@@ -75,19 +75,23 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "IslandQuiz — конструктор викторин" },
+      { title: "IslandQuiz — конструктор квизов и викторин" },
       {
         name: "description",
         content:
-          "Личный инструмент для создания и проведения викторин: квиз, своя игра, миллионер. Тёплые темы, экспорт в Excel, LaTeX-формулы.",
+          "Создавайте квизы, свою игру и миллионера. Пять тем, экспорт в Excel, LaTeX-формулы, drag-and-drop и всё локально в вашем браузере.",
       },
-      { property: "og:title", content: "IslandQuiz — конструктор викторин" },
+      { property: "og:title", content: "IslandQuiz — конструктор квизов и викторин" },
       {
         property: "og:description",
-        content: "Три формата игр, пять визуальных тем, всё в одном тёплом инструменте.",
+        content: "Создавайте квизы, свою игру и миллионера. Пять тем, экспорт в Excel, LaTeX-формулы, drag-and-drop и всё локально в вашем браузере.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "IslandQuiz — конструктор квизов и викторин" },
+      { name: "twitter:description", content: "Создавайте квизы, свою игру и миллионера. Пять тем, экспорт в Excel, LaTeX-формулы, drag-and-drop и всё локально в вашем браузере." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/78583ab5-d93a-4ad7-b970-7841af0df6d4/id-preview-8d6a3115--6d712a97-ead2-4134-ac65-6680e230aa38.lovable.app-1783779517790.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/78583ab5-d93a-4ad7-b970-7841af0df6d4/id-preview-8d6a3115--6d712a97-ead2-4134-ac65-6680e230aa38.lovable.app-1783779517790.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },

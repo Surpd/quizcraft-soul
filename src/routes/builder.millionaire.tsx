@@ -1,24 +1,25 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import {
   Coins,
   Plus,
   Trash2,
-  Save,
   FileSpreadsheet,
   Upload,
   Settings2,
   Printer,
   FileText,
+  Play,
 } from "lucide-react";
 import { BuilderShell } from "@/components/builder-shell";
+import { HelpButton } from "@/components/help-modal";
 import { ImageDrop } from "@/lib/image-drop";
 import { ThemeSelect } from "@/components/theme-select";
 import { newId, saveGame } from "@/lib/storage";
 import {
-  downloadCSVTemplate,
+  downloadExcelTemplate,
   exportMillionaireExcel,
-  parseCSV,
+  importMillionaireXlsx,
   printMillionaire,
 } from "@/lib/exports";
 import type {
@@ -61,7 +62,6 @@ function makeQuestion(money: number): MillionaireQuestion {
 }
 
 function BuilderMillionaire() {
-  const nav = useNavigate();
   const [config, setConfig] = useState<MillionaireConfig>({
     theme: "amber",
     timePerQuestion: 30,
@@ -84,6 +84,9 @@ function BuilderMillionaire() {
     const nextIdx = questions.length;
     const money = LADDERS[config.moneyScale][nextIdx] ?? LADDERS[config.moneyScale].at(-1)!;
     setQuestions([...questions, makeQuestion(money)]);
+    setTimeout(() => {
+      document.getElementById(`mq-${nextIdx}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 50);
   };
 
   const patchQuestion = (idx: number, patch: Partial<MillionaireQuestion>) => {
@@ -115,10 +118,10 @@ function BuilderMillionaire() {
     setQuestions((prev) => prev.filter((_, i) => i !== idx));
   };
 
-  const handleSave = () => {
+  const handleSave = (): string | null => {
     if (questions.some((q) => !q.q.trim() || !q.options.some((o) => o.correct && o.text.trim()))) {
       showToast("В каждом вопросе укажите текст и верный ответ");
-      return;
+      return null;
     }
     const id = savedId ?? newId();
     saveGame<MillionaireData>("millionaire", id, { config, questions });
@@ -129,50 +132,79 @@ function BuilderMillionaire() {
 
   const openPlayer = () => {
     const id = handleSave();
-    if (id) nav({ to: "/play/millionaire/$id", params: { id } });
+    if (id) window.open(`/play/millionaire/${id}`, "_blank", "noopener");
   };
 
-  const handleCSV = async (file: File) => {
+  const handleImport = async (file: File) => {
     try {
-      const rows = await parseCSV<Record<string, string>>(file);
-      const imported: MillionaireQuestion[] = rows.map((r) => {
-        const letter = (r.correct ?? "A").toUpperCase();
-        const opts = [r.a, r.b, r.c, r.d].map((t, i) => ({
-          text: t ?? "",
-          correct: ["A", "B", "C", "D"][i] === letter,
-        }));
-        return { q: r.question ?? "", image: "", money: parseInt(r.money ?? "1000") || 1000, options: opts };
-      });
+      const imported = await importMillionaireXlsx(file);
       if (imported.length) {
         setQuestions(imported);
         showToast(`Загружено вопросов: ${imported.length}`);
       }
     } catch (err) {
       console.error(err);
-      showToast("Не удалось прочитать CSV");
+      showToast("Не удалось прочитать Excel");
     }
   };
 
+  const scrollToQ = (idx: number) => {
+    document.getElementById(`mq-${idx}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
+
+  const sidebar = (
+    <div className="space-y-1">
+      <p className="mb-2 px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        Лестница
+      </p>
+      {questions.map((q, i) => {
+        const filled = q.q.trim() && q.options.some((o) => o.correct && o.text.trim());
+        return (
+          <button
+            key={i}
+            onClick={() => scrollToQ(i)}
+            className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs transition-colors hover:bg-surface-muted ${
+              filled ? "text-foreground" : "text-muted-foreground"
+            }`}
+          >
+            <span
+              className={`grid h-6 w-6 place-items-center rounded-md font-mono text-[10px] font-bold ${
+                filled ? "bg-success-soft text-success" : "bg-surface-muted"
+              }`}
+            >
+              {i + 1}
+            </span>
+            <span className="truncate">{q.money.toLocaleString("ru-RU")} ₽</span>
+          </button>
+        );
+      })}
+      <div className="my-2 border-t border-border" />
+      <button onClick={addQuestion} className="btn-ghost w-full justify-center text-xs">
+        <Plus className="h-3.5 w-3.5" /> Вопрос
+      </button>
+    </div>
+  );
+
   const toolbar = (
     <div className="flex flex-wrap gap-2">
-      <button className="btn-ghost" onClick={() => downloadCSVTemplate("millionaire")}>
-        <FileText className="h-4 w-4" /> Шаблон
+      <button className="btn-ghost" onClick={() => downloadExcelTemplate("millionaire")}>
+        <FileText className="h-4 w-4" /> Шаблон Excel
       </button>
       <label className="btn-ghost cursor-pointer">
-        <Upload className="h-4 w-4" /> CSV
+        <Upload className="h-4 w-4" /> Загрузить Excel
         <input
           type="file"
-          accept=".csv"
+          accept=".xlsx,.xls"
           className="hidden"
           onChange={(e) => {
             const f = e.target.files?.[0];
-            if (f) handleCSV(f);
+            if (f) handleImport(f);
             e.currentTarget.value = "";
           }}
         />
       </label>
       <button className="btn-ghost" onClick={() => exportMillionaireExcel({ config, questions })}>
-        <FileSpreadsheet className="h-4 w-4" /> Excel
+        <FileSpreadsheet className="h-4 w-4" /> Скачать .xlsx
       </button>
       <button className="btn-ghost" onClick={() => printMillionaire({ config, questions })}>
         <Printer className="h-4 w-4" /> Печать
@@ -181,7 +213,7 @@ function BuilderMillionaire() {
         <Settings2 className="h-4 w-4" /> Настройки
       </button>
       <button className="btn-accent" onClick={openPlayer}>
-        <Save className="h-4 w-4" /> Играть
+        <Play className="h-4 w-4" /> Играть (новая вкладка)
       </button>
     </div>
   );
@@ -192,6 +224,18 @@ function BuilderMillionaire() {
       subtitle="Лестница вопросов с 4 вариантами, несгораемыми суммами и подсказкой 50:50"
       icon={<Coins className="h-5 w-5" />}
       toolbar={toolbar}
+      sidebar={sidebar}
+      theme={config.theme}
+      onSave={handleSave}
+      extraFabs={
+        <HelpButton title="Как пользоваться конструктором «Миллионера»">
+          <p><b>Лестница:</b> 15 вопросов от лёгких к сложным. Сумма растёт по выбранной шкале (Лёгкая / Средняя / Хард).</p>
+          <p><b>Верный ответ:</b> кликните по букве A/B/C/D — она станет зелёной.</p>
+          <p><b>Несгораемые:</b> в настройках — «Классика» (2 точки), «Три точки» или «Без».</p>
+          <p><b>Слева</b> — быстрая навигация по всем 15 вопросам; зелёный значок = вопрос готов.</p>
+          <p><b>Excel:</b> шаблон включает колонки money, question, a, b, c, d, correct (буква).</p>
+        </HelpButton>
+      }
     >
       {showSettings && (
         <div className="surface-card animate-fade-up space-y-4 p-6">
@@ -242,7 +286,7 @@ function BuilderMillionaire() {
       )}
 
       {questions.map((q, idx) => (
-        <div key={idx} className="surface-card space-y-3 p-6">
+        <div key={idx} id={`mq-${idx}`} className="surface-card space-y-3 p-6 scroll-mt-24">
           <div className="flex items-center justify-between">
             <div className="rounded-full bg-amber-soft px-4 py-1.5 text-sm font-bold text-amber">
               Вопрос {idx + 1} · {q.money.toLocaleString("ru-RU")} ₽
@@ -303,7 +347,7 @@ function BuilderMillionaire() {
       </button>
 
       {toast && (
-        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full bg-foreground px-5 py-3 text-sm font-semibold text-white shadow-lift">
+        <div className="fixed bottom-20 left-1/2 z-50 -translate-x-1/2 rounded-full bg-foreground px-5 py-3 text-sm font-semibold text-white shadow-lift">
           {toast}
         </div>
       )}

@@ -1,10 +1,9 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { createFileRoute } from "@tanstack/react-router";
+import { useRef, useState } from "react";
 import {
   FileText,
   Plus,
   Trash2,
-  Save,
   FileSpreadsheet,
   Printer,
   Upload,
@@ -13,15 +12,18 @@ import {
   CheckCircle2,
   Type as TypeIcon,
   Shuffle,
+  Play,
+  BarChart3,
 } from "lucide-react";
 import { BuilderShell } from "@/components/builder-shell";
+import { HelpButton } from "@/components/help-modal";
 import { ImageDrop } from "@/lib/image-drop";
 import { ThemeSelect } from "@/components/theme-select";
 import { newId, saveGame } from "@/lib/storage";
 import {
-  downloadCSVTemplate,
+  downloadExcelTemplate,
   exportQuizExcel,
-  parseCSV,
+  importQuizXlsx,
   printQuiz,
 } from "@/lib/exports";
 import type {
@@ -58,7 +60,6 @@ function makeQuestion(type: QuizQuestionType, points = 100, time = 30): QuizQues
 }
 
 function BuilderQuiz() {
-  const nav = useNavigate();
   const [config, setConfig] = useState<QuizConfig>({
     title: "Новый квиз",
     description: "",
@@ -91,10 +92,15 @@ function BuilderQuiz() {
     setQuestions((prev) => prev.filter((q) => q.id !== id));
   };
 
-  const handleSave = () => {
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 2500);
+  };
+
+  const handleSave = (): string | null => {
     if (questions.some((q) => !q.q.trim())) {
       showToast("Заполните текст всех вопросов");
-      return;
+      return null;
     }
     const id = savedId ?? newId();
     saveGame<QuizData>("quiz", id, { config, questions });
@@ -103,40 +109,26 @@ function BuilderQuiz() {
     return id;
   };
 
-  const showToast = (msg: string) => {
-    setToast(msg);
-    setTimeout(() => setToast(null), 2500);
-  };
-
   const openPlayer = () => {
     const id = handleSave();
-    if (id) nav({ to: "/play/quiz/$id", params: { id } });
+    if (id) window.open(`/play/quiz/${id}`, "_blank", "noopener");
   };
 
-  const handleCSVImport = async (file: File) => {
+  const openResults = () => {
+    const id = handleSave();
+    if (id) window.open(`/quiz/${id}/results`, "_blank", "noopener");
+  };
+
+  const handleImport = async (file: File) => {
     try {
-      const rows = await parseCSV<Record<string, string>>(file);
-      const imported: QuizQuestion[] = rows.map((r) => {
-        const type = ((r.type ?? "choice") as QuizQuestionType) || "choice";
-        const opts = r.options ? r.options.split("|").map((s) => s.trim()) : [];
-        return {
-          id: newId(),
-          type,
-          q: r.question ?? "",
-          image: "",
-          options: type === "choice" ? (opts.length ? opts : ["", "", "", ""]) : [],
-          answer: r.answer ?? "",
-          points: parseInt(r.points ?? "100") || 100,
-          time: parseInt(r.time ?? String(config.defaultTime)) || config.defaultTime,
-        };
-      });
+      const imported = await importQuizXlsx(file, config.defaultTime);
       if (imported.length) {
         setQuestions(imported);
         showToast(`Загружено вопросов: ${imported.length}`);
       }
     } catch (err) {
       console.error(err);
-      showToast("Не удалось прочитать CSV");
+      showToast("Не удалось прочитать Excel");
     }
   };
 
@@ -184,33 +176,36 @@ function BuilderQuiz() {
 
   const toolbar = (
     <div className="flex flex-wrap gap-2">
-      <button className="btn-ghost" onClick={() => downloadCSVTemplate("quiz")}>
-        <FileText className="h-4 w-4" /> Шаблон
+      <button className="btn-ghost" onClick={() => downloadExcelTemplate("quiz")}>
+        <FileText className="h-4 w-4" /> Шаблон Excel
       </button>
       <label className="btn-ghost cursor-pointer">
-        <Upload className="h-4 w-4" /> Импорт CSV
+        <Upload className="h-4 w-4" /> Загрузить Excel
         <input
           type="file"
-          accept=".csv"
+          accept=".xlsx,.xls"
           className="hidden"
           onChange={(e) => {
             const f = e.target.files?.[0];
-            if (f) handleCSVImport(f);
+            if (f) handleImport(f);
             e.currentTarget.value = "";
           }}
         />
       </label>
       <button className="btn-ghost" onClick={() => exportQuizExcel({ config, questions })}>
-        <FileSpreadsheet className="h-4 w-4" /> Excel
+        <FileSpreadsheet className="h-4 w-4" /> Скачать .xlsx
       </button>
       <button className="btn-ghost" onClick={() => printQuiz({ config, questions })}>
         <Printer className="h-4 w-4" /> Печать
+      </button>
+      <button className="btn-ghost" onClick={openResults}>
+        <BarChart3 className="h-4 w-4" /> Результаты
       </button>
       <button className="btn-ghost" onClick={() => setShowSettings((s) => !s)}>
         <Settings2 className="h-4 w-4" /> Настройки
       </button>
       <button className="btn-accent" onClick={openPlayer}>
-        <Save className="h-4 w-4" /> Сохранить и играть
+        <Play className="h-4 w-4" /> Играть (новая вкладка)
       </button>
     </div>
   );
@@ -222,6 +217,18 @@ function BuilderQuiz() {
       icon={<FileText className="h-5 w-5" />}
       toolbar={toolbar}
       sidebar={sidebar}
+      theme={config.theme}
+      onSave={handleSave}
+      extraFabs={
+        <HelpButton title="Как пользоваться конструктором квиза">
+          <p><b>Типы вопросов:</b> ABCD — 4 варианта, отметьте верный кликом по букве. Да/Нет — простой бинарный вопрос. Текст — принимаются несколько вариантов через запятую. Пары — сопоставление левого и правого списка.</p>
+          <p><b>Картинка:</b> перетащите файл в зону или вставьте URL.</p>
+          <p><b>Тема плеера:</b> в «Настройки» → выбираете тему; конструктор сразу подсветит её акцентом.</p>
+          <p><b>Панель слева:</b> клик по номеру — переход к вопросу. Клик «+ …» — добавить новый.</p>
+          <p><b>Ссылки:</b> «Играть» и «Результаты» открываются в новой вкладке.</p>
+          <p><b>Excel:</b> скачайте шаблон, заполните — загрузите обратно кнопкой «Загрузить Excel».</p>
+        </HelpButton>
+      }
     >
       {showSettings && (
         <div className="surface-card animate-fade-up space-y-4 p-6">
@@ -317,11 +324,7 @@ function BuilderQuiz() {
         {(Object.keys(TYPE_META) as QuizQuestionType[]).map((t) => {
           const Icon = TYPE_META[t].icon;
           return (
-            <button
-              key={t}
-              onClick={() => addQuestion(t)}
-              className="btn-ghost"
-            >
+            <button key={t} onClick={() => addQuestion(t)} className="btn-ghost">
               <Plus className="h-4 w-4" />
               <Icon className={`h-4 w-4 ${TYPE_META[t].tone}`} />
               {TYPE_META[t].label}
@@ -331,7 +334,7 @@ function BuilderQuiz() {
       </div>
 
       {toast && (
-        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full bg-foreground px-5 py-3 text-sm font-semibold text-white shadow-lift">
+        <div className="fixed bottom-20 left-1/2 z-50 -translate-x-1/2 rounded-full bg-foreground px-5 py-3 text-sm font-semibold text-white shadow-lift">
           {toast}
         </div>
       )}
@@ -375,10 +378,7 @@ function QuestionCard({
         onChange={(e) => onPatch({ q: e.target.value })}
       />
 
-      <ImageDrop
-        value={question.image}
-        onChange={(image) => onPatch({ image })}
-      />
+      <ImageDrop value={question.image} onChange={(image) => onPatch({ image })} />
 
       {question.type === "choice" && (
         <div className="space-y-2">
@@ -477,59 +477,53 @@ function MatchingEditor({
   question: QuizQuestion;
   onPatch: (p: Partial<QuizQuestion>) => void;
 }) {
-  const pairs = useMemo(() => {
-    try {
-      const p = JSON.parse(question.answer || "[]") as { left: string; right: string }[];
-      return Array.isArray(p) && p.length ? p : [{ left: "", right: "" }];
-    } catch {
-      return [{ left: "", right: "" }];
-    }
-  }, [question.answer]);
-
-  const updatePairs = (next: { left: string; right: string }[]) => {
+  let pairs: { left: string; right: string }[] = [];
+  try {
+    pairs = JSON.parse(question.answer || "[]");
+  } catch {
+    pairs = [];
+  }
+  const setPairs = (next: { left: string; right: string }[]) =>
     onPatch({ answer: JSON.stringify(next) });
-  };
-
   return (
     <div className="space-y-2">
       {pairs.map((p, i) => (
         <div key={i} className="flex items-center gap-2">
           <input
             className="input-base"
-            placeholder="Левая часть"
+            placeholder="Слева"
             value={p.left}
             onChange={(e) => {
               const next = [...pairs];
               next[i] = { ...next[i], left: e.target.value };
-              updatePairs(next);
+              setPairs(next);
             }}
           />
           <span className="text-muted-foreground">→</span>
           <input
             className="input-base"
-            placeholder="Правильная пара"
+            placeholder="Справа"
             value={p.right}
             onChange={(e) => {
               const next = [...pairs];
               next[i] = { ...next[i], right: e.target.value };
-              updatePairs(next);
+              setPairs(next);
             }}
           />
           <button
-            type="button"
-            onClick={() => updatePairs(pairs.filter((_, j) => j !== i))}
-            className="rounded p-1.5 text-muted-foreground hover:bg-danger-soft hover:text-danger"
+            onClick={() => setPairs(pairs.filter((_, k) => k !== i))}
+            className="rounded-lg p-2 text-muted-foreground hover:bg-danger-soft hover:text-danger"
+            aria-label="Удалить пару"
           >
             <Trash2 className="h-4 w-4" />
           </button>
         </div>
       ))}
       <button
-        type="button"
-        onClick={() => updatePairs([...pairs, { left: "", right: "" }])}
+        onClick={() => setPairs([...pairs, { left: "", right: "" }])}
         className="btn-ghost"
       >
-        <Plus className="h-4 w-4" /> Добавить пару
+        <Plus className="h-4 w-4" /> Пара
       </button>
     </div>
   );

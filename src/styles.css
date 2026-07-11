@@ -318,3 +318,23 @@
   50% { opacity: 0.6; }
 }
 .animate-pulse-soft { animation: pulse-soft 1.6s ease-in-out infinite; }
+
+/* Themed animated backgrounds */
+@keyframes iq-float-up {
+  0% { transform: translateY(0) scale(1); opacity: 0; }
+  10% { opacity: 0.8; }
+  100% { transform: translateY(-110vh) scale(1.1); opacity: 0; }
+}
+@keyframes iq-drift-down {
+  0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+  10% { opacity: 0.85; }
+  100% { transform: translateY(110vh) rotate(360deg); opacity: 0; }
+}
+@keyframes iq-sway {
+  0%, 100% { margin-left: 0; }
+  50% { margin-left: 30px; }
+}
+@keyframes iq-twinkle {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 1; }
+}

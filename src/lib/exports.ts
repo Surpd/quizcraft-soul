@@ -1,33 +1,31 @@
-// Export helpers — Excel (xlsx) and CSV/PDF (browser print).
-// Kept dependency-light: xlsx + papaparse are already installed.
+// Export helpers — Excel (xlsx) is primary; browser print for PDF.
 
 import * as XLSX from "xlsx";
-import Papa from "papaparse";
-import type { JeopardyData, MillionaireData, QuizData } from "./types";
+import type {
+  JeopardyCategory,
+  JeopardyData,
+  JeopardyFinal,
+  JeopardyQuestion,
+  MillionaireData,
+  MillionaireQuestion,
+  QuizData,
+  QuizQuestion,
+  QuizQuestionType,
+} from "./types";
+import { newId } from "./storage";
 
-function downloadBlob(blob: Blob, filename: string) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-}
-
-/* ---------------- Excel ---------------- */
+/* ---------------- Excel export ---------------- */
 
 export function exportQuizExcel(data: QuizData) {
   const wb = XLSX.utils.book_new();
   const rows = data.questions.map((q, i) => ({
     "#": i + 1,
-    Тип: q.type,
-    Вопрос: q.q,
-    Варианты: q.options.join(" | "),
-    Ответ: q.answer,
-    Баллы: q.points,
-    "Время (сек)": q.time,
+    type: q.type,
+    question: q.q,
+    options: q.options.join(" | "),
+    answer: q.answer,
+    points: q.points,
+    time: q.time,
   }));
   const ws = XLSX.utils.json_to_sheet(rows);
   XLSX.utils.book_append_sheet(wb, ws, "Вопросы");
@@ -36,25 +34,29 @@ export function exportQuizExcel(data: QuizData) {
 
 export function exportJeopardyExcel(data: JeopardyData) {
   const wb = XLSX.utils.book_new();
+  const rows: Record<string, string | number>[] = [];
   data.rounds.forEach((round, ri) => {
-    const rows: Record<string, string | number>[] = [];
     round.forEach((cat) => {
       cat.questions.forEach((q) => {
         rows.push({
-          Категория: cat.category,
-          Стоимость: q.points,
-          Вопрос: q.q,
-          Ответ: q.a,
+          round: ri + 1,
+          category: cat.category,
+          points: q.points,
+          question: q.q,
+          answer: q.a,
         });
       });
     });
-    const ws = XLSX.utils.json_to_sheet(rows);
-    XLSX.utils.book_append_sheet(wb, ws, `Раунд ${ri + 1}`);
   });
-  const finalWs = XLSX.utils.json_to_sheet([
-    { Категория: data.final.category, Вопрос: data.final.q, Ответ: data.final.a },
-  ]);
-  XLSX.utils.book_append_sheet(wb, finalWs, "Финал");
+  rows.push({
+    round: "final",
+    category: data.final.category,
+    points: 0,
+    question: data.final.q,
+    answer: data.final.a,
+  });
+  const ws = XLSX.utils.json_to_sheet(rows);
+  XLSX.utils.book_append_sheet(wb, ws, "Своя игра");
   XLSX.writeFile(wb, "своя-игра.xlsx");
 }
 
@@ -62,47 +64,135 @@ export function exportMillionaireExcel(data: MillionaireData) {
   const wb = XLSX.utils.book_new();
   const rows = data.questions.map((q, i) => ({
     "#": i + 1,
-    Сумма: q.money,
-    Вопрос: q.q,
-    A: q.options[0]?.text ?? "",
-    B: q.options[1]?.text ?? "",
-    C: q.options[2]?.text ?? "",
-    D: q.options[3]?.text ?? "",
-    Верный: ["A", "B", "C", "D"][q.options.findIndex((o) => o.correct)] ?? "?",
+    money: q.money,
+    question: q.q,
+    a: q.options[0]?.text ?? "",
+    b: q.options[1]?.text ?? "",
+    c: q.options[2]?.text ?? "",
+    d: q.options[3]?.text ?? "",
+    correct: ["A", "B", "C", "D"][q.options.findIndex((o) => o.correct)] ?? "A",
   }));
   const ws = XLSX.utils.json_to_sheet(rows);
   XLSX.utils.book_append_sheet(wb, ws, "Миллионер");
   XLSX.writeFile(wb, "миллионер.xlsx");
 }
 
-/* ---------------- CSV import ---------------- */
+/* ---------------- Excel templates ---------------- */
 
-export function parseCSV<T = Record<string, string>>(file: File): Promise<T[]> {
-  return new Promise((resolve, reject) => {
-    Papa.parse<T>(file, {
-      header: true,
-      skipEmptyLines: true,
-      complete: (res) => resolve(res.data),
-      error: reject,
-    });
+export function downloadExcelTemplate(kind: "quiz" | "jeopardy" | "millionaire") {
+  const wb = XLSX.utils.book_new();
+  let rows: Record<string, string | number>[] = [];
+  let name = "template";
+  if (kind === "quiz") {
+    name = "quiz-template";
+    rows = [
+      { type: "choice", question: "Столица Франции?", options: "Париж|Лондон|Берлин|Мадрид", answer: "Париж", points: 100, time: 30 },
+      { type: "bool", question: "Вода мокрая?", options: "", answer: "true", points: 50, time: 20 },
+      { type: "text", question: "Что такое H2O?", options: "", answer: "вода", points: 100, time: 30 },
+    ];
+  } else if (kind === "jeopardy") {
+    name = "своя-игра-template";
+    rows = [
+      { round: 1, category: "История", points: 100, question: "Год начала ВОВ?", answer: "1941" },
+      { round: 1, category: "История", points: 200, question: "Первый президент США?", answer: "Вашингтон" },
+      { round: "final", category: "Наука", points: 0, question: "Единица силы?", answer: "Ньютон" },
+    ];
+  } else {
+    name = "миллионер-template";
+    rows = [
+      { money: 500, question: "Столица Японии?", a: "Токио", b: "Осака", c: "Киото", d: "Нагоя", correct: "A" },
+      { money: 1000, question: "Автор «Войны и мира»?", a: "Толстой", b: "Достоевский", c: "Чехов", d: "Пушкин", correct: "A" },
+    ];
+  }
+  const ws = XLSX.utils.json_to_sheet(rows);
+  XLSX.utils.book_append_sheet(wb, ws, "Шаблон");
+  XLSX.writeFile(wb, `${name}.xlsx`);
+}
+
+/* ---------------- Excel import ---------------- */
+
+async function readXlsx(file: File): Promise<Record<string, string>[]> {
+  const buf = await file.arrayBuffer();
+  const wb = XLSX.read(buf, { type: "array" });
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  return XLSX.utils.sheet_to_json<Record<string, string>>(ws, { defval: "", raw: false });
+}
+
+export async function importQuizXlsx(file: File, defaultTime: number): Promise<QuizQuestion[]> {
+  const rows = await readXlsx(file);
+  return rows.map((r) => {
+    const type = ((r.type ?? "choice") as QuizQuestionType) || "choice";
+    const opts = r.options ? String(r.options).split("|").map((s) => s.trim()) : [];
+    return {
+      id: newId(),
+      type,
+      q: String(r.question ?? ""),
+      image: "",
+      options: type === "choice" ? (opts.length ? opts : ["", "", "", ""]) : [],
+      answer: String(r.answer ?? ""),
+      points: parseInt(String(r.points ?? "100")) || 100,
+      time: parseInt(String(r.time ?? defaultTime)) || defaultTime,
+    };
   });
 }
 
-/* ---------------- CSV templates ---------------- */
+export async function importJeopardyXlsx(
+  file: File,
+): Promise<{ rounds: JeopardyCategory[][]; final: JeopardyFinal | null }> {
+  const rows = await readXlsx(file);
+  const roundsMap = new Map<string, Map<string, JeopardyQuestion[]>>();
+  let final: JeopardyFinal | null = null;
+  rows.forEach((r) => {
+    const round = String(r.round ?? "").trim().toLowerCase();
+    if (round === "final") {
+      final = {
+        category: String(r.category ?? ""),
+        q: String(r.question ?? ""),
+        a: String(r.answer ?? ""),
+        image: "",
+      };
+      return;
+    }
+    if (!round) return;
+    const cats = roundsMap.get(round) ?? new Map();
+    const catName = String(r.category ?? "");
+    const cat = cats.get(catName) ?? [];
+    cat.push({
+      points: parseInt(String(r.points ?? "100")) || 100,
+      q: String(r.question ?? ""),
+      a: String(r.answer ?? ""),
+      image: "",
+    });
+    cats.set(catName, cat);
+    roundsMap.set(round, cats);
+  });
+  const rounds: JeopardyCategory[][] = [];
+  Array.from(roundsMap.keys())
+    .sort()
+    .forEach((k) => {
+      const cats = roundsMap.get(k)!;
+      rounds.push(
+        Array.from(cats.entries()).map(([category, questions]) => ({ category, questions })),
+      );
+    });
+  return { rounds, final };
+}
 
-export function downloadCSVTemplate(kind: "quiz" | "jeopardy" | "millionaire") {
-  let csv = "";
-  if (kind === "quiz") {
-    csv =
-      "type,question,options,answer,points,time\nchoice,Столица Франции?,Париж|Лондон|Берлин|Мадрид,Париж,100,30\nbool,Вода мокрая?,,true,50,20\ntext,Что такое H2O?,,вода,100,30\n";
-  } else if (kind === "jeopardy") {
-    csv =
-      "round,category,points,question,answer\n1,История,100,Год начала ВОВ?,1941\n1,История,200,Первый президент США?,Вашингтон\nfinal,Наука,0,Единица силы?,Ньютон\n";
-  } else {
-    csv =
-      "money,question,a,b,c,d,correct\n500,Столица Японии?,Токио,Осака,Киото,Нагоя,A\n1000,Автор «Войны и мира»?,Толстой,Достоевский,Чехов,Пушкин,A\n";
-  }
-  downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8" }), `template_${kind}.csv`);
+export async function importMillionaireXlsx(file: File): Promise<MillionaireQuestion[]> {
+  const rows = await readXlsx(file);
+  return rows.map((r) => {
+    const letter = String(r.correct ?? "A").toUpperCase();
+    const opts = [r.a, r.b, r.c, r.d].map((t, i) => ({
+      text: String(t ?? ""),
+      correct: ["A", "B", "C", "D"][i] === letter,
+    }));
+    return {
+      q: String(r.question ?? ""),
+      image: "",
+      money: parseInt(String(r.money ?? "1000")) || 1000,
+      options: opts,
+    };
+  });
 }
 
 /* ---------------- Print / PDF ---------------- */

@@ -1,0 +1,536 @@
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  FileText,
+  Plus,
+  Trash2,
+  Save,
+  FileSpreadsheet,
+  Printer,
+  Upload,
+  Settings2,
+  Circle,
+  CheckCircle2,
+  Type as TypeIcon,
+  Shuffle,
+} from "lucide-react";
+import { BuilderShell } from "@/components/builder-shell";
+import { ImageDrop } from "@/lib/image-drop";
+import { ThemeSelect } from "@/components/theme-select";
+import { newId, saveGame } from "@/lib/storage";
+import {
+  downloadCSVTemplate,
+  exportQuizExcel,
+  parseCSV,
+  printQuiz,
+} from "@/lib/exports";
+import type {
+  PlayerTheme,
+  QuizConfig,
+  QuizData,
+  QuizQuestion,
+  QuizQuestionType,
+} from "@/lib/types";
+
+export const Route = createFileRoute("/builder/quiz")({
+  head: () => ({
+    meta: [
+      { title: "Конструктор квиза — IslandQuiz" },
+      { name: "description", content: "Создавайте квизы с ABCD, Да/Нет, открытым ответом и сопоставлением." },
+    ],
+  }),
+  component: BuilderQuiz,
+});
+
+const TYPE_META: Record<QuizQuestionType, { label: string; icon: typeof Circle; tone: string }> = {
+  choice: { label: "ABCD", icon: Circle, tone: "text-primary" },
+  bool: { label: "Да/Нет", icon: CheckCircle2, tone: "text-success" },
+  text: { label: "Текст", icon: TypeIcon, tone: "text-amber" },
+  matching: { label: "Пары", icon: Shuffle, tone: "text-accent" },
+};
+
+function makeQuestion(type: QuizQuestionType, points = 100, time = 30): QuizQuestion {
+  const base = { id: newId(), type, q: "", image: "", options: [], answer: "", points, time };
+  if (type === "choice") return { ...base, options: ["", "", "", ""], answer: "" };
+  if (type === "bool") return { ...base, answer: "true" };
+  if (type === "matching") return { ...base, answer: JSON.stringify([{ left: "", right: "" }]) };
+  return base;
+}
+
+function BuilderQuiz() {
+  const nav = useNavigate();
+  const [config, setConfig] = useState<QuizConfig>({
+    title: "Новый квиз",
+    description: "",
+    theme: "amber",
+    shuffleQuestions: false,
+    showResult: "end",
+    defaultTime: 30,
+    orderMode: "sequential",
+    totalTime: 10,
+  });
+  const [questions, setQuestions] = useState<QuizQuestion[]>([makeQuestion("choice")]);
+  const [showSettings, setShowSettings] = useState(false);
+  const [savedId, setSavedId] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+
+  const addQuestion = (type: QuizQuestionType) => {
+    const q = makeQuestion(type, 100, config.defaultTime);
+    setQuestions((prev) => [...prev, q]);
+    setTimeout(() => {
+      document.getElementById(`q-${q.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 50);
+  };
+
+  const patchQuestion = (id: string, patch: Partial<QuizQuestion>) => {
+    setQuestions((prev) => prev.map((q) => (q.id === id ? { ...q, ...patch } : q)));
+  };
+
+  const removeQuestion = (id: string) => {
+    setQuestions((prev) => prev.filter((q) => q.id !== id));
+  };
+
+  const handleSave = () => {
+    if (questions.some((q) => !q.q.trim())) {
+      showToast("Заполните текст всех вопросов");
+      return;
+    }
+    const id = savedId ?? newId();
+    saveGame<QuizData>("quiz", id, { config, questions });
+    setSavedId(id);
+    showToast("Квиз сохранён!");
+    return id;
+  };
+
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 2500);
+  };
+
+  const openPlayer = () => {
+    const id = handleSave();
+    if (id) nav({ to: "/play/quiz/$id", params: { id } });
+  };
+
+  const handleCSVImport = async (file: File) => {
+    try {
+      const rows = await parseCSV<Record<string, string>>(file);
+      const imported: QuizQuestion[] = rows.map((r) => {
+        const type = ((r.type ?? "choice") as QuizQuestionType) || "choice";
+        const opts = r.options ? r.options.split("|").map((s) => s.trim()) : [];
+        return {
+          id: newId(),
+          type,
+          q: r.question ?? "",
+          image: "",
+          options: type === "choice" ? (opts.length ? opts : ["", "", "", ""]) : [],
+          answer: r.answer ?? "",
+          points: parseInt(r.points ?? "100") || 100,
+          time: parseInt(r.time ?? String(config.defaultTime)) || config.defaultTime,
+        };
+      });
+      if (imported.length) {
+        setQuestions(imported);
+        showToast(`Загружено вопросов: ${imported.length}`);
+      }
+    } catch (err) {
+      console.error(err);
+      showToast("Не удалось прочитать CSV");
+    }
+  };
+
+  const sidebar = (
+    <div className="space-y-1">
+      <p className="mb-2 px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        Вопросы
+      </p>
+      {questions.map((q, i) => {
+        const Icon = TYPE_META[q.type].icon;
+        return (
+          <button
+            key={q.id}
+            type="button"
+            onClick={() =>
+              document.getElementById(`q-${q.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" })
+            }
+            className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-xs transition-colors hover:bg-surface-muted"
+          >
+            <span className="grid h-6 w-6 place-items-center rounded-md bg-surface-muted font-mono text-[10px] font-bold">
+              {i + 1}
+            </span>
+            <Icon className={`h-3.5 w-3.5 ${TYPE_META[q.type].tone}`} />
+            <span className="truncate text-muted-foreground">
+              {q.q.slice(0, 20) || TYPE_META[q.type].label}
+            </span>
+          </button>
+        );
+      })}
+      <div className="my-2 border-t border-border" />
+      <div className="grid grid-cols-2 gap-1">
+        {(Object.keys(TYPE_META) as QuizQuestionType[]).map((t) => (
+          <button
+            key={t}
+            type="button"
+            onClick={() => addQuestion(t)}
+            className="rounded-md border border-dashed border-border-strong px-2 py-1.5 text-[11px] font-semibold text-muted-foreground hover:border-primary hover:text-primary"
+          >
+            + {TYPE_META[t].label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+
+  const toolbar = (
+    <div className="flex flex-wrap gap-2">
+      <button className="btn-ghost" onClick={() => downloadCSVTemplate("quiz")}>
+        <FileText className="h-4 w-4" /> Шаблон
+      </button>
+      <label className="btn-ghost cursor-pointer">
+        <Upload className="h-4 w-4" /> Импорт CSV
+        <input
+          type="file"
+          accept=".csv"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) handleCSVImport(f);
+            e.currentTarget.value = "";
+          }}
+        />
+      </label>
+      <button className="btn-ghost" onClick={() => exportQuizExcel({ config, questions })}>
+        <FileSpreadsheet className="h-4 w-4" /> Excel
+      </button>
+      <button className="btn-ghost" onClick={() => printQuiz({ config, questions })}>
+        <Printer className="h-4 w-4" /> Печать
+      </button>
+      <button className="btn-ghost" onClick={() => setShowSettings((s) => !s)}>
+        <Settings2 className="h-4 w-4" /> Настройки
+      </button>
+      <button className="btn-accent" onClick={openPlayer}>
+        <Save className="h-4 w-4" /> Сохранить и играть
+      </button>
+    </div>
+  );
+
+  return (
+    <BuilderShell
+      title="Квиз"
+      subtitle="Тест из вопросов разного типа: выбор ответа, правда/ложь, открытый вопрос, сопоставление"
+      icon={<FileText className="h-5 w-5" />}
+      toolbar={toolbar}
+      sidebar={sidebar}
+    >
+      {showSettings && (
+        <div className="surface-card animate-fade-up space-y-4 p-6">
+          <h3 className="font-display font-bold">Настройки квиза</h3>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="block sm:col-span-2">
+              <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">Название</span>
+              <input
+                className="input-base"
+                value={config.title}
+                onChange={(e) => setConfig({ ...config, title: e.target.value })}
+              />
+            </label>
+            <label className="block sm:col-span-2">
+              <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">Описание</span>
+              <input
+                className="input-base"
+                value={config.description}
+                onChange={(e) => setConfig({ ...config, description: e.target.value })}
+              />
+            </label>
+            <label className="block">
+              <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">Порядок вопросов</span>
+              <select
+                className="input-base"
+                value={config.orderMode}
+                onChange={(e) =>
+                  setConfig({ ...config, orderMode: e.target.value as QuizConfig["orderMode"] })
+                }
+              >
+                <option value="sequential">Последовательно</option>
+                <option value="free">В любом порядке</option>
+              </select>
+            </label>
+            <label className="block">
+              <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">
+                {config.orderMode === "free" ? "Общее время (мин)" : "Таймер на вопрос (сек)"}
+              </span>
+              <input
+                type="number"
+                className="input-base"
+                value={config.orderMode === "free" ? config.totalTime : config.defaultTime}
+                onChange={(e) =>
+                  config.orderMode === "free"
+                    ? setConfig({ ...config, totalTime: parseInt(e.target.value) || 10 })
+                    : setConfig({ ...config, defaultTime: parseInt(e.target.value) || 30 })
+                }
+              />
+            </label>
+            <label className="block">
+              <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">Показывать результат</span>
+              <select
+                className="input-base"
+                value={config.showResult}
+                onChange={(e) => setConfig({ ...config, showResult: e.target.value as "each" | "end" })}
+              >
+                <option value="end">В конце</option>
+                <option value="each">После каждого</option>
+              </select>
+            </label>
+            <label className="flex items-center gap-2 self-end pb-2 text-sm">
+              <input
+                type="checkbox"
+                checked={config.shuffleQuestions}
+                onChange={(e) => setConfig({ ...config, shuffleQuestions: e.target.checked })}
+              />
+              Перемешивать вопросы
+            </label>
+            <div className="sm:col-span-2">
+              <span className="mb-2 block text-xs font-semibold text-muted-foreground">Тема плеера</span>
+              <ThemeSelect
+                value={config.theme}
+                onChange={(theme: PlayerTheme) => setConfig({ ...config, theme })}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div ref={listRef} className="space-y-4">
+        {questions.map((q, idx) => (
+          <QuestionCard
+            key={q.id}
+            index={idx}
+            question={q}
+            onPatch={(p) => patchQuestion(q.id, p)}
+            onRemove={() => removeQuestion(q.id)}
+          />
+        ))}
+      </div>
+
+      <div className="flex flex-wrap justify-center gap-2 py-4">
+        {(Object.keys(TYPE_META) as QuizQuestionType[]).map((t) => {
+          const Icon = TYPE_META[t].icon;
+          return (
+            <button
+              key={t}
+              onClick={() => addQuestion(t)}
+              className="btn-ghost"
+            >
+              <Plus className="h-4 w-4" />
+              <Icon className={`h-4 w-4 ${TYPE_META[t].tone}`} />
+              {TYPE_META[t].label}
+            </button>
+          );
+        })}
+      </div>
+
+      {toast && (
+        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full bg-foreground px-5 py-3 text-sm font-semibold text-white shadow-lift">
+          {toast}
+        </div>
+      )}
+    </BuilderShell>
+  );
+}
+
+function QuestionCard({
+  index,
+  question,
+  onPatch,
+  onRemove,
+}: {
+  index: number;
+  question: QuizQuestion;
+  onPatch: (p: Partial<QuizQuestion>) => void;
+  onRemove: () => void;
+}) {
+  const Icon = TYPE_META[question.type].icon;
+  return (
+    <div id={`q-${question.id}`} className="surface-card space-y-4 p-6 scroll-mt-24">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <Icon className={`h-4 w-4 ${TYPE_META[question.type].tone}`} />
+          Вопрос {index + 1} · {TYPE_META[question.type].label}
+        </div>
+        <button
+          onClick={onRemove}
+          className="rounded-lg p-1.5 text-muted-foreground hover:bg-danger-soft hover:text-danger"
+          aria-label="Удалить"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+      </div>
+
+      <textarea
+        rows={2}
+        className="input-base"
+        placeholder="Текст вопроса... (можно \\(x^2\\))"
+        value={question.q}
+        onChange={(e) => onPatch({ q: e.target.value })}
+      />
+
+      <ImageDrop
+        value={question.image}
+        onChange={(image) => onPatch({ image })}
+      />
+
+      {question.type === "choice" && (
+        <div className="space-y-2">
+          {question.options.map((opt, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => onPatch({ answer: opt })}
+                className={`grid h-8 w-8 flex-shrink-0 place-items-center rounded-full border-2 text-xs font-bold ${
+                  question.answer && question.answer === opt && opt
+                    ? "border-success bg-success text-white"
+                    : "border-border-strong text-muted-foreground hover:border-primary"
+                }`}
+                aria-label="Отметить верным"
+              >
+                {String.fromCharCode(65 + i)}
+              </button>
+              <input
+                className="input-base"
+                placeholder={`Вариант ${String.fromCharCode(65 + i)}`}
+                value={opt}
+                onChange={(e) => {
+                  const options = [...question.options];
+                  const old = options[i];
+                  options[i] = e.target.value;
+                  const answer = question.answer === old ? e.target.value : question.answer;
+                  onPatch({ options, answer });
+                }}
+              />
+            </div>
+          ))}
+          <p className="text-xs text-muted-foreground">Кликните по букве, чтобы отметить верный вариант.</p>
+        </div>
+      )}
+
+      {question.type === "bool" && (
+        <div className="flex gap-2">
+          {(["true", "false"] as const).map((v) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => onPatch({ answer: v })}
+              className={`flex-1 rounded-xl border-2 px-4 py-3 text-sm font-bold transition-all ${
+                question.answer === v
+                  ? v === "true"
+                    ? "border-success bg-success-soft text-success"
+                    : "border-danger bg-danger-soft text-danger"
+                  : "border-border-strong text-muted-foreground hover:border-primary"
+              }`}
+            >
+              {v === "true" ? "✓ Правда" : "✕ Ложь"}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {question.type === "text" && (
+        <input
+          className="input-base"
+          placeholder="Правильный ответ (или несколько через запятую)"
+          value={question.answer}
+          onChange={(e) => onPatch({ answer: e.target.value })}
+        />
+      )}
+
+      {question.type === "matching" && <MatchingEditor question={question} onPatch={onPatch} />}
+
+      <div className="flex flex-wrap gap-3">
+        <label className="text-xs text-muted-foreground">
+          Баллы
+          <input
+            type="number"
+            className="input-base ml-2 inline-block w-20 py-1 text-sm"
+            value={question.points}
+            onChange={(e) => onPatch({ points: parseInt(e.target.value) || 0 })}
+          />
+        </label>
+        <label className="text-xs text-muted-foreground">
+          Время (сек)
+          <input
+            type="number"
+            className="input-base ml-2 inline-block w-20 py-1 text-sm"
+            value={question.time}
+            onChange={(e) => onPatch({ time: parseInt(e.target.value) || 30 })}
+          />
+        </label>
+      </div>
+    </div>
+  );
+}
+
+function MatchingEditor({
+  question,
+  onPatch,
+}: {
+  question: QuizQuestion;
+  onPatch: (p: Partial<QuizQuestion>) => void;
+}) {
+  const pairs = useMemo(() => {
+    try {
+      const p = JSON.parse(question.answer || "[]") as { left: string; right: string }[];
+      return Array.isArray(p) && p.length ? p : [{ left: "", right: "" }];
+    } catch {
+      return [{ left: "", right: "" }];
+    }
+  }, [question.answer]);
+
+  const updatePairs = (next: { left: string; right: string }[]) => {
+    onPatch({ answer: JSON.stringify(next) });
+  };
+
+  return (
+    <div className="space-y-2">
+      {pairs.map((p, i) => (
+        <div key={i} className="flex items-center gap-2">
+          <input
+            className="input-base"
+            placeholder="Левая часть"
+            value={p.left}
+            onChange={(e) => {
+              const next = [...pairs];
+              next[i] = { ...next[i], left: e.target.value };
+              updatePairs(next);
+            }}
+          />
+          <span className="text-muted-foreground">→</span>
+          <input
+            className="input-base"
+            placeholder="Правильная пара"
+            value={p.right}
+            onChange={(e) => {
+              const next = [...pairs];
+              next[i] = { ...next[i], right: e.target.value };
+              updatePairs(next);
+            }}
+          />
+          <button
+            type="button"
+            onClick={() => updatePairs(pairs.filter((_, j) => j !== i))}
+            className="rounded p-1.5 text-muted-foreground hover:bg-danger-soft hover:text-danger"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
+      ))}
+      <button
+        type="button"
+        onClick={() => updatePairs([...pairs, { left: "", right: "" }])}
+        className="btn-ghost"
+      >
+        <Plus className="h-4 w-4" /> Добавить пару
+      </button>
+    </div>
+  );
+}

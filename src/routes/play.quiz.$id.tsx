@@ -212,15 +212,13 @@ function PlayQuiz() {
 
         {phase === "playing" && questions[order[idx]] && (
           <div className="flex w-full flex-col gap-6">
-            {config.orderMode === "free" && (
-              <FreeNav
-                questions={questions}
-                order={order}
-                answers={answers}
-                current={idx}
-                onGo={goTo}
-              />
-            )}
+            <FreeNav
+              questions={questions}
+              order={order}
+              answers={answers}
+              current={idx}
+              onGo={goTo}
+            />
             <div className="flex items-center justify-between text-xs uppercase tracking-widest text-[color:var(--pt-text-muted)]">
               <span>
                 {idx + 1} / {order.length}

@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { ArrowLeft, Home } from "lucide-react";
 import type { PlayerTheme } from "@/lib/types";
 import type { ReactNode } from "react";
+import { AnimatedBackground } from "./animated-bg";
 
 export function PlayerShell({
   theme,
@@ -12,7 +13,8 @@ export function PlayerShell({
   children: ReactNode;
 }) {
   return (
-    <div data-scope="player" className={`pt-${theme}`}>
+    <div data-scope="player" className={`relative pt-${theme}`}>
+      <AnimatedBackground theme={theme} />
       <Link
         to="/"
         aria-label="На главную"
@@ -20,7 +22,7 @@ export function PlayerShell({
       >
         <Home className="h-4 w-4" />
       </Link>
-      {children}
+      <div className="relative z-10">{children}</div>
     </div>
   );
 }

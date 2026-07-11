@@ -10,33 +10,72 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as BuilderQuizRouteImport } from './routes/builder.quiz'
+import { Route as BuilderMillionaireRouteImport } from './routes/builder.millionaire'
+import { Route as BuilderJeopardyRouteImport } from './routes/builder.jeopardy'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BuilderQuizRoute = BuilderQuizRouteImport.update({
+  id: '/builder/quiz',
+  path: '/builder/quiz',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BuilderMillionaireRoute = BuilderMillionaireRouteImport.update({
+  id: '/builder/millionaire',
+  path: '/builder/millionaire',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BuilderJeopardyRoute = BuilderJeopardyRouteImport.update({
+  id: '/builder/jeopardy',
+  path: '/builder/jeopardy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/builder/jeopardy': typeof BuilderJeopardyRoute
+  '/builder/millionaire': typeof BuilderMillionaireRoute
+  '/builder/quiz': typeof BuilderQuizRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/builder/jeopardy': typeof BuilderJeopardyRoute
+  '/builder/millionaire': typeof BuilderMillionaireRoute
+  '/builder/quiz': typeof BuilderQuizRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/builder/jeopardy': typeof BuilderJeopardyRoute
+  '/builder/millionaire': typeof BuilderMillionaireRoute
+  '/builder/quiz': typeof BuilderQuizRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/builder/jeopardy'
+    | '/builder/millionaire'
+    | '/builder/quiz'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/builder/jeopardy' | '/builder/millionaire' | '/builder/quiz'
+  id:
+    | '__root__'
+    | '/'
+    | '/builder/jeopardy'
+    | '/builder/millionaire'
+    | '/builder/quiz'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  BuilderJeopardyRoute: typeof BuilderJeopardyRoute
+  BuilderMillionaireRoute: typeof BuilderMillionaireRoute
+  BuilderQuizRoute: typeof BuilderQuizRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +87,35 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/builder/quiz': {
+      id: '/builder/quiz'
+      path: '/builder/quiz'
+      fullPath: '/builder/quiz'
+      preLoaderRoute: typeof BuilderQuizRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/builder/millionaire': {
+      id: '/builder/millionaire'
+      path: '/builder/millionaire'
+      fullPath: '/builder/millionaire'
+      preLoaderRoute: typeof BuilderMillionaireRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/builder/jeopardy': {
+      id: '/builder/jeopardy'
+      path: '/builder/jeopardy'
+      fullPath: '/builder/jeopardy'
+      preLoaderRoute: typeof BuilderJeopardyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  BuilderJeopardyRoute: BuilderJeopardyRoute,
+  BuilderMillionaireRoute: BuilderMillionaireRoute,
+  BuilderQuizRoute: BuilderQuizRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

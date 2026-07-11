@@ -139,10 +139,29 @@ function PlayQuiz() {
 
   const finishAll = () => setPhase("done");
   const goTo = (newIdx: number) => {
-    if (config?.orderMode !== "free") return;
     setCurrent("");
+    setFeedback(null);
     setIdx(newIdx);
   };
+
+  // Persist result once when reaching "done"
+  useEffect(() => {
+    if (phase !== "done" || !stored) return;
+    const totalPts = questions.reduce((s, q) => s + q.points, 0);
+    const earned = answers.reduce((s, a) => s + a.earned, 0);
+    const correct = answers.filter((a) => a.correct).length;
+    const timeSec = Math.max(0, Math.floor((Date.now() - startedAt.current) / 1000));
+    saveQuizResult({
+      gameId: id,
+      playerName: name.trim(),
+      score: earned,
+      maxScore: totalPts,
+      correctCount: correct,
+      totalQuestions: questions.length,
+      timeSec,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
 
   if (!stored || !config) {
     return (

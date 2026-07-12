@@ -23,13 +23,22 @@ export function exportQuizExcel(data: QuizData) {
     type: q.type,
     question: q.q,
     options: q.options.join(" | "),
-    answer: q.answer,
+    answer: q.type === "matching" ? formatMatchingForCell(q.answer) : q.answer,
     points: q.points,
     time: q.time,
   }));
   const ws = XLSX.utils.json_to_sheet(rows);
   XLSX.utils.book_append_sheet(wb, ws, "Вопросы");
   XLSX.writeFile(wb, `${data.config.title || "quiz"}.xlsx`);
+}
+
+function formatMatchingForCell(raw: string): string {
+  try {
+    const pairs = JSON.parse(raw || "[]") as { left: string; right: string }[];
+    return pairs.map((p) => `${p.left} → ${p.right}`).join("; ");
+  } catch {
+    return raw;
+  }
 }
 
 export function exportJeopardyExcel(data: JeopardyData) {

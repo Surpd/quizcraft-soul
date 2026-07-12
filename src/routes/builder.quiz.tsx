@@ -220,7 +220,7 @@ function BuilderQuiz() {
       toolbar={toolbar}
       sidebar={sidebar}
       theme={config.theme}
-      onSave={handleSave}
+      onSave={openPlayer}
       extraFabs={
         <HelpButton title="Как пользоваться конструктором квиза">
           <p><b>Типы вопросов:</b> ABCD — 4 варианта, отметьте верный кликом по букве. Да/Нет — простой бинарный вопрос. Текст — принимаются несколько вариантов через запятую. Пары — сопоставление левого и правого списка.</p>

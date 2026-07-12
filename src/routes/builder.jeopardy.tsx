@@ -314,6 +314,14 @@ function BuilderJeopardy() {
                 onChange={(theme: PlayerTheme) => setConfig({ ...config, theme })}
               />
             </div>
+            <label className="flex items-center gap-2 pt-2 text-sm sm:col-span-3">
+              <input
+                type="checkbox"
+                checked={printAnswers}
+                onChange={(e) => setPrintAnswers(e.target.checked)}
+              />
+              Печатать с ответами (иначе — только вопросы)
+            </label>
           </div>
         </div>
       )}

@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   Coins,
   Plus,
@@ -15,6 +15,7 @@ import { BuilderShell } from "@/components/builder-shell";
 import { HelpButton } from "@/components/help-modal";
 import { ImageDrop } from "@/lib/image-drop";
 import { ThemeSelect } from "@/components/theme-select";
+import { FormulaButton } from "@/components/formula-popover";
 import { newId, saveGame } from "@/lib/storage";
 import {
   downloadExcelTemplate,
@@ -29,6 +30,7 @@ import type {
   MillionaireQuestion,
   MoneyScale,
   PlayerTheme,
+  PointsMode,
 } from "@/lib/types";
 
 export const Route = createFileRoute("/builder/millionaire")({
@@ -67,6 +69,7 @@ function BuilderMillionaire() {
     timePerQuestion: 30,
     moneyScale: "normal",
     milestones: "three",
+    pointsMode: "classic",
   });
   const [questions, setQuestions] = useState<MillionaireQuestion[]>(
     LADDERS.normal.slice(0, 5).map((m) => makeQuestion(m)),
@@ -74,6 +77,19 @@ function BuilderMillionaire() {
   const [showSettings, setShowSettings] = useState(false);
   const [savedId, setSavedId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [printAnswers, setPrintAnswers] = useState(true);
+
+  const moneyForIndex = (idx: number, scale: MoneyScale, mode: PointsMode): number => {
+    const base = LADDERS[scale][idx] ?? LADDERS[scale].at(-1)!;
+    if (mode === "double") return base * 2;
+    return base;
+  };
+
+  const applyScaleAndMode = (scale: MoneyScale, mode: PointsMode) => {
+    if (mode === "custom") return;
+    setQuestions((prev) => prev.map((q, i) => ({ ...q, money: moneyForIndex(i, scale, mode) })));
+  };
+
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -82,7 +98,7 @@ function BuilderMillionaire() {
 
   const addQuestion = () => {
     const nextIdx = questions.length;
-    const money = LADDERS[config.moneyScale][nextIdx] ?? LADDERS[config.moneyScale].at(-1)!;
+    const money = moneyForIndex(nextIdx, config.moneyScale, config.pointsMode ?? "classic");
     setQuestions([...questions, makeQuestion(money)]);
     setTimeout(() => {
       document.getElementById(`mq-${nextIdx}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -206,8 +222,8 @@ function BuilderMillionaire() {
       <button className="btn-ghost" onClick={() => exportMillionaireExcel({ config, questions })}>
         <FileSpreadsheet className="h-4 w-4" /> Скачать .xlsx
       </button>
-      <button className="btn-ghost" onClick={() => printMillionaire({ config, questions })}>
-        <Printer className="h-4 w-4" /> Печать
+      <button className="btn-ghost" onClick={() => printMillionaire({ config, questions }, { withAnswers: printAnswers })}>
+        <Printer className="h-4 w-4" /> Печать {printAnswers ? "с ответами" : "без ответов"}
       </button>
       <button className="btn-ghost" onClick={() => setShowSettings((s) => !s)}>
         <Settings2 className="h-4 w-4" /> Настройки
@@ -226,7 +242,7 @@ function BuilderMillionaire() {
       toolbar={toolbar}
       sidebar={sidebar}
       theme={config.theme}
-      onSave={handleSave}
+      onSave={openPlayer}
       extraFabs={
         <HelpButton title="Как пользоваться конструктором «Миллионера»">
           <p><b>Лестница:</b> 15 вопросов от лёгких к сложным. Сумма растёт по выбранной шкале (Лёгкая / Средняя / Хард).</p>
@@ -255,11 +271,31 @@ function BuilderMillionaire() {
               <select
                 className="input-base"
                 value={config.moneyScale}
-                onChange={(e) => setConfig({ ...config, moneyScale: e.target.value as MoneyScale })}
+                onChange={(e) => {
+                  const scale = e.target.value as MoneyScale;
+                  setConfig({ ...config, moneyScale: scale });
+                  applyScaleAndMode(scale, config.pointsMode ?? "classic");
+                }}
               >
                 <option value="easy">Лёгкая (10-100 000)</option>
                 <option value="normal">Средняя (500-1 000 000)</option>
                 <option value="hard">Хард (10 000-100 млн)</option>
+              </select>
+            </label>
+            <label>
+              <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">Режим очков</span>
+              <select
+                className="input-base"
+                value={config.pointsMode ?? "classic"}
+                onChange={(e) => {
+                  const mode = e.target.value as PointsMode;
+                  setConfig({ ...config, pointsMode: mode });
+                  applyScaleAndMode(config.moneyScale, mode);
+                }}
+              >
+                <option value="classic">Классический</option>
+                <option value="double">Удвоенный (×2)</option>
+                <option value="custom">Произвольный (задать вручную)</option>
               </select>
             </label>
             <label>
@@ -274,6 +310,14 @@ function BuilderMillionaire() {
                 <option value="none">Без несгораемых</option>
               </select>
             </label>
+            <label className="flex items-center gap-2 self-end pb-2 text-sm sm:col-span-3">
+              <input
+                type="checkbox"
+                checked={printAnswers}
+                onChange={(e) => setPrintAnswers(e.target.checked)}
+              />
+              Печатать верные ответы (иначе — только вопросы)
+            </label>
             <div className="sm:col-span-3">
               <span className="mb-2 block text-xs font-semibold text-muted-foreground">Тема плеера</span>
               <ThemeSelect
@@ -286,60 +330,15 @@ function BuilderMillionaire() {
       )}
 
       {questions.map((q, idx) => (
-        <div key={idx} id={`mq-${idx}`} className="surface-card space-y-3 p-6 scroll-mt-24">
-          <div className="flex items-center justify-between">
-            <div className="rounded-full bg-amber-soft px-4 py-1.5 text-sm font-bold text-amber">
-              Вопрос {idx + 1} · {q.money.toLocaleString("ru-RU")} ₽
-            </div>
-            <button
-              onClick={() => removeQuestion(idx)}
-              className="rounded-lg p-1.5 text-muted-foreground hover:bg-danger-soft hover:text-danger"
-            >
-              <Trash2 className="h-4 w-4" />
-            </button>
-          </div>
-          <textarea
-            rows={2}
-            className="input-base"
-            placeholder="Текст вопроса..."
-            value={q.q}
-            onChange={(e) => patchQuestion(idx, { q: e.target.value })}
-          />
-          <ImageDrop value={q.image} onChange={(image) => patchQuestion(idx, { image })} />
-          <div className="grid gap-2 sm:grid-cols-2">
-            {q.options.map((opt, oi) => (
-              <div key={oi} className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => markCorrect(idx, oi)}
-                  className={`grid h-9 w-9 flex-shrink-0 place-items-center rounded-full border-2 text-sm font-bold ${
-                    opt.correct
-                      ? "border-success bg-success text-white"
-                      : "border-border-strong text-muted-foreground hover:border-primary"
-                  }`}
-                  aria-label="Отметить верным"
-                >
-                  {String.fromCharCode(65 + oi)}
-                </button>
-                <input
-                  className="input-base"
-                  placeholder={`Вариант ${String.fromCharCode(65 + oi)}`}
-                  value={opt.text}
-                  onChange={(e) => patchOption(idx, oi, { text: e.target.value })}
-                />
-              </div>
-            ))}
-          </div>
-          <label className="text-xs text-muted-foreground">
-            Сумма
-            <input
-              type="number"
-              className="input-base ml-2 inline-block w-32 py-1 text-sm"
-              value={q.money}
-              onChange={(e) => patchQuestion(idx, { money: parseInt(e.target.value) || 0 })}
-            />
-          </label>
-        </div>
+        <MillionaireQuestionCard
+          key={idx}
+          idx={idx}
+          q={q}
+          onRemove={() => removeQuestion(idx)}
+          onPatch={(patch) => patchQuestion(idx, patch)}
+          onPatchOption={(oi, patch) => patchOption(idx, oi, patch)}
+          onMarkCorrect={(oi) => markCorrect(idx, oi)}
+        />
       ))}
 
       <button onClick={addQuestion} className="btn-ghost w-full justify-center py-4">
@@ -352,5 +351,98 @@ function BuilderMillionaire() {
         </div>
       )}
     </BuilderShell>
+  );
+}
+
+function MillionaireQuestionCard({
+  idx,
+  q,
+  onRemove,
+  onPatch,
+  onPatchOption,
+  onMarkCorrect,
+}: {
+  idx: number;
+  q: MillionaireQuestion;
+  onRemove: () => void;
+  onPatch: (patch: Partial<MillionaireQuestion>) => void;
+  onPatchOption: (oi: number, patch: Partial<{ text: string; correct: boolean }>) => void;
+  onMarkCorrect: (oi: number) => void;
+}) {
+  const qRef = useRef<HTMLTextAreaElement>(null);
+  const optRefs = useRef<(HTMLInputElement | null)[]>([]);
+  return (
+    <div id={`mq-${idx}`} className="surface-card space-y-3 p-6 scroll-mt-24">
+      <div className="flex items-center justify-between">
+        <div className="rounded-full bg-amber-soft px-4 py-1.5 text-sm font-bold text-amber">
+          Вопрос {idx + 1} · {q.money.toLocaleString("ru-RU")} ₽
+        </div>
+        <button
+          onClick={onRemove}
+          className="rounded-lg p-1.5 text-muted-foreground hover:bg-danger-soft hover:text-danger"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+      </div>
+      <div className="relative">
+        <textarea
+          ref={qRef}
+          rows={2}
+          className="input-base pr-10"
+          placeholder="Текст вопроса..."
+          value={q.q}
+          onChange={(e) => onPatch({ q: e.target.value })}
+        />
+        <div className="absolute right-2 top-2">
+          <FormulaButton inputRef={qRef} value={q.q} onChange={(v) => onPatch({ q: v })} />
+        </div>
+      </div>
+      <ImageDrop value={q.image} onChange={(image) => onPatch({ image })} />
+      <div className="grid gap-2 sm:grid-cols-2">
+        {q.options.map((opt, oi) => (
+          <div key={oi} className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => onMarkCorrect(oi)}
+              className={`grid h-9 w-9 flex-shrink-0 place-items-center rounded-full border-2 text-sm font-bold ${
+                opt.correct
+                  ? "border-success bg-success text-white"
+                  : "border-border-strong text-muted-foreground hover:border-primary"
+              }`}
+              aria-label="Отметить верным"
+            >
+              {String.fromCharCode(65 + oi)}
+            </button>
+            <div className="relative flex-1">
+              <input
+                ref={(el) => {
+                  optRefs.current[oi] = el;
+                }}
+                className="input-base pr-10"
+                placeholder={`Вариант ${String.fromCharCode(65 + oi)}`}
+                value={opt.text}
+                onChange={(e) => onPatchOption(oi, { text: e.target.value })}
+              />
+              <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
+                <FormulaButton
+                  inputRef={{ current: optRefs.current[oi] } as React.RefObject<HTMLInputElement | null>}
+                  value={opt.text}
+                  onChange={(v) => onPatchOption(oi, { text: v })}
+                />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <label className="text-xs text-muted-foreground">
+        Сумма
+        <input
+          type="number"
+          className="input-base ml-2 inline-block w-32 py-1 text-sm"
+          value={q.money}
+          onChange={(e) => onPatch({ money: parseInt(e.target.value) || 0 })}
+        />
+      </label>
+    </div>
   );
 }

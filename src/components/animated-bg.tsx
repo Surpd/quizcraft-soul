@@ -1,13 +1,18 @@
 // Animated backgrounds per player theme. Purely decorative, pointer-events none.
+// IMPORTANT: memoized so the per-second timer re-renders in player routes do not
+// re-randomize positions and cause the "jittering" effect. Animations are pure CSS.
+import { memo } from "react";
 import type { PlayerTheme } from "@/lib/types";
 
-export function AnimatedBackground({ theme }: { theme: PlayerTheme }) {
+function AnimatedBackgroundImpl({ theme }: { theme: PlayerTheme }) {
   if (theme === "ocean") return <Bubbles />;
   if (theme === "forest") return <Leaves />;
   if (theme === "midnight") return <Stars />;
   if (theme === "amber") return <Sparks />;
   return null;
 }
+
+export const AnimatedBackground = memo(AnimatedBackgroundImpl);
 
 function Bubbles() {
   const bubbles = Array.from({ length: 14 });

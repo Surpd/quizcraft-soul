@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   Grid3x3,
   Plus,
@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { BuilderShell } from "@/components/builder-shell";
 import { HelpButton } from "@/components/help-modal";
+import { FormulaButton } from "@/components/formula-popover";
 import { ImageDrop } from "@/lib/image-drop";
 import { ThemeSelect } from "@/components/theme-select";
 import { newId, saveGame } from "@/lib/storage";
@@ -76,6 +77,7 @@ function BuilderJeopardy() {
   const [savedId, setSavedId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [modal, setModal] = useState<ModalTarget | null>(null);
+  const [printAnswers, setPrintAnswers] = useState(true);
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -161,16 +163,26 @@ function BuilderJeopardy() {
       <div className="space-y-2">
         {rounds.map((round, ri) => (
           <div key={ri}>
-            <button
-              onClick={() =>
-                document
-                  .getElementById(`round-${ri}`)
-                  ?.scrollIntoView({ behavior: "smooth", block: "start" })
-              }
-              className="w-full rounded-lg bg-primary px-3 py-2 text-left text-xs font-bold text-primary-foreground"
-            >
-              Раунд {ri + 1}
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() =>
+                  document
+                    .getElementById(`round-${ri}`)
+                    ?.scrollIntoView({ behavior: "smooth", block: "start" })
+                }
+                className="flex-1 truncate rounded-lg bg-primary px-3 py-2 text-left text-xs font-bold text-primary-foreground"
+              >
+                Раунд {ri + 1}
+              </button>
+              <button
+                onClick={() => addCategory(ri)}
+                aria-label="Добавить категорию"
+                title="Добавить категорию"
+                className="grid h-8 w-8 flex-shrink-0 place-items-center rounded-md border border-border-strong bg-surface text-primary hover:bg-primary-soft"
+              >
+                <Plus className="h-3.5 w-3.5" />
+              </button>
+            </div>
             <div className="mt-1 space-y-0.5 pl-2">
               {round.map((cat, ci) => (
                 <button
@@ -188,6 +200,12 @@ function BuilderJeopardy() {
             </div>
           </div>
         ))}
+        <button
+          onClick={addRound}
+          className="flex w-full items-center justify-center gap-1 rounded-lg border border-dashed border-primary/40 bg-primary-soft px-3 py-2 text-xs font-bold text-primary hover:bg-primary/10"
+        >
+          <Plus className="h-3.5 w-3.5" /> Раунд
+        </button>
         <button
           onClick={() => document.getElementById("final-block")?.scrollIntoView({ behavior: "smooth" })}
           className="w-full rounded-lg border border-amber/30 bg-amber-soft px-3 py-2 text-center text-xs font-bold text-amber"
@@ -227,8 +245,8 @@ function BuilderJeopardy() {
       <button className="btn-ghost" onClick={() => exportJeopardyExcel({ config, rounds, final })}>
         <FileSpreadsheet className="h-4 w-4" /> Скачать .xlsx
       </button>
-      <button className="btn-ghost" onClick={() => printJeopardy({ config, rounds, final })}>
-        <Printer className="h-4 w-4" /> Печать
+      <button className="btn-ghost" onClick={() => printJeopardy({ config, rounds, final }, { withAnswers: printAnswers })}>
+        <Printer className="h-4 w-4" /> Печать {printAnswers ? "с ответами" : "без ответов"}
       </button>
       <button className="btn-ghost" onClick={() => setShowSettings((s) => !s)}>
         <Settings2 className="h-4 w-4" /> Настройки
@@ -247,7 +265,7 @@ function BuilderJeopardy() {
       toolbar={toolbar}
       sidebar={mode === "list" ? sidebar : undefined}
       theme={config.theme}
-      onSave={handleSave}
+      onSave={openPlayer}
       extraFabs={
         <HelpButton title="Как пользоваться конструктором Своей игры">
           <p><b>Раунды и категории:</b> в раунде — несколько категорий, в каждой 5 вопросов разной стоимости. Кнопка «Категория» добавляет колонку, «Добавить раунд» — новый раунд.</p>
@@ -296,6 +314,14 @@ function BuilderJeopardy() {
                 onChange={(theme: PlayerTheme) => setConfig({ ...config, theme })}
               />
             </div>
+            <label className="flex items-center gap-2 pt-2 text-sm sm:col-span-3">
+              <input
+                type="checkbox"
+                checked={printAnswers}
+                onChange={(e) => setPrintAnswers(e.target.checked)}
+              />
+              Печатать с ответами (иначе — только вопросы)
+            </label>
           </div>
         </div>
       )}
@@ -466,6 +492,8 @@ function QuestionModal({
   const [q, setQ] = useState(data.q);
   const [a, setA] = useState(data.a);
   const [image, setImage] = useState(data.image ?? "");
+  const qRef = useRef<HTMLTextAreaElement>(null);
+  const aRef = useRef<HTMLInputElement>(null);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/60 p-4 backdrop-blur-sm">
@@ -477,19 +505,31 @@ function QuestionModal({
           </button>
         </div>
         <div className="space-y-3">
-          <textarea
-            rows={3}
-            className="input-base"
-            placeholder="Текст вопроса"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-          />
-          <input
-            className="input-base"
-            placeholder="Ответ"
-            value={a}
-            onChange={(e) => setA(e.target.value)}
-          />
+          <div className="relative">
+            <textarea
+              ref={qRef}
+              rows={3}
+              className="input-base pr-10"
+              placeholder="Текст вопроса"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+            />
+            <div className="absolute right-2 top-2">
+              <FormulaButton inputRef={qRef} value={q} onChange={setQ} />
+            </div>
+          </div>
+          <div className="relative">
+            <input
+              ref={aRef}
+              className="input-base pr-10"
+              placeholder="Ответ"
+              value={a}
+              onChange={(e) => setA(e.target.value)}
+            />
+            <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
+              <FormulaButton inputRef={aRef} value={a} onChange={setA} />
+            </div>
+          </div>
           <ImageDrop value={image} onChange={setImage} />
         </div>
         <div className="mt-6 flex justify-end gap-2">

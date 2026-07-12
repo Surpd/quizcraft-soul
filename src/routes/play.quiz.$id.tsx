@@ -11,6 +11,7 @@ import { PlayerShell, TimerBar } from "@/components/player-shell";
 import { LaTeX } from "@/lib/latex";
 import { loadGame } from "@/lib/storage";
 import { saveQuizResult } from "@/lib/results";
+import { formatQuizAnswer } from "@/lib/format-answer";
 import type { QuizData, QuizQuestion } from "@/lib/types";
 
 export const Route = createFileRoute("/play/quiz/$id")({
@@ -436,13 +437,20 @@ function QuestionCard({
       )}
 
       {feedback && (
-        <p
-          className={`mt-4 text-center text-lg font-bold ${
-            feedback === "correct" ? "text-success" : "text-danger"
-          }`}
-        >
-          {feedback === "correct" ? "✓ Верно!" : "✕ Неверно"}
-        </p>
+        <div className="mt-4 text-center">
+          <p
+            className={`text-lg font-bold ${
+              feedback === "correct" ? "text-success" : "text-danger"
+            }`}
+          >
+            {feedback === "correct" ? "✓ Верно!" : "✕ Неверно"}
+          </p>
+          {feedback === "wrong" && config.showResult === "each" && (
+            <p className="mt-1 text-sm text-[color:var(--pt-text-muted)]">
+              Правильный ответ: <span className="text-[color:var(--pt-text)]">{formatQuizAnswer(question)}</span>
+            </p>
+          )}
+        </div>
       )}
     </div>
   );

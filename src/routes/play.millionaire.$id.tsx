@@ -137,7 +137,7 @@ function PlayMillionaire() {
 
   return (
     <PlayerShell theme={config.theme}>
-      <div className="mx-auto flex min-h-screen max-w-5xl gap-6 px-4 py-16 lg:pr-56">
+      <div className="mx-auto flex min-h-screen max-w-5xl items-center justify-center gap-6 px-4 py-16 lg:pr-56">
         <div className="min-w-0 flex-1">
           {phase === "playing" && (
             <>

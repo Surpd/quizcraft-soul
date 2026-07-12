@@ -96,12 +96,14 @@ export interface MillionaireQuestion {
 
 export type MoneyScale = "easy" | "normal" | "hard";
 export type MilestoneMode = "classic" | "three" | "none";
+export type PointsMode = "classic" | "double" | "custom";
 
 export interface MillionaireConfig {
   theme: PlayerTheme;
   timePerQuestion: number;
   moneyScale: MoneyScale;
   milestones: MilestoneMode;
+  pointsMode?: PointsMode;
 }
 
 export interface MillionaireData {

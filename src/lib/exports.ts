@@ -197,16 +197,23 @@ export async function importMillionaireXlsx(file: File): Promise<MillionaireQues
 
 /* ---------------- Print / PDF ---------------- */
 
-export function printQuiz(data: QuizData) {
+import { formatQuizAnswer } from "./format-answer";
+
+export interface PrintOptions {
+  withAnswers?: boolean;
+}
+
+export function printQuiz(data: QuizData, opts: PrintOptions = {}) {
   const win = window.open("", "_blank");
   if (!win) return;
+  const withAnswers = opts.withAnswers !== false;
   const rows = data.questions
     .map(
       (q, i) => `
       <div class="q">
         <div class="qn">${i + 1}. ${escape(q.q)}</div>
         ${q.options.length ? `<ul>${q.options.map((o) => `<li>${escape(o)}</li>`).join("")}</ul>` : ""}
-        <div class="a"><strong>Ответ:</strong> ${escape(q.answer)}</div>
+        ${withAnswers ? `<div class="a"><strong>Ответ:</strong> ${escape(formatQuizAnswer(q))}</div>` : ""}
       </div>`,
     )
     .join("");
@@ -216,9 +223,10 @@ export function printQuiz(data: QuizData) {
   setTimeout(() => win.print(), 300);
 }
 
-export function printJeopardy(data: JeopardyData) {
+export function printJeopardy(data: JeopardyData, opts: PrintOptions = {}) {
   const win = window.open("", "_blank");
   if (!win) return;
+  const withAnswers = opts.withAnswers !== false;
   const body = data.rounds
     .map(
       (round, ri) => `
@@ -227,33 +235,34 @@ export function printJeopardy(data: JeopardyData) {
         .map(
           (cat) => `
         <h3>${escape(cat.category)}</h3>
-        <table><thead><tr><th>Стоимость</th><th>Вопрос</th><th>Ответ</th></tr></thead>
+        <table><thead><tr><th>Стоимость</th><th>Вопрос</th>${withAnswers ? "<th>Ответ</th>" : ""}</tr></thead>
         <tbody>${cat.questions
           .map(
-            (q) => `<tr><td>${q.points}</td><td>${escape(q.q)}</td><td>${escape(q.a)}</td></tr>`,
+            (q) => `<tr><td>${q.points}</td><td>${escape(q.q)}</td>${withAnswers ? `<td>${escape(q.a)}</td>` : ""}</tr>`,
           )
           .join("")}</tbody></table>`,
         )
         .join("")}`,
     )
     .join("");
-  const finalBlock = `<h2>Финал</h2><p><strong>${escape(data.final.category)}:</strong> ${escape(data.final.q)}</p><p><em>Ответ: ${escape(data.final.a)}</em></p>`;
+  const finalBlock = `<h2>Финал</h2><p><strong>${escape(data.final.category)}:</strong> ${escape(data.final.q)}</p>${withAnswers ? `<p><em>Ответ: ${escape(data.final.a)}</em></p>` : ""}`;
   win.document.write(printShell("Своя Игра", body + finalBlock));
   win.document.close();
   win.focus();
   setTimeout(() => win.print(), 300);
 }
 
-export function printMillionaire(data: MillionaireData) {
+export function printMillionaire(data: MillionaireData, opts: PrintOptions = {}) {
   const win = window.open("", "_blank");
   if (!win) return;
+  const withAnswers = opts.withAnswers !== false;
   const rows = data.questions
     .map(
       (q, i) => `
     <div class="q">
       <div class="qn">${i + 1}. [${q.money.toLocaleString("ru-RU")} ₽] ${escape(q.q)}</div>
       <ol type="A">${q.options
-        .map((o) => `<li${o.correct ? ' style="font-weight:700"' : ""}>${escape(o.text)}</li>`)
+        .map((o) => `<li${withAnswers && o.correct ? ' style="font-weight:700;color:#0d9488"' : ""}>${escape(o.text)}</li>`)
         .join("")}</ol>
     </div>`,
     )

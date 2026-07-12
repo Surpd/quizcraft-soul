@@ -492,6 +492,8 @@ function QuestionModal({
   const [q, setQ] = useState(data.q);
   const [a, setA] = useState(data.a);
   const [image, setImage] = useState(data.image ?? "");
+  const qRef = useRef<HTMLTextAreaElement>(null);
+  const aRef = useRef<HTMLInputElement>(null);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/60 p-4 backdrop-blur-sm">
@@ -503,19 +505,31 @@ function QuestionModal({
           </button>
         </div>
         <div className="space-y-3">
-          <textarea
-            rows={3}
-            className="input-base"
-            placeholder="Текст вопроса"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-          />
-          <input
-            className="input-base"
-            placeholder="Ответ"
-            value={a}
-            onChange={(e) => setA(e.target.value)}
-          />
+          <div className="relative">
+            <textarea
+              ref={qRef}
+              rows={3}
+              className="input-base pr-10"
+              placeholder="Текст вопроса"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+            />
+            <div className="absolute right-2 top-2">
+              <FormulaButton inputRef={qRef} value={q} onChange={setQ} />
+            </div>
+          </div>
+          <div className="relative">
+            <input
+              ref={aRef}
+              className="input-base pr-10"
+              placeholder="Ответ"
+              value={a}
+              onChange={(e) => setA(e.target.value)}
+            />
+            <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
+              <FormulaButton inputRef={aRef} value={a} onChange={setA} />
+            </div>
+          </div>
           <ImageDrop value={image} onChange={setImage} />
         </div>
         <div className="mt-6 flex justify-end gap-2">

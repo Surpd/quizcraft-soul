@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   Coins,
   Plus,
@@ -15,6 +15,7 @@ import { BuilderShell } from "@/components/builder-shell";
 import { HelpButton } from "@/components/help-modal";
 import { ImageDrop } from "@/lib/image-drop";
 import { ThemeSelect } from "@/components/theme-select";
+import { FormulaButton } from "@/components/formula-popover";
 import { newId, saveGame } from "@/lib/storage";
 import {
   downloadExcelTemplate,
@@ -29,6 +30,7 @@ import type {
   MillionaireQuestion,
   MoneyScale,
   PlayerTheme,
+  PointsMode,
 } from "@/lib/types";
 
 export const Route = createFileRoute("/builder/millionaire")({

@@ -77,6 +77,7 @@ function BuilderJeopardy() {
   const [savedId, setSavedId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [modal, setModal] = useState<ModalTarget | null>(null);
+  const [printAnswers, setPrintAnswers] = useState(true);
 
   const showToast = (msg: string) => {
     setToast(msg);

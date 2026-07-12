@@ -207,7 +207,6 @@ export async function importMillionaireXlsx(file: File): Promise<MillionaireQues
 
 /* ---------------- Print / PDF ---------------- */
 
-import { formatQuizAnswer } from "./format-answer";
 
 export interface PrintOptions {
   withAnswers?: boolean;

@@ -13,6 +13,7 @@ import type {
   QuizQuestionType,
 } from "./types";
 import { newId } from "./storage";
+import { formatQuizAnswer } from "./format-answer";
 
 /* ---------------- Excel export ---------------- */
 

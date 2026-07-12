@@ -242,7 +242,7 @@ function BuilderMillionaire() {
       toolbar={toolbar}
       sidebar={sidebar}
       theme={config.theme}
-      onSave={handleSave}
+      onSave={openPlayer}
       extraFabs={
         <HelpButton title="Как пользоваться конструктором «Миллионера»">
           <p><b>Лестница:</b> 15 вопросов от лёгких к сложным. Сумма растёт по выбранной шкале (Лёгкая / Средняя / Хард).</p>

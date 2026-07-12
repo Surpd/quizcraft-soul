@@ -299,6 +299,14 @@ function BuilderQuiz() {
               />
               Перемешивать вопросы
             </label>
+            <label className="flex items-center gap-2 self-end pb-2 text-sm sm:col-span-2">
+              <input
+                type="checkbox"
+                checked={printAnswers}
+                onChange={(e) => setPrintAnswers(e.target.checked)}
+              />
+              Печатать с ответами (иначе — только вопросы)
+            </label>
             <div className="sm:col-span-2">
               <span className="mb-2 block text-xs font-semibold text-muted-foreground">Тема плеера</span>
               <ThemeSelect

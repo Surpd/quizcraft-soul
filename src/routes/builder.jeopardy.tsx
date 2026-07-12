@@ -245,8 +245,8 @@ function BuilderJeopardy() {
       <button className="btn-ghost" onClick={() => exportJeopardyExcel({ config, rounds, final })}>
         <FileSpreadsheet className="h-4 w-4" /> Скачать .xlsx
       </button>
-      <button className="btn-ghost" onClick={() => printJeopardy({ config, rounds, final })}>
-        <Printer className="h-4 w-4" /> Печать
+      <button className="btn-ghost" onClick={() => printJeopardy({ config, rounds, final }, { withAnswers: printAnswers })}>
+        <Printer className="h-4 w-4" /> Печать {printAnswers ? "с ответами" : "без ответов"}
       </button>
       <button className="btn-ghost" onClick={() => setShowSettings((s) => !s)}>
         <Settings2 className="h-4 w-4" /> Настройки

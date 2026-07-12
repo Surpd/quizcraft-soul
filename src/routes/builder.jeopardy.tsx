@@ -163,16 +163,26 @@ function BuilderJeopardy() {
       <div className="space-y-2">
         {rounds.map((round, ri) => (
           <div key={ri}>
-            <button
-              onClick={() =>
-                document
-                  .getElementById(`round-${ri}`)
-                  ?.scrollIntoView({ behavior: "smooth", block: "start" })
-              }
-              className="w-full rounded-lg bg-primary px-3 py-2 text-left text-xs font-bold text-primary-foreground"
-            >
-              Раунд {ri + 1}
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() =>
+                  document
+                    .getElementById(`round-${ri}`)
+                    ?.scrollIntoView({ behavior: "smooth", block: "start" })
+                }
+                className="flex-1 truncate rounded-lg bg-primary px-3 py-2 text-left text-xs font-bold text-primary-foreground"
+              >
+                Раунд {ri + 1}
+              </button>
+              <button
+                onClick={() => addCategory(ri)}
+                aria-label="Добавить категорию"
+                title="Добавить категорию"
+                className="grid h-8 w-8 flex-shrink-0 place-items-center rounded-md border border-border-strong bg-surface text-primary hover:bg-primary-soft"
+              >
+                <Plus className="h-3.5 w-3.5" />
+              </button>
+            </div>
             <div className="mt-1 space-y-0.5 pl-2">
               {round.map((cat, ci) => (
                 <button
@@ -190,6 +200,12 @@ function BuilderJeopardy() {
             </div>
           </div>
         ))}
+        <button
+          onClick={addRound}
+          className="flex w-full items-center justify-center gap-1 rounded-lg border border-dashed border-primary/40 bg-primary-soft px-3 py-2 text-xs font-bold text-primary hover:bg-primary/10"
+        >
+          <Plus className="h-3.5 w-3.5" /> Раунд
+        </button>
         <button
           onClick={() => document.getElementById("final-block")?.scrollIntoView({ behavior: "smooth" })}
           className="w-full rounded-lg border border-amber/30 bg-amber-soft px-3 py-2 text-center text-xs font-bold text-amber"

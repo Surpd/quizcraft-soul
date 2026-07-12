@@ -98,7 +98,7 @@ function BuilderMillionaire() {
 
   const addQuestion = () => {
     const nextIdx = questions.length;
-    const money = LADDERS[config.moneyScale][nextIdx] ?? LADDERS[config.moneyScale].at(-1)!;
+    const money = moneyForIndex(nextIdx, config.moneyScale, config.pointsMode ?? "classic");
     setQuestions([...questions, makeQuestion(money)]);
     setTimeout(() => {
       document.getElementById(`mq-${nextIdx}`)?.scrollIntoView({ behavior: "smooth", block: "center" });

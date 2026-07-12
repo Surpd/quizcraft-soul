@@ -353,3 +353,96 @@ function BuilderMillionaire() {
     </BuilderShell>
   );
 }
+
+function MillionaireQuestionCard({
+  idx,
+  q,
+  onRemove,
+  onPatch,
+  onPatchOption,
+  onMarkCorrect,
+}: {
+  idx: number;
+  q: MillionaireQuestion;
+  onRemove: () => void;
+  onPatch: (patch: Partial<MillionaireQuestion>) => void;
+  onPatchOption: (oi: number, patch: Partial<{ text: string; correct: boolean }>) => void;
+  onMarkCorrect: (oi: number) => void;
+}) {
+  const qRef = useRef<HTMLTextAreaElement>(null);
+  const optRefs = useRef<(HTMLInputElement | null)[]>([]);
+  return (
+    <div id={`mq-${idx}`} className="surface-card space-y-3 p-6 scroll-mt-24">
+      <div className="flex items-center justify-between">
+        <div className="rounded-full bg-amber-soft px-4 py-1.5 text-sm font-bold text-amber">
+          Вопрос {idx + 1} · {q.money.toLocaleString("ru-RU")} ₽
+        </div>
+        <button
+          onClick={onRemove}
+          className="rounded-lg p-1.5 text-muted-foreground hover:bg-danger-soft hover:text-danger"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+      </div>
+      <div className="relative">
+        <textarea
+          ref={qRef}
+          rows={2}
+          className="input-base pr-10"
+          placeholder="Текст вопроса..."
+          value={q.q}
+          onChange={(e) => onPatch({ q: e.target.value })}
+        />
+        <div className="absolute right-2 top-2">
+          <FormulaButton inputRef={qRef} value={q.q} onChange={(v) => onPatch({ q: v })} />
+        </div>
+      </div>
+      <ImageDrop value={q.image} onChange={(image) => onPatch({ image })} />
+      <div className="grid gap-2 sm:grid-cols-2">
+        {q.options.map((opt, oi) => (
+          <div key={oi} className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => onMarkCorrect(oi)}
+              className={`grid h-9 w-9 flex-shrink-0 place-items-center rounded-full border-2 text-sm font-bold ${
+                opt.correct
+                  ? "border-success bg-success text-white"
+                  : "border-border-strong text-muted-foreground hover:border-primary"
+              }`}
+              aria-label="Отметить верным"
+            >
+              {String.fromCharCode(65 + oi)}
+            </button>
+            <div className="relative flex-1">
+              <input
+                ref={(el) => {
+                  optRefs.current[oi] = el;
+                }}
+                className="input-base pr-10"
+                placeholder={`Вариант ${String.fromCharCode(65 + oi)}`}
+                value={opt.text}
+                onChange={(e) => onPatchOption(oi, { text: e.target.value })}
+              />
+              <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
+                <FormulaButton
+                  inputRef={{ current: optRefs.current[oi] } as React.RefObject<HTMLInputElement | null>}
+                  value={opt.text}
+                  onChange={(v) => onPatchOption(oi, { text: v })}
+                />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <label className="text-xs text-muted-foreground">
+        Сумма
+        <input
+          type="number"
+          className="input-base ml-2 inline-block w-32 py-1 text-sm"
+          value={q.money}
+          onChange={(e) => onPatch({ money: parseInt(e.target.value) || 0 })}
+        />
+      </label>
+    </div>
+  );
+}

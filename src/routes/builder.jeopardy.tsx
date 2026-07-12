@@ -265,7 +265,7 @@ function BuilderJeopardy() {
       toolbar={toolbar}
       sidebar={mode === "list" ? sidebar : undefined}
       theme={config.theme}
-      onSave={handleSave}
+      onSave={openPlayer}
       extraFabs={
         <HelpButton title="Как пользоваться конструктором Своей игры">
           <p><b>Раунды и категории:</b> в раунде — несколько категорий, в каждой 5 вопросов разной стоимости. Кнопка «Категория» добавляет колонку, «Добавить раунд» — новый раунд.</p>

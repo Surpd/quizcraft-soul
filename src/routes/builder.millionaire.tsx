@@ -69,6 +69,7 @@ function BuilderMillionaire() {
     timePerQuestion: 30,
     moneyScale: "normal",
     milestones: "three",
+    pointsMode: "classic",
   });
   const [questions, setQuestions] = useState<MillionaireQuestion[]>(
     LADDERS.normal.slice(0, 5).map((m) => makeQuestion(m)),
@@ -76,6 +77,19 @@ function BuilderMillionaire() {
   const [showSettings, setShowSettings] = useState(false);
   const [savedId, setSavedId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [printAnswers, setPrintAnswers] = useState(true);
+
+  const moneyForIndex = (idx: number, scale: MoneyScale, mode: PointsMode): number => {
+    const base = LADDERS[scale][idx] ?? LADDERS[scale].at(-1)!;
+    if (mode === "double") return base * 2;
+    return base;
+  };
+
+  const applyScaleAndMode = (scale: MoneyScale, mode: PointsMode) => {
+    if (mode === "custom") return;
+    setQuestions((prev) => prev.map((q, i) => ({ ...q, money: moneyForIndex(i, scale, mode) })));
+  };
+
 
   const showToast = (msg: string) => {
     setToast(msg);

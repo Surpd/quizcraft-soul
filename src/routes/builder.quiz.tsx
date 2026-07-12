@@ -197,8 +197,8 @@ function BuilderQuiz() {
       <button className="btn-ghost" onClick={() => exportQuizExcel({ config, questions })}>
         <FileSpreadsheet className="h-4 w-4" /> Скачать .xlsx
       </button>
-      <button className="btn-ghost" onClick={() => printQuiz({ config, questions })}>
-        <Printer className="h-4 w-4" /> Печать
+      <button className="btn-ghost" onClick={() => printQuiz({ config, questions }, { withAnswers: printAnswers })}>
+        <Printer className="h-4 w-4" /> Печать {printAnswers ? "с ответами" : "без ответов"}
       </button>
       <button className="btn-ghost" onClick={openResults}>
         <BarChart3 className="h-4 w-4" /> Результаты

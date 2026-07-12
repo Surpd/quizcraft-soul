@@ -53,7 +53,7 @@ export function BuilderShell({
             На главную
           </Link>
 
-          <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+          <div className="mb-6 space-y-4">
             <div>
               <h1 className="flex items-center gap-3 font-display text-3xl font-black tracking-tight sm:text-4xl">
                 {icon && (
@@ -72,7 +72,11 @@ export function BuilderShell({
               </h1>
               {subtitle && <p className="mt-2 text-sm text-muted-foreground">{subtitle}</p>}
             </div>
-            {toolbar}
+            {toolbar && (
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                {toolbar}
+              </div>
+            )}
           </div>
 
           <div className={sidebar ? "flex flex-col gap-6 lg:flex-row" : ""}>

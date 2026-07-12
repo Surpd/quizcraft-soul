@@ -364,6 +364,8 @@ function QuestionCard({
   onRemove: () => void;
 }) {
   const Icon = TYPE_META[question.type].icon;
+  const qRef = useRef<HTMLTextAreaElement>(null);
+  const optRefs = useRef<(HTMLInputElement | null)[]>([]);
   return (
     <div id={`q-${question.id}`} className="surface-card space-y-4 p-6 scroll-mt-24">
       <div className="flex items-center justify-between">
@@ -380,13 +382,19 @@ function QuestionCard({
         </button>
       </div>
 
-      <textarea
-        rows={2}
-        className="input-base"
-        placeholder="Текст вопроса... (можно \\(x^2\\))"
-        value={question.q}
-        onChange={(e) => onPatch({ q: e.target.value })}
-      />
+      <div className="relative">
+        <textarea
+          ref={qRef}
+          rows={2}
+          className="input-base pr-10"
+          placeholder="Текст вопроса... (можно \\(x^2\\))"
+          value={question.q}
+          onChange={(e) => onPatch({ q: e.target.value })}
+        />
+        <div className="absolute right-2 top-2">
+          <FormulaButton inputRef={qRef} value={question.q} onChange={(v) => onPatch({ q: v })} />
+        </div>
+      </div>
 
       <ImageDrop value={question.image} onChange={(image) => onPatch({ image })} />
 
@@ -406,21 +414,39 @@ function QuestionCard({
               >
                 {String.fromCharCode(65 + i)}
               </button>
-              <input
-                className="input-base"
-                placeholder={`Вариант ${String.fromCharCode(65 + i)}`}
-                value={opt}
-                onChange={(e) => {
-                  const options = [...question.options];
-                  const old = options[i];
-                  options[i] = e.target.value;
-                  const answer = question.answer === old ? e.target.value : question.answer;
-                  onPatch({ options, answer });
-                }}
-              />
+              <div className="relative flex-1">
+                <input
+                  ref={(el) => {
+                    optRefs.current[i] = el;
+                  }}
+                  className="input-base pr-10"
+                  placeholder={`Вариант ${String.fromCharCode(65 + i)}`}
+                  value={opt}
+                  onChange={(e) => {
+                    const options = [...question.options];
+                    const old = options[i];
+                    options[i] = e.target.value;
+                    const answer = question.answer === old ? e.target.value : question.answer;
+                    onPatch({ options, answer });
+                  }}
+                />
+                <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
+                  <FormulaButton
+                    inputRef={{ current: optRefs.current[i] } as React.RefObject<HTMLInputElement | null>}
+                    value={opt}
+                    onChange={(v) => {
+                      const options = [...question.options];
+                      const old = options[i];
+                      options[i] = v;
+                      const answer = question.answer === old ? v : question.answer;
+                      onPatch({ options, answer });
+                    }}
+                  />
+                </div>
+              </div>
             </div>
           ))}
-          <p className="text-xs text-muted-foreground">Кликните по букве, чтобы отметить верный вариант.</p>
+          <p className="text-xs text-muted-foreground">Кликните по букве, чтобы отметить верный вариант. Кнопка ƒx — вставить LaTeX-формулу.</p>
         </div>
       )}
 

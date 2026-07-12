@@ -222,8 +222,8 @@ function BuilderMillionaire() {
       <button className="btn-ghost" onClick={() => exportMillionaireExcel({ config, questions })}>
         <FileSpreadsheet className="h-4 w-4" /> Скачать .xlsx
       </button>
-      <button className="btn-ghost" onClick={() => printMillionaire({ config, questions })}>
-        <Printer className="h-4 w-4" /> Печать
+      <button className="btn-ghost" onClick={() => printMillionaire({ config, questions }, { withAnswers: printAnswers })}>
+        <Printer className="h-4 w-4" /> Печать {printAnswers ? "с ответами" : "без ответов"}
       </button>
       <button className="btn-ghost" onClick={() => setShowSettings((s) => !s)}>
         <Settings2 className="h-4 w-4" /> Настройки

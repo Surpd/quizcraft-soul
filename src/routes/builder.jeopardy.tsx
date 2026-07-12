@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { BuilderShell } from "@/components/builder-shell";
 import { HelpButton } from "@/components/help-modal";
+import { FormulaButton } from "@/components/formula-popover";
 import { ImageDrop } from "@/lib/image-drop";
 import { ThemeSelect } from "@/components/theme-select";
 import { newId, saveGame } from "@/lib/storage";

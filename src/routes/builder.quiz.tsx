@@ -75,6 +75,7 @@ function BuilderQuiz() {
   const [showSettings, setShowSettings] = useState(false);
   const [savedId, setSavedId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [printAnswers, setPrintAnswers] = useState(true);
   const listRef = useRef<HTMLDivElement>(null);
 
   const addQuestion = (type: QuizQuestionType) => {

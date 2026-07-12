@@ -330,60 +330,15 @@ function BuilderMillionaire() {
       )}
 
       {questions.map((q, idx) => (
-        <div key={idx} id={`mq-${idx}`} className="surface-card space-y-3 p-6 scroll-mt-24">
-          <div className="flex items-center justify-between">
-            <div className="rounded-full bg-amber-soft px-4 py-1.5 text-sm font-bold text-amber">
-              Вопрос {idx + 1} · {q.money.toLocaleString("ru-RU")} ₽
-            </div>
-            <button
-              onClick={() => removeQuestion(idx)}
-              className="rounded-lg p-1.5 text-muted-foreground hover:bg-danger-soft hover:text-danger"
-            >
-              <Trash2 className="h-4 w-4" />
-            </button>
-          </div>
-          <textarea
-            rows={2}
-            className="input-base"
-            placeholder="Текст вопроса..."
-            value={q.q}
-            onChange={(e) => patchQuestion(idx, { q: e.target.value })}
-          />
-          <ImageDrop value={q.image} onChange={(image) => patchQuestion(idx, { image })} />
-          <div className="grid gap-2 sm:grid-cols-2">
-            {q.options.map((opt, oi) => (
-              <div key={oi} className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => markCorrect(idx, oi)}
-                  className={`grid h-9 w-9 flex-shrink-0 place-items-center rounded-full border-2 text-sm font-bold ${
-                    opt.correct
-                      ? "border-success bg-success text-white"
-                      : "border-border-strong text-muted-foreground hover:border-primary"
-                  }`}
-                  aria-label="Отметить верным"
-                >
-                  {String.fromCharCode(65 + oi)}
-                </button>
-                <input
-                  className="input-base"
-                  placeholder={`Вариант ${String.fromCharCode(65 + oi)}`}
-                  value={opt.text}
-                  onChange={(e) => patchOption(idx, oi, { text: e.target.value })}
-                />
-              </div>
-            ))}
-          </div>
-          <label className="text-xs text-muted-foreground">
-            Сумма
-            <input
-              type="number"
-              className="input-base ml-2 inline-block w-32 py-1 text-sm"
-              value={q.money}
-              onChange={(e) => patchQuestion(idx, { money: parseInt(e.target.value) || 0 })}
-            />
-          </label>
-        </div>
+        <MillionaireQuestionCard
+          key={idx}
+          idx={idx}
+          q={q}
+          onRemove={() => removeQuestion(idx)}
+          onPatch={(patch) => patchQuestion(idx, patch)}
+          onPatchOption={(oi, patch) => patchOption(idx, oi, patch)}
+          onMarkCorrect={(oi) => markCorrect(idx, oi)}
+        />
       ))}
 
       <button onClick={addQuestion} className="btn-ghost w-full justify-center py-4">

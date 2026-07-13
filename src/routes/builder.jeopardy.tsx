@@ -300,6 +300,22 @@ function BuilderJeopardy() {
         </>
       }
     >
+      <div className="surface-card p-6">
+        <label className="block">
+          <span className="mb-1.5 flex items-center justify-between text-xs font-semibold text-muted-foreground">
+            Название игры
+            <CharCounter value={config.title ?? ""} max={LIMITS.title} />
+          </span>
+          <input
+            className="input-base text-lg font-display font-bold"
+            maxLength={LIMITS.title}
+            placeholder="Название «Своей игры»"
+            value={config.title ?? ""}
+            onChange={(e) => setConfig({ ...config, title: e.target.value })}
+          />
+        </label>
+      </div>
+
       {showSettings && (
         <div className="surface-card animate-fade-up space-y-4 p-6">
           <h3 className="font-display font-bold">Настройки</h3>

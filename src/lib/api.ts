@@ -48,6 +48,12 @@ export async function listGames(kind?: GameKind): Promise<StoredGame[]> {
   return fake(_listGames(kind));
 }
 
+export async function findGame(id: string): Promise<StoredGame | null> {
+  const all = _listGames();
+  return fake(all.find((g) => g.id === id) ?? null);
+}
+
+
 export async function deleteGame(kind: GameKind, id: string) {
   _deleteGame(kind, id);
   return fake({ ok: true });

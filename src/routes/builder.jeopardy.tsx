@@ -195,7 +195,7 @@ function BuilderJeopardy() {
                 }
                 className="flex-1 truncate rounded-lg bg-primary px-3 py-2 text-left text-xs font-bold text-primary-foreground"
               >
-                Раунд {ri + 1}
+                {config.roundTitles?.[ri]?.trim() || `Раунд ${ri + 1}`}
               </button>
               <button
                 onClick={() => addCategory(ri)}

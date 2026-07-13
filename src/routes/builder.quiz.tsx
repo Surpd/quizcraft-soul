@@ -210,40 +210,40 @@ function BuilderQuiz() {
   );
 
   const toolbar = (
-    <div className="flex flex-wrap gap-2">
-      <button className="btn-ghost" onClick={() => downloadExcelTemplate("quiz")}>
-        <FileText className="h-4 w-4" /> Шаблон Excel
-      </button>
-      <label className="btn-ghost cursor-pointer">
-        <Upload className="h-4 w-4" /> Загрузить Excel
-        <input
-          type="file"
-          accept=".xlsx,.xls"
-          className="hidden"
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            if (f) handleImport(f);
-            e.currentTarget.value = "";
-          }}
-        />
-      </label>
-      <button className="btn-ghost" onClick={() => exportQuizExcel({ config, questions })}>
-        <FileSpreadsheet className="h-4 w-4" /> Скачать .xlsx
-      </button>
-      <button className="btn-ghost" onClick={() => printQuiz({ config, questions }, { withAnswers: printAnswers })}>
-        <Printer className="h-4 w-4" /> Печать {printAnswers ? "с ответами" : "без ответов"}
-      </button>
+    <div className="flex flex-wrap items-center justify-center gap-2">
+      <BuilderToolbar
+        kind="quiz"
+        onImportFile={handleImport}
+        onDownloadTemplate={() => downloadExcelTemplate("quiz")}
+        onExportExcel={() => exportQuizExcel({ config, questions })}
+        onPrint={(withAnswers) => printQuiz({ config, questions }, { withAnswers })}
+        printAnswers={printAnswers}
+        onToggleSettings={() => setShowSettings((s) => !s)}
+      />
       <button className="btn-ghost" onClick={openResults}>
         <BarChart3 className="h-4 w-4" /> Результаты
       </button>
-      <button className="btn-ghost" onClick={() => setShowSettings((s) => !s)}>
-        <Settings2 className="h-4 w-4" /> Настройки
-      </button>
-      <button className="btn-accent" onClick={openPlayer}>
-        <Play className="h-4 w-4" /> Играть (новая вкладка)
-      </button>
     </div>
   );
+
+  if (loadState === "loading") {
+    return (
+      <div className="min-h-screen grid place-items-center bg-surface text-muted-foreground">
+        Загружаем квиз…
+      </div>
+    );
+  }
+  if (loadState === "error") {
+    return (
+      <div className="min-h-screen grid place-items-center bg-surface p-6 text-center">
+        <div>
+          <h1 className="font-display text-2xl font-bold">Квиз не найден</h1>
+          <p className="mt-2 text-sm text-muted-foreground">Возможно, он был удалён.</p>
+          <a href="/library" className="btn-accent mt-4 inline-flex">В библиотеку</a>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <BuilderShell
@@ -253,16 +253,22 @@ function BuilderQuiz() {
       toolbar={toolbar}
       sidebar={sidebar}
       theme={config.theme}
-      onSave={openPlayer}
       extraFabs={
-        <HelpButton title="Как пользоваться конструктором квиза">
-          <p><b>Типы вопросов:</b> ABCD — 4 варианта, отметьте верный кликом по букве. Да/Нет — простой бинарный вопрос. Текст — принимаются несколько вариантов через запятую. Пары — сопоставление левого и правого списка.</p>
-          <p><b>Картинка:</b> перетащите файл в зону или вставьте URL.</p>
-          <p><b>Тема плеера:</b> в «Настройки» → выбираете тему; конструктор сразу подсветит её акцентом.</p>
-          <p><b>Панель слева:</b> клик по номеру — переход к вопросу. Клик «+ …» — добавить новый.</p>
-          <p><b>Ссылки:</b> «Играть» и «Результаты» открываются в новой вкладке.</p>
-          <p><b>Excel:</b> скачайте шаблон, заполните — загрузите обратно кнопкой «Загрузить Excel».</p>
-        </HelpButton>
+        <>
+          <BuilderFabs
+            kind="quiz"
+            savedId={savedId}
+            onSave={handleSave}
+            onSaveAsCopy={handleSaveAsCopy}
+          />
+          <HelpButton title="Как пользоваться конструктором квиза">
+            <p><b>Типы вопросов:</b> ABCD — 4 варианта, отметьте верный кликом по букве. Да/Нет — простой бинарный вопрос. Текст — принимаются несколько вариантов через запятую. Пары — сопоставление левого и правого списка.</p>
+            <p><b>Картинка:</b> перетащите файл в зону или вставьте URL.</p>
+            <p><b>Тема плеера:</b> в «Настройки» → выбираете тему; конструктор сразу подсветит её акцентом.</p>
+            <p><b>Панель слева:</b> клик по номеру — переход к вопросу. Клик «+ …» — добавить новый.</p>
+            <p><b>Играть:</b> для квиза — выбор между онлайн-комнатой и офлайн-режимом с QR.</p>
+          </HelpButton>
+        </>
       }
     >
       {showSettings && (

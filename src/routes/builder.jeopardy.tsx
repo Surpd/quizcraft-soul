@@ -399,13 +399,27 @@ function BuilderJeopardy() {
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {round.map((cat, ci) => (
                 <div key={ci} id={`cat-${ri}-${ci}`} className="rounded-2xl border border-border bg-surface-muted p-3">
-                  <input
-                    className="input-base mb-1 bg-white text-center font-bold"
-                    placeholder={`Категория ${ci + 1}`}
-                    maxLength={LIMITS.category}
-                    value={cat.category}
-                    onChange={(e) => updateCategory(ri, ci, { category: e.target.value })}
-                  />
+                  <div className="mb-1 flex items-center gap-1">
+                    <input
+                      className="input-base bg-white text-center font-bold"
+                      placeholder={`Категория ${ci + 1}`}
+                      maxLength={LIMITS.category}
+                      value={cat.category}
+                      onChange={(e) => updateCategory(ri, ci, { category: e.target.value })}
+                    />
+                    <AIJeopardyCategoryButton
+                      categoryName={cat.category}
+                      gameTopic={config.title}
+                      emptySlots={cat.questions.filter((q) => !q.q.trim()).map((q) => q.points)}
+                      onPickCategory={(name) => updateCategory(ri, ci, { category: name })}
+                      onFillQuestions={(items) => {
+                        items.forEach((it) => {
+                          const qi = cat.questions.findIndex((q) => q.points === it.points && !q.q.trim());
+                          if (qi >= 0) updateQuestion(ri, ci, qi, { q: it.q, a: it.a });
+                        });
+                      }}
+                    />
+                  </div>
                   <div className="mb-2 flex justify-end">
                     <CharCounter value={cat.category} max={LIMITS.category} />
                   </div>

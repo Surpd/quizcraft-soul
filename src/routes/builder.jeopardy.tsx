@@ -60,6 +60,7 @@ interface ModalTarget {
 }
 
 function BuilderJeopardy() {
+  const { id: urlId } = Route.useSearch();
   const [config, setConfig] = useState<JeopardyConfig>({
     theme: "amber",
     timeBase: 30,
@@ -76,6 +77,25 @@ function BuilderJeopardy() {
   const [toast, setToast] = useState<string | null>(null);
   const [modal, setModal] = useState<ModalTarget | null>(null);
   const [printAnswers, setPrintAnswers] = useState(true);
+  const [loadState, setLoadState] = useState<"idle" | "loading" | "error">(urlId ? "loading" : "idle");
+
+  useEffect(() => {
+    if (!urlId) return;
+    try {
+      const rec = loadGame<JeopardyData>("jeopardy", urlId);
+      if (rec) {
+        setConfig(rec.data.config);
+        setRounds(rec.data.rounds);
+        setFinal(rec.data.final);
+        setSavedId(urlId);
+        setLoadState("idle");
+      } else setLoadState("error");
+    } catch (err) {
+      console.error(err);
+      setLoadState("error");
+    }
+  }, [urlId]);
+
 
   const showToast = (msg: string) => {
     setToast(msg);

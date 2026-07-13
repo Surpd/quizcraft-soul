@@ -6,6 +6,8 @@ import { HelpButton } from "@/components/help-modal";
 import { ImageDrop } from "@/lib/image-drop";
 import { ThemeSelect } from "@/components/theme-select";
 import { FormulaButton } from "@/components/formula-popover";
+import { CharCounter } from "@/components/char-counter";
+import { LIMITS } from "@/lib/limits";
 import { newId, saveGame, loadGame } from "@/lib/storage";
 import { BuilderToolbar, BuilderFabs } from "@/components/builder-actions";
 import {
@@ -412,6 +414,7 @@ function MillionaireQuestionCard({
         <textarea
           ref={qRef}
           rows={2}
+          maxLength={LIMITS.question}
           className="input-base pr-10"
           placeholder="Текст вопроса..."
           value={q.q}
@@ -419,6 +422,9 @@ function MillionaireQuestionCard({
         />
         <div className="absolute right-2 top-2">
           <FormulaButton inputRef={qRef} value={q.q} onChange={(v) => onPatch({ q: v })} />
+        </div>
+        <div className="mt-1 flex justify-end">
+          <CharCounter value={q.q} max={LIMITS.question} />
         </div>
       </div>
       <ImageDrop value={q.image} onChange={(image) => onPatch({ image })} />

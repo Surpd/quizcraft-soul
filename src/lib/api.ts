@@ -11,6 +11,11 @@ import {
   newId,
 } from "./storage";
 import { saveQuizResult, loadQuizResults } from "./results";
+import {
+  saveJeopardyResult,
+  loadJeopardyResults,
+  type JeopardyResult,
+} from "./jeopardy-results";
 import type {
   GameKind,
   JeopardyData,

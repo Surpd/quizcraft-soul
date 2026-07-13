@@ -119,26 +119,31 @@ function LibraryPage() {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map((g) => {
-              const Icon = KIND_ICON[g.kind];
-              return (
-                <Link
-                  key={`${g.kind}-${g.id}`}
-                  to="/game/$id"
-                  params={{ id: g.id }}
-                  className="surface-card group relative flex flex-col gap-3 overflow-hidden p-5 transition-all hover:-translate-y-0.5 hover:shadow-lift"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider ${KIND_ACCENT[g.kind]}`}>
-                      <Icon className="h-3 w-3" />
-                      {KIND_LABEL[g.kind]}
+              try {
+                const Icon = KIND_ICON[g.kind] ?? FileText;
+                return (
+                  <Link
+                    key={`${g.kind}-${g.id}`}
+                    to="/game/$id"
+                    params={{ id: g.id }}
+                    className="surface-card group relative flex flex-col gap-3 overflow-hidden p-5 transition-all hover:-translate-y-0.5 hover:shadow-lift"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider ${KIND_ACCENT[g.kind]}`}>
+                        <Icon className="h-3 w-3" />
+                        {KIND_LABEL[g.kind]}
+                      </div>
                     </div>
-                  </div>
-                  <h3 className="line-clamp-2 font-display text-lg font-bold">{titleOf(g)}</h3>
-                  <p className="mt-auto text-xs text-muted-foreground">
-                    Создано: {new Date(g.updatedAt).toLocaleDateString("ru-RU")}
-                  </p>
-                </Link>
-              );
+                    <h3 className="line-clamp-2 font-display text-lg font-bold">{titleOf(g)}</h3>
+                    <p className="mt-auto text-xs text-muted-foreground">
+                      Создано: {new Date(g.updatedAt).toLocaleDateString("ru-RU")}
+                    </p>
+                  </Link>
+                );
+              } catch (err) {
+                console.error("Ошибка рендера карточки", g, err);
+                return null;
+              }
             })}
           </div>
         )}

@@ -69,6 +69,8 @@ export interface JeopardyFinal {
 }
 
 export interface JeopardyConfig {
+  title?: string;
+  roundTitles?: string[];
   theme: PlayerTheme;
   timeBase: number;
   timeStep: number;

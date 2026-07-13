@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { FileText, Grid3x3, Coins, Palette, FileSpreadsheet, Printer, Sigma } from "lucide-react";
+import { FileText, Grid3x3, Coins, Palette, FileSpreadsheet, Printer, Sigma, Library as LibraryIcon, Radio, ArrowRight } from "lucide-react";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({

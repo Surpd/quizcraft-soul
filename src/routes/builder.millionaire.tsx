@@ -1,22 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useRef, useState } from "react";
-import {
-  Coins,
-  Plus,
-  Trash2,
-  FileSpreadsheet,
-  Upload,
-  Settings2,
-  Printer,
-  FileText,
-  Play,
-} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Coins, Plus, Trash2 } from "lucide-react";
 import { BuilderShell } from "@/components/builder-shell";
 import { HelpButton } from "@/components/help-modal";
 import { ImageDrop } from "@/lib/image-drop";
 import { ThemeSelect } from "@/components/theme-select";
 import { FormulaButton } from "@/components/formula-popover";
-import { newId, saveGame } from "@/lib/storage";
+import { newId, saveGame, loadGame } from "@/lib/storage";
+import { BuilderToolbar, BuilderFabs } from "@/components/builder-actions";
 import {
   downloadExcelTemplate,
   exportMillionaireExcel,
@@ -34,6 +25,9 @@ import type {
 } from "@/lib/types";
 
 export const Route = createFileRoute("/builder/millionaire")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    id: typeof search.id === "string" ? search.id : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Миллионер — конструктор — IslandQuiz" },

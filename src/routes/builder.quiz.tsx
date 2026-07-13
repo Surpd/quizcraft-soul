@@ -473,17 +473,22 @@ function BuilderQuiz() {
 function QuestionCard({
   index,
   question,
+  topic,
   onPatch,
   onRemove,
 }: {
   index: number;
   question: QuizQuestion;
+  topic: string;
   onPatch: (p: Partial<QuizQuestion>) => void;
   onRemove: () => void;
 }) {
   const Icon = TYPE_META[question.type].icon;
   const qRef = useRef<HTMLTextAreaElement>(null);
   const optRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const aiType: "choice" | "bool" | "text" | undefined =
+    question.type === "matching" ? undefined : question.type;
+  const aiFormat = `quiz-${question.type}`;
   return (
     <div id={`q-${question.id}`} className="surface-card space-y-4 p-6 scroll-mt-24">
       <div className="flex items-center justify-between">
@@ -505,12 +510,19 @@ function QuestionCard({
           ref={qRef}
           rows={2}
           maxLength={LIMITS.question}
-          className="input-base pr-10"
+          className="input-base pr-20"
           placeholder="Текст вопроса... (можно \\(x^2\\))"
           value={question.q}
           onChange={(e) => onPatch({ q: e.target.value })}
         />
-        <div className="absolute right-2 top-2">
+        <div className="absolute right-2 top-2 flex items-center gap-1">
+          <AIHelperButton
+            currentValue={question.q}
+            topic={topic}
+            type={aiType}
+            format={aiFormat}
+            onPick={(v) => onPatch({ q: v })}
+          />
           <FormulaButton inputRef={qRef} value={question.q} onChange={(v) => onPatch({ q: v })} />
         </div>
         <div className="mt-1 flex justify-end">

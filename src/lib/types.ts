@@ -101,6 +101,7 @@ export type MilestoneMode = "classic" | "three" | "none";
 export type PointsMode = "classic" | "double" | "custom";
 
 export interface MillionaireConfig {
+  title?: string;
   theme: PlayerTheme;
   timePerQuestion: number;
   moneyScale: MoneyScale;

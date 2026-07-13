@@ -448,11 +448,15 @@ function MillionaireQuestionCard({
                 ref={(el) => {
                   optRefs.current[oi] = el;
                 }}
-                className="input-base pr-10"
+                className="input-base pr-16"
+                maxLength={LIMITS.option}
                 placeholder={`Вариант ${String.fromCharCode(65 + oi)}`}
                 value={opt.text}
                 onChange={(e) => onPatchOption(oi, { text: e.target.value })}
               />
+              <div className="pointer-events-none absolute right-9 top-1/2 -translate-y-1/2">
+                <CharCounter value={opt.text} max={LIMITS.option} />
+              </div>
               <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
                 <FormulaButton
                   inputRef={{ current: optRefs.current[oi] } as React.RefObject<HTMLInputElement | null>}

@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { FileText, Grid3x3, Coins, Palette, FileSpreadsheet, Printer, Sigma } from "lucide-react";
+import { FileText, Grid3x3, Coins, Palette, FileSpreadsheet, Printer, Sigma, Library as LibraryIcon, Radio, ArrowRight } from "lucide-react";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -187,7 +188,96 @@ function Home() {
           </div>
         </section>
 
-        {/* Features */}
+        {/* Library block */}
+        <section className="bg-surface py-20 sm:py-24">
+          <div className="mx-auto max-w-7xl px-6">
+            <div className="grid items-center gap-10 md:grid-cols-2">
+              <div>
+                <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-primary-soft px-3 py-1 text-xs font-bold uppercase tracking-wider text-primary">
+                  <LibraryIcon className="h-3.5 w-3.5" /> Библиотека
+                </div>
+                <h2 className="font-display text-3xl font-black md:text-4xl">Ваша библиотека квизов</h2>
+                <p className="mt-4 text-muted-foreground">
+                  Все созданные игры хранятся в одном месте. Открывайте, редактируйте, запускайте —
+                  без ограничений.
+                </p>
+                <Link to="/library" className="btn-accent mt-6 inline-flex">
+                  Перейти в библиотеку <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {[
+                  { icon: FileText, tone: "bg-primary-soft text-primary", label: "Столицы мира", kind: "Квиз" },
+                  { icon: Grid3x3, tone: "bg-amber-soft text-amber", label: "Кино 90-х", kind: "Своя игра" },
+                  { icon: Coins, tone: "bg-success-soft text-success", label: "Химия", kind: "Миллионер" },
+                  { icon: FileText, tone: "bg-primary-soft text-primary", label: "История ХХ века", kind: "Квиз" },
+                ].map((c, i) => (
+                  <div key={i} className="surface-card p-4">
+                    <div className={`grid h-8 w-8 place-items-center rounded-lg ${c.tone}`}>
+                      <c.icon className="h-4 w-4" />
+                    </div>
+                    <p className="mt-3 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{c.kind}</p>
+                    <p className="font-display text-sm font-bold">{c.label}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Online rooms block */}
+        <section className="py-20 sm:py-24">
+          <div className="mx-auto max-w-7xl px-6">
+            <div className="grid items-center gap-10 md:grid-cols-2">
+              <div className="relative order-2 md:order-1">
+                <div className="surface-card rotate-[-1deg] p-6 shadow-lift">
+                  <div className="mb-3 flex items-center justify-between">
+                    <div className="inline-flex items-center gap-2 rounded-full bg-primary-soft px-3 py-1 text-xs font-bold text-primary">
+                      <span className="relative flex h-2 w-2">
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-70" />
+                        <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+                      </span>
+                      LIVE
+                    </div>
+                    <span className="font-mono text-xs text-muted-foreground">код: 4207</span>
+                  </div>
+                  <div className="space-y-2">
+                    {[
+                      { n: "🦩 Ева", s: 2450, hot: 4 },
+                      { n: "🐢 Марк", s: 2180, hot: 2 },
+                      { n: "🐬 Лиза", s: 1990 },
+                      { n: "🦜 Тим", s: 1720 },
+                    ].map((p, i) => (
+                      <div key={p.n} className={`flex items-center justify-between rounded-xl px-3 py-2 ${i === 0 ? "bg-amber-soft" : "bg-surface-muted"}`}>
+                        <div className="flex items-center gap-2 text-sm font-semibold">
+                          <span className="w-4 font-mono text-xs text-muted-foreground">{i + 1}</span>
+                          <span>{p.n}</span>
+                          {p.hot && <span className="rounded-full bg-amber/20 px-1.5 text-[10px] font-bold text-amber">🔥{p.hot}</span>}
+                        </div>
+                        <span className="font-mono text-sm font-bold">{p.s.toLocaleString("ru-RU")}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div className="order-1 md:order-2">
+                <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-accent-soft px-3 py-1 text-xs font-bold uppercase tracking-wider text-accent">
+                  <Radio className="h-3.5 w-3.5" /> Онлайн-комнаты
+                </div>
+                <h2 className="font-display text-3xl font-black md:text-4xl">Играйте вместе в реальном времени</h2>
+                <p className="mt-4 text-muted-foreground">
+                  Создайте комнату, поделитесь кодом — и ученики подключатся со своих устройств.
+                  Стрики, рейтинг, подиум — всё как в Kahoot!
+                </p>
+                <Link to="/library" className="btn-accent mt-6 inline-flex">
+                  Попробовать онлайн-режим <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+
+
         <section id="features" className="py-24 sm:py-32">
           <div className="mx-auto max-w-7xl px-6">
             <div className="mb-16 max-w-2xl">

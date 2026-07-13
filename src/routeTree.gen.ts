@@ -13,6 +13,7 @@ import { Route as LibraryRouteImport } from './routes/library'
 import { Route as JoinRouteImport } from './routes/join'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as RoomCodeRouteImport } from './routes/room.$code'
+import { Route as GameIdRouteImport } from './routes/game.$id'
 import { Route as BuilderQuizRouteImport } from './routes/builder.quiz'
 import { Route as BuilderMillionaireRouteImport } from './routes/builder.millionaire'
 import { Route as BuilderJeopardyRouteImport } from './routes/builder.jeopardy'
@@ -40,6 +41,11 @@ const IndexRoute = IndexRouteImport.update({
 const RoomCodeRoute = RoomCodeRouteImport.update({
   id: '/room/$code',
   path: '/room/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GameIdRoute = GameIdRouteImport.update({
+  id: '/game/$id',
+  path: '/game/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BuilderQuizRoute = BuilderQuizRouteImport.update({
@@ -90,6 +96,7 @@ export interface FileRoutesByFullPath {
   '/builder/jeopardy': typeof BuilderJeopardyRoute
   '/builder/millionaire': typeof BuilderMillionaireRoute
   '/builder/quiz': typeof BuilderQuizRoute
+  '/game/$id': typeof GameIdRoute
   '/room/$code': typeof RoomCodeRouteWithChildren
   '/play/jeopardy/$id': typeof PlayJeopardyIdRoute
   '/play/millionaire/$id': typeof PlayMillionaireIdRoute
@@ -104,6 +111,7 @@ export interface FileRoutesByTo {
   '/builder/jeopardy': typeof BuilderJeopardyRoute
   '/builder/millionaire': typeof BuilderMillionaireRoute
   '/builder/quiz': typeof BuilderQuizRoute
+  '/game/$id': typeof GameIdRoute
   '/room/$code': typeof RoomCodeRouteWithChildren
   '/play/jeopardy/$id': typeof PlayJeopardyIdRoute
   '/play/millionaire/$id': typeof PlayMillionaireIdRoute
@@ -119,6 +127,7 @@ export interface FileRoutesById {
   '/builder/jeopardy': typeof BuilderJeopardyRoute
   '/builder/millionaire': typeof BuilderMillionaireRoute
   '/builder/quiz': typeof BuilderQuizRoute
+  '/game/$id': typeof GameIdRoute
   '/room/$code': typeof RoomCodeRouteWithChildren
   '/play/jeopardy/$id': typeof PlayJeopardyIdRoute
   '/play/millionaire/$id': typeof PlayMillionaireIdRoute
@@ -135,6 +144,7 @@ export interface FileRouteTypes {
     | '/builder/jeopardy'
     | '/builder/millionaire'
     | '/builder/quiz'
+    | '/game/$id'
     | '/room/$code'
     | '/play/jeopardy/$id'
     | '/play/millionaire/$id'
@@ -149,6 +159,7 @@ export interface FileRouteTypes {
     | '/builder/jeopardy'
     | '/builder/millionaire'
     | '/builder/quiz'
+    | '/game/$id'
     | '/room/$code'
     | '/play/jeopardy/$id'
     | '/play/millionaire/$id'
@@ -163,6 +174,7 @@ export interface FileRouteTypes {
     | '/builder/jeopardy'
     | '/builder/millionaire'
     | '/builder/quiz'
+    | '/game/$id'
     | '/room/$code'
     | '/play/jeopardy/$id'
     | '/play/millionaire/$id'
@@ -178,6 +190,7 @@ export interface RootRouteChildren {
   BuilderJeopardyRoute: typeof BuilderJeopardyRoute
   BuilderMillionaireRoute: typeof BuilderMillionaireRoute
   BuilderQuizRoute: typeof BuilderQuizRoute
+  GameIdRoute: typeof GameIdRoute
   RoomCodeRoute: typeof RoomCodeRouteWithChildren
   PlayJeopardyIdRoute: typeof PlayJeopardyIdRoute
   PlayMillionaireIdRoute: typeof PlayMillionaireIdRoute
@@ -213,6 +226,13 @@ declare module '@tanstack/react-router' {
       path: '/room/$code'
       fullPath: '/room/$code'
       preLoaderRoute: typeof RoomCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/game/$id': {
+      id: '/game/$id'
+      path: '/game/$id'
+      fullPath: '/game/$id'
+      preLoaderRoute: typeof GameIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/builder/quiz': {
@@ -293,6 +313,7 @@ const rootRouteChildren: RootRouteChildren = {
   BuilderJeopardyRoute: BuilderJeopardyRoute,
   BuilderMillionaireRoute: BuilderMillionaireRoute,
   BuilderQuizRoute: BuilderQuizRoute,
+  GameIdRoute: GameIdRoute,
   RoomCodeRoute: RoomCodeRouteWithChildren,
   PlayJeopardyIdRoute: PlayJeopardyIdRoute,
   PlayMillionaireIdRoute: PlayMillionaireIdRoute,

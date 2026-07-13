@@ -16,8 +16,9 @@ import {
   X,
 } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
-import { findGame, createRoom, deleteGame } from "@/lib/api";
+import { findGame, createRoom, deleteGame, getJeopardyResults } from "@/lib/api";
 import { loadQuizResults, type QuizResult } from "@/lib/results";
+import type { JeopardyResult } from "@/lib/jeopardy-results";
 import {
   exportQuizExcel,
   exportJeopardyExcel,

@@ -16,8 +16,9 @@ import {
   X,
 } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
-import { findGame, createRoom, deleteGame } from "@/lib/api";
+import { findGame, createRoom, deleteGame, getJeopardyResults } from "@/lib/api";
 import { loadQuizResults, type QuizResult } from "@/lib/results";
+import type { JeopardyResult } from "@/lib/jeopardy-results";
 import {
   exportQuizExcel,
   exportJeopardyExcel,
@@ -57,6 +58,8 @@ function GameDashboard() {
   const [game, setGame] = useState<StoredGame | null | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<QuizResult[]>([]);
+  const [jResults, setJResults] = useState<JeopardyResult[]>([]);
+  const [jResultsState, setJResultsState] = useState<"idle" | "loading" | "error">("idle");
   const [expanded, setExpanded] = useState<string | null>(null);
   const [openHost, setOpenHost] = useState(false);
   const [busyMsg, setBusyMsg] = useState<string | null>(null);
@@ -74,10 +77,39 @@ function GameDashboard() {
         if (cancel) return;
         setGame(g);
         if (g?.kind === "quiz") setResults(loadQuizResults(g.id));
+        if (g?.kind === "jeopardy") {
+          setJResultsState("loading");
+          getJeopardyResults(g.id)
+            .then((rs) => {
+              if (cancel) return;
+              setJResults(rs);
+              setJResultsState("idle");
+            })
+            .catch(() => { if (!cancel) setJResultsState("error"); });
+        }
       })
       .catch((e) => { if (!cancel) setError(e?.message ?? "Не удалось загрузить"); });
     return () => { cancel = true; };
   }, [id]);
+
+  const jStats = useMemo(() => {
+    if (!jResults.length) return null;
+    const teamTotals = new Map<string, { name: string; total: number }>();
+    let bestScore = -Infinity;
+    for (const r of jResults) {
+      for (const t of r.teams) {
+        const prev = teamTotals.get(t.name) ?? { name: t.name, total: 0 };
+        teamTotals.set(t.name, { name: t.name, total: prev.total + t.score });
+        if (t.score > bestScore) bestScore = t.score;
+      }
+    }
+    const top = [...teamTotals.values()].sort((a, b) => b.total - a.total)[0];
+    return {
+      count: jResults.length,
+      topTeam: top?.name ?? "—",
+      bestScore: Number.isFinite(bestScore) ? bestScore : 0,
+    };
+  }, [jResults]);
 
   const stats = useMemo(() => {
     if (!results.length) return null;
@@ -337,9 +369,17 @@ function GameDashboard() {
               )}
             </div>
           </>
+        ) : game.kind === "jeopardy" ? (
+          <JeopardyDashboard
+            results={jResults}
+            state={jResultsState}
+            stats={jStats}
+            expanded={expanded}
+            onToggle={(rid) => setExpanded(expanded === rid ? null : rid)}
+          />
         ) : (
           <div className="surface-card p-6 text-sm text-muted-foreground">
-            Статистика прохождений доступна для формата «Квиз».
+            Статистика прохождений доступна для форматов «Квиз» и «Своя игра».
           </div>
         )}
       </main>
@@ -354,6 +394,135 @@ function GameDashboard() {
         </div>
       )}
     </div>
+  );
+}
+
+function JeopardyDashboard({
+  results,
+  state,
+  stats,
+  expanded,
+  onToggle,
+}: {
+  results: JeopardyResult[];
+  state: "idle" | "loading" | "error";
+  stats: { count: number; topTeam: string; bestScore: number } | null;
+  expanded: string | null;
+  onToggle: (id: string) => void;
+}) {
+  if (state === "loading") {
+    return <div className="surface-card p-10 text-center text-sm text-muted-foreground">Загружаем результаты…</div>;
+  }
+  if (state === "error") {
+    return <div className="surface-card p-10 text-center text-sm text-danger">Не удалось загрузить результаты</div>;
+  }
+  if (!results.length) {
+    return (
+      <div className="surface-card p-10 text-center text-sm text-muted-foreground">
+        Ещё не сыграно ни одной игры.
+      </div>
+    );
+  }
+  return (
+    <>
+      <div className="mb-4 grid gap-3 sm:grid-cols-3">
+        <StatCard label="Сыграно игр" value={String(stats?.count ?? 0)} />
+        <StatCard label="Топ-команда" value={stats?.topTeam ?? "—"} />
+        <StatCard label="Лучший счёт за игру" value={String(stats?.bestScore ?? 0)} />
+      </div>
+
+      <div className="surface-card overflow-hidden">
+        <div className="flex items-center gap-2 border-b border-border px-5 py-3">
+          <Trophy className="h-4 w-4 text-amber" />
+          <h2 className="font-display text-base font-bold">Сыгранные игры</h2>
+        </div>
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-surface-muted text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              <th className="w-8 px-3 py-2"></th>
+              <th className="px-3 py-2">Дата</th>
+              <th className="px-3 py-2">Команды</th>
+              <th className="px-3 py-2">Победитель</th>
+              <th className="px-3 py-2">Счёт</th>
+              <th className="px-3 py-2">Ставка</th>
+            </tr>
+          </thead>
+          <tbody>
+            {results.flatMap((r) => {
+              const winner = r.teams.find((t) => t.id === r.winnerId) ?? null;
+              const isOpen = expanded === r.id;
+              const rows = [
+                <tr
+                  key={r.id}
+                  onClick={() => onToggle(r.id)}
+                  className="cursor-pointer border-t border-border hover:bg-surface-muted/60"
+                >
+                  <td className="px-3 py-2 text-muted-foreground">
+                    {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                  </td>
+                  <td className="px-3 py-2 text-muted-foreground">
+                    {new Date(r.playedAt).toLocaleString("ru-RU")}
+                  </td>
+                  <td className="px-3 py-2">{r.teams.map((t) => t.name).join(", ")}</td>
+                  <td className="px-3 py-2 font-semibold">{winner?.name ?? "—"}</td>
+                  <td className="px-3 py-2 font-mono">{winner?.score ?? 0}</td>
+                  <td className="px-3 py-2 text-muted-foreground">
+                    {r.hasFinal ? (winner?.finalBet ?? 0) : "—"}
+                  </td>
+                </tr>,
+              ];
+              if (isOpen) {
+                rows.push(
+                  <tr key={r.id + "-d"} className="bg-surface-muted/40">
+                    <td colSpan={6} className="px-5 py-3">
+                      <div className="overflow-hidden rounded-lg border border-border bg-white">
+                        <table className="w-full text-xs">
+                          <thead>
+                            <tr className="bg-surface-muted text-left uppercase tracking-wider text-muted-foreground">
+                              <th className="px-2 py-1.5">Команда</th>
+                              <th className="px-2 py-1.5">Итог</th>
+                              <th className="px-2 py-1.5">Верно</th>
+                              <th className="px-2 py-1.5">Неверно</th>
+                              {r.hasFinal && <th className="px-2 py-1.5">Ставка</th>}
+                              {r.hasFinal && <th className="px-2 py-1.5">Финал</th>}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {[...r.teams]
+                              .sort((a, b) => b.score - a.score)
+                              .map((t) => (
+                                <tr key={t.id} className="border-t border-border">
+                                  <td className="px-2 py-1.5 font-semibold">{t.name}</td>
+                                  <td className="px-2 py-1.5 font-mono">{t.score}</td>
+                                  <td className="px-2 py-1.5 text-success">{t.correct}</td>
+                                  <td className="px-2 py-1.5 text-danger">{t.wrong}</td>
+                                  {r.hasFinal && (
+                                    <td className="px-2 py-1.5">{t.finalBet ?? 0}</td>
+                                  )}
+                                  {r.hasFinal && (
+                                    <td className="px-2 py-1.5">
+                                      {t.finalCorrect ? (
+                                        <span className="text-success">✓</span>
+                                      ) : (
+                                        <span className="text-danger">✕</span>
+                                      )}
+                                    </td>
+                                  )}
+                                </tr>
+                              ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </td>
+                  </tr>,
+                );
+              }
+              return rows;
+            })}
+          </tbody>
+        </table>
+      </div>
+    </>
   );
 }
 

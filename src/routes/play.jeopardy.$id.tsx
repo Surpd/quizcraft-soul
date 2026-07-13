@@ -4,6 +4,7 @@ import { Plus, Minus, X, Trophy } from "lucide-react";
 import { PlayerShell, TimerBar } from "@/components/player-shell";
 import { LaTeX } from "@/lib/latex";
 import { loadGame } from "@/lib/storage";
+import { submitJeopardyResult } from "@/lib/api";
 import type { JeopardyData } from "@/lib/types";
 
 export const Route = createFileRoute("/play/jeopardy/$id")({
@@ -41,6 +42,9 @@ function PlayJeopardy() {
   const [timeLeft, setTimeLeft] = useState(0);
   const [bets, setBets] = useState<Bets>({});
   const [finalAnswers, setFinalAnswers] = useState<Record<string, boolean>>({});
+  const [correctCounts, setCorrectCounts] = useState<Record<string, number>>({});
+  const [wrongCounts, setWrongCounts] = useState<Record<string, number>>({});
+  const savedRef = useRef(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
@@ -91,6 +95,35 @@ function PlayJeopardy() {
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [stage, config]);
+
+  // Persist game result when reaching results stage.
+  useEffect(() => {
+    if (stage !== "results" || savedRef.current) return;
+    savedRef.current = true;
+    const sorted = [...teams].sort((a, b) => b.score - a.score);
+    const winner = sorted[0] ?? null;
+    const hasFinal = Object.keys(bets).length > 0;
+    submitJeopardyResult({
+      gameId: id,
+      hasFinal,
+      winnerId: winner?.id ?? null,
+      teams: teams.map((t) => ({
+        id: t.id,
+        name: t.name,
+        score: t.score,
+        correct: correctCounts[t.id] ?? 0,
+        wrong: wrongCounts[t.id] ?? 0,
+        finalBet: hasFinal ? (bets[t.id] ?? 0) : undefined,
+        finalCorrect: hasFinal ? (finalAnswers[t.id] ?? false) : undefined,
+      })),
+    })
+      .then(() => console.log("[jeopardy] результат сохранён"))
+      .catch((err) => {
+        console.error("[jeopardy] ошибка сохранения результата", err);
+        savedRef.current = false;
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stage]);
 
   if (!data || !config) {
     return (
@@ -395,13 +428,19 @@ function PlayJeopardy() {
                     >
                       <span className="flex-1 truncate font-semibold">{t.name}</span>
                       <button
-                        onClick={() => patchTeam(t.id, { score: t.score - q.points })}
+                        onClick={() => {
+                          patchTeam(t.id, { score: t.score - q.points });
+                          setWrongCounts((prev) => ({ ...prev, [t.id]: (prev[t.id] ?? 0) + 1 }));
+                        }}
                         className="rounded-lg bg-danger/20 px-3 py-1.5 font-bold text-danger"
                       >
                         −{q.points}
                       </button>
                       <button
-                        onClick={() => patchTeam(t.id, { score: t.score + q.points })}
+                        onClick={() => {
+                          patchTeam(t.id, { score: t.score + q.points });
+                          setCorrectCounts((prev) => ({ ...prev, [t.id]: (prev[t.id] ?? 0) + 1 }));
+                        }}
                         className="rounded-lg bg-success/20 px-3 py-1.5 font-bold text-success"
                       >
                         +{q.points}

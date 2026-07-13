@@ -11,6 +11,8 @@ import {
 import { BuilderShell } from "@/components/builder-shell";
 import { HelpButton } from "@/components/help-modal";
 import { FormulaButton } from "@/components/formula-popover";
+import { CharCounter } from "@/components/char-counter";
+import { LIMITS } from "@/lib/limits";
 import { ImageDrop } from "@/lib/image-drop";
 import { ThemeSelect } from "@/components/theme-select";
 import { newId, saveGame, loadGame } from "@/lib/storage";
@@ -368,11 +370,15 @@ function BuilderJeopardy() {
               {round.map((cat, ci) => (
                 <div key={ci} id={`cat-${ri}-${ci}`} className="rounded-2xl border border-border bg-surface-muted p-3">
                   <input
-                    className="input-base mb-2 bg-white text-center font-bold"
+                    className="input-base mb-1 bg-white text-center font-bold"
                     placeholder={`Категория ${ci + 1}`}
+                    maxLength={LIMITS.category}
                     value={cat.category}
                     onChange={(e) => updateCategory(ri, ci, { category: e.target.value })}
                   />
+                  <div className="mb-2 flex justify-end">
+                    <CharCounter value={cat.category} max={LIMITS.category} />
+                  </div>
                   <div className="grid grid-rows-5 gap-1">
                     {cat.questions.map((q, qi) => (
                       <button

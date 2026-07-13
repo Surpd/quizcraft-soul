@@ -521,7 +521,24 @@ function QuestionCard({
             topic={topic}
             type={aiType}
             format={aiFormat}
-            onPick={(v) => onPatch({ q: v })}
+            onPick={(v) => {
+              const patch: Partial<QuizQuestion> = { q: v.question };
+              if (question.type === "choice" && v.options) {
+                patch.options = v.options;
+                const correctIdx = typeof v.correct === "number" ? v.correct : 0;
+                patch.answer = v.options[correctIdx] ?? "";
+              }
+              if (question.type === "bool") {
+                patch.answer = v.correct === true ? "true" : "false";
+              }
+              if (question.type === "text" && v.correctAnswer) {
+                patch.answer = v.correctAnswer;
+              }
+              if (question.type === "matching" && v.pairs) {
+                patch.answer = JSON.stringify(v.pairs);
+              }
+              onPatch(patch);
+            }}
           />
           <FormulaButton inputRef={qRef} value={question.q} onChange={(v) => onPatch({ q: v })} />
         </div>

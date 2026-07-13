@@ -125,47 +125,66 @@ function PlayQuiz() {
     setPhase("playing");
   };
 
+  const persistResult = (finalAnswers: QAnswer[]) => {
+    if (savedRef.current) return;
+    savedRef.current = true;
+    const totalPts = questions.reduce((s, q) => s + q.points, 0);
+    const earned = finalAnswers.reduce((s, a) => s + a.earned, 0);
+    const correct = finalAnswers.filter((a) => a.correct).length;
+    const timeSec = Math.max(0, Math.floor((Date.now() - startedAt.current) / 1000));
+    try {
+      saveQuizResult({
+        gameId: id,
+        playerName: name.trim(),
+        score: earned,
+        maxScore: totalPts,
+        correctCount: correct,
+        totalQuestions: questions.length,
+        timeSec,
+      });
+    } catch (e) {
+      console.error("Не удалось сохранить результат", e);
+    }
+  };
+
   const submit = (timeout = false) => {
     if (!config) return;
     const q = questions[order[idx]];
     const isCorrect = timeout ? false : checkAnswer(q, current);
     const earned = isCorrect ? q.points : 0;
-    setAnswers((prev) => [...prev, { qId: q.id, correct: isCorrect, earned }]);
+    const nextAnswers = [...answers, { qId: q.id, correct: isCorrect, earned }];
+    setAnswers(nextAnswers);
     setFeedback(isCorrect ? "correct" : "wrong");
     const delay = config.showResult === "each" ? 1200 : 200;
     setTimeout(() => {
       setFeedback(null);
       setCurrent("");
-      if (idx + 1 >= order.length) setPhase("done");
-      else setIdx(idx + 1);
+      if (idx + 1 >= order.length) {
+        persistResult(nextAnswers);
+        setPhase("done");
+      } else setIdx(idx + 1);
     }, delay);
   };
 
-  const finishAll = () => setPhase("done");
+  const finishAll = () => {
+    persistResult(answers);
+    setPhase("done");
+  };
   const goTo = (newIdx: number) => {
     setCurrent("");
     setFeedback(null);
     setIdx(newIdx);
   };
 
-  // Persist result once when reaching "done"
-  useEffect(() => {
-    if (phase !== "done" || !stored) return;
-    const totalPts = questions.reduce((s, q) => s + q.points, 0);
-    const earned = answers.reduce((s, a) => s + a.earned, 0);
-    const correct = answers.filter((a) => a.correct).length;
-    const timeSec = Math.max(0, Math.floor((Date.now() - startedAt.current) / 1000));
-    saveQuizResult({
-      gameId: id,
-      playerName: name.trim(),
-      score: earned,
-      maxScore: totalPts,
-      correctCount: correct,
-      totalQuestions: questions.length,
-      timeSec,
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase]);
+  if (loading) {
+    return (
+      <PlayerShell theme="amber">
+        <div className="flex min-h-screen items-center justify-center px-4 text-center">
+          <div className="h-10 w-10 animate-spin rounded-full border-2 border-[color:var(--pt-border)] border-t-[color:var(--pt-accent)]" />
+        </div>
+      </PlayerShell>
+    );
+  }
 
   if (!stored || !config) {
     return (

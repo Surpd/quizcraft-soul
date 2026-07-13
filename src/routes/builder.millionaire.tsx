@@ -131,7 +131,11 @@ function BuilderMillionaire() {
   };
 
   const removeQuestion = (idx: number) => {
-    setQuestions((prev) => prev.filter((_, i) => i !== idx));
+    setQuestions((prev) => {
+      const next = prev.filter((_, i) => i !== idx);
+      if ((config.pointsMode ?? "classic") === "custom") return next;
+      return next.map((q, i) => ({ ...q, money: moneyForIndex(i, config.moneyScale, config.pointsMode ?? "classic") }));
+    });
   };
 
   const handleSave = (): string | null => {

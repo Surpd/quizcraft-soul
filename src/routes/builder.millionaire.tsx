@@ -401,6 +401,7 @@ function BuilderMillionaire() {
 function MillionaireQuestionCard({
   idx,
   q,
+  topic,
   onRemove,
   onPatch,
   onPatchOption,
@@ -408,6 +409,7 @@ function MillionaireQuestionCard({
 }: {
   idx: number;
   q: MillionaireQuestion;
+  topic: string;
   onRemove: () => void;
   onPatch: (patch: Partial<MillionaireQuestion>) => void;
   onPatchOption: (oi: number, patch: Partial<{ text: string; correct: boolean }>) => void;
@@ -433,12 +435,19 @@ function MillionaireQuestionCard({
           ref={qRef}
           rows={2}
           maxLength={LIMITS.question}
-          className="input-base pr-10"
+          className="input-base pr-20"
           placeholder="Текст вопроса..."
           value={q.q}
           onChange={(e) => onPatch({ q: e.target.value })}
         />
-        <div className="absolute right-2 top-2">
+        <div className="absolute right-2 top-2 flex items-center gap-1">
+          <AIHelperButton
+            currentValue={q.q}
+            topic={topic}
+            type="choice"
+            format="millionaire"
+            onPick={(v) => onPatch({ q: v })}
+          />
           <FormulaButton inputRef={qRef} value={q.q} onChange={(v) => onPatch({ q: v })} />
         </div>
         <div className="mt-1 flex justify-end">

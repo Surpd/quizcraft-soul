@@ -1,6 +1,16 @@
 // Quiz result persistence in localStorage.
 // Structured so a future Lovable Cloud swap only replaces this module.
 
+export interface QuizAnswerDetail {
+  qId: string;
+  question: string;
+  given: string;
+  correctAnswer: string;
+  isCorrect: boolean;
+  earned: number;
+  points: number;
+}
+
 export interface QuizResult {
   id: string;
   gameId: string;
@@ -11,6 +21,7 @@ export interface QuizResult {
   totalQuestions: number;
   timeSec: number;
   finishedAt: number;
+  answers?: QuizAnswerDetail[];
 }
 
 const NS = "islandquiz.v1.results";

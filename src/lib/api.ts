@@ -50,7 +50,17 @@ export async function listGames(kind?: GameKind): Promise<StoredGame[]> {
 
 export async function findGame(id: string): Promise<StoredGame | null> {
   const all = _listGames();
-  return fake(all.find((g) => g.id === id) ?? null);
+  const g = all.find((x) => x.id === id) ?? null;
+  if (!g) return fake(null);
+  const d = g.data as { config?: unknown; rounds?: unknown; questions?: unknown } | undefined;
+  if (!d || !d.config) return fake(null);
+  if (g.kind === "jeopardy" && !Array.isArray(d.rounds)) {
+    (d as { rounds: unknown[] }).rounds = [];
+  }
+  if ((g.kind === "quiz" || g.kind === "millionaire") && !Array.isArray(d.questions)) {
+    (d as { questions: unknown[] }).questions = [];
+  }
+  return fake(g);
 }
 
 

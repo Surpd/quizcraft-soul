@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Library as LibraryIcon, Plus, Sparkles, FileText, Grid3x3, Coins } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { listGames } from "@/lib/api";
+import { cleanupInvalidGames } from "@/lib/storage";
 import type { GameKind, QuizData, StoredGame } from "@/lib/types";
 
 export const Route = createFileRoute("/library")({
@@ -40,8 +41,16 @@ function LibraryPage() {
 
   useEffect(() => {
     let cancel = false;
+    try { cleanupInvalidGames(); } catch { /* ignore */ }
     listGames()
-      .then((g) => { if (!cancel) setGames(g); })
+      .then((g) => {
+        if (cancel) return;
+        const clean = g.filter((x) => {
+          const d = x?.data as { config?: unknown } | undefined;
+          return !!x && !!x.kind && !!d && !!d.config;
+        });
+        setGames(clean);
+      })
       .catch((e) => { if (!cancel) setError(e?.message ?? "Не удалось загрузить"); });
     return () => { cancel = true; };
   }, []);

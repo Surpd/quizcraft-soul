@@ -18,6 +18,7 @@ export function saveGame<T>(kind: GameKind, id: string, data: T): StoredGame<T> 
   if (typeof window === "undefined") return record;
   try {
     localStorage.setItem(key(kind, id), JSON.stringify(record));
+    cleanupInvalidGames();
   } catch (err) {
     console.error("Failed to save game", err);
   }
@@ -54,4 +55,30 @@ export function listGames(kind?: GameKind): StoredGame[] {
     }
   }
   return out.sort((a, b) => b.updatedAt - a.updatedAt);
+}
+
+export function isValidGame(rec: unknown): rec is StoredGame {
+  if (!rec || typeof rec !== "object") return false;
+  const r = rec as { kind?: unknown; data?: { config?: unknown } };
+  if (r.kind !== "quiz" && r.kind !== "jeopardy" && r.kind !== "millionaire") return false;
+  if (!r.data || typeof r.data !== "object") return false;
+  if (!r.data.config) return false;
+  return true;
+}
+
+export function cleanupInvalidGames(): number {
+  if (typeof window === "undefined") return 0;
+  const toRemove: string[] = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (!k || !k.startsWith(`${NS}.`)) continue;
+    try {
+      const rec = JSON.parse(localStorage.getItem(k)!);
+      if (!isValidGame(rec)) toRemove.push(k);
+    } catch {
+      toRemove.push(k);
+    }
+  }
+  toRemove.forEach((k) => localStorage.removeItem(k));
+  return toRemove.length;
 }

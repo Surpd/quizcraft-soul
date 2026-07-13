@@ -22,6 +22,10 @@ interface QAnswer {
   qId: string;
   correct: boolean;
   earned: number;
+  question: string;
+  given: string;
+  correctAnswer: string;
+  points: number;
 }
 
 function shuffle<T>(arr: T[]): T[] {
@@ -143,6 +147,15 @@ function PlayQuiz() {
         correctCount: correct,
         totalQuestions: questions.length,
         timeSec,
+        answers: finalAnswers.map((a) => ({
+          qId: a.qId,
+          question: a.question,
+          given: a.given,
+          correctAnswer: a.correctAnswer,
+          isCorrect: a.correct,
+          earned: a.earned,
+          points: a.points,
+        })),
       });
       console.log("[quiz] результат сохранён", saved);
     } catch (e) {
@@ -162,7 +175,18 @@ function PlayQuiz() {
     const q = questions[order[idx]];
     const isCorrect = timeout ? false : checkAnswer(q, current);
     const earned = isCorrect ? q.points : 0;
-    const nextAnswers = [...answers, { qId: q.id, correct: isCorrect, earned }];
+    const nextAnswers: QAnswer[] = [
+      ...answers,
+      {
+        qId: q.id,
+        correct: isCorrect,
+        earned,
+        question: q.q,
+        given: timeout ? "" : current,
+        correctAnswer: formatQuizAnswer(q),
+        points: q.points,
+      },
+    ];
     setAnswers(nextAnswers);
     setFeedback(isCorrect ? "correct" : "wrong");
     const delay = config.showResult === "each" ? 1200 : 200;

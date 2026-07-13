@@ -283,9 +283,48 @@ function GameDashboard() {
                       if (isOpen) {
                         rows.push(
                           <tr key={r.id + "-d"} className="bg-surface-muted/40">
-                            <td colSpan={6} className="px-5 py-3 text-xs text-muted-foreground">
-                              Детализация по вопросам появится, когда плеер начнёт передавать
-                              ответы (сейчас сохраняется только сводка).
+                            <td colSpan={6} className="px-5 py-3">
+                              {r.answers && r.answers.length > 0 ? (
+                                <div className="overflow-hidden rounded-lg border border-border bg-white">
+                                  <table className="w-full text-xs">
+                                    <thead>
+                                      <tr className="bg-surface-muted text-left uppercase tracking-wider text-muted-foreground">
+                                        <th className="w-8 px-2 py-1.5"></th>
+                                        <th className="px-2 py-1.5">Вопрос</th>
+                                        <th className="px-2 py-1.5">Ответ игрока</th>
+                                        <th className="px-2 py-1.5">Правильный</th>
+                                        <th className="px-2 py-1.5">Баллы</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {r.answers.map((a, i) => (
+                                        <tr key={i} className="border-t border-border align-top">
+                                          <td className="px-2 py-1.5">
+                                            {a.isCorrect ? (
+                                              <span className="text-success">✓</span>
+                                            ) : (
+                                              <span className="text-danger">✕</span>
+                                            )}
+                                          </td>
+                                          <td className="px-2 py-1.5">{a.question}</td>
+                                          <td className={`px-2 py-1.5 ${a.isCorrect ? "text-success" : "text-danger"}`}>
+                                            {a.given || <span className="text-muted-foreground">—</span>}
+                                          </td>
+                                          <td className="px-2 py-1.5 text-muted-foreground">{a.correctAnswer}</td>
+                                          <td className="px-2 py-1.5 font-mono">
+                                            {a.earned}
+                                            <span className="text-muted-foreground">/{a.points}</span>
+                                          </td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              ) : (
+                                <p className="text-xs text-muted-foreground">
+                                  Детализация недоступна: результат сохранён до обновления.
+                                </p>
+                              )}
                             </td>
                           </tr>,
                         );

@@ -137,7 +137,7 @@ export function AIHelperButton({
   };
 
   const handlePick = (v: GeneratedQuestion) => {
-    onPick(v.question);
+    onPick(v);
     setOpen(false);
   };
 

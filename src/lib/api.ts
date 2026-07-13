@@ -55,11 +55,11 @@ export async function deleteGame(kind: GameKind, id: string) {
 
 // ---------- Results (per-quiz dashboard) ----------
 export async function getResults(gameId: string) {
-  return fake(listResults(gameId));
+  return fake(loadQuizResults(gameId));
 }
 
-export async function submitResult(payload: Parameters<typeof saveResult>[0]) {
-  saveResult(payload);
+export async function submitResult(payload: Parameters<typeof saveQuizResult>[0]) {
+  saveQuizResult(payload);
   return fake({ ok: true });
 }
 

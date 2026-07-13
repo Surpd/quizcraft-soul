@@ -273,34 +273,40 @@ function BuilderQuiz() {
         </>
       }
     >
+      <div className="surface-card space-y-3 p-6">
+        <label className="block">
+          <span className="mb-1.5 flex items-center justify-between text-xs font-semibold text-muted-foreground">
+            Название
+            <CharCounter value={config.title} max={LIMITS.title} />
+          </span>
+          <input
+            className="input-base text-lg font-display font-bold"
+            maxLength={LIMITS.title}
+            placeholder="Название квиза"
+            value={config.title}
+            onChange={(e) => setConfig({ ...config, title: e.target.value })}
+          />
+        </label>
+        <label className="block">
+          <span className="mb-1.5 flex items-center justify-between text-xs font-semibold text-muted-foreground">
+            Описание
+            <CharCounter value={config.description} max={LIMITS.question} />
+          </span>
+          <input
+            className="input-base"
+            maxLength={LIMITS.question}
+            placeholder="Краткое описание или инструкция..."
+            value={config.description}
+            onChange={(e) => setConfig({ ...config, description: e.target.value })}
+          />
+        </label>
+      </div>
+
       {showSettings && (
         <div className="surface-card animate-fade-up space-y-4 p-6">
           <h3 className="font-display font-bold">Настройки квиза</h3>
           <div className="grid gap-4 sm:grid-cols-2">
-            <label className="block sm:col-span-2">
-              <span className="mb-1.5 flex items-center justify-between text-xs font-semibold text-muted-foreground">
-                Название
-                <CharCounter value={config.title} max={LIMITS.title} />
-              </span>
-              <input
-                className="input-base"
-                maxLength={LIMITS.title}
-                value={config.title}
-                onChange={(e) => setConfig({ ...config, title: e.target.value })}
-              />
-            </label>
-            <label className="block sm:col-span-2">
-              <span className="mb-1.5 flex items-center justify-between text-xs font-semibold text-muted-foreground">
-                Описание
-                <CharCounter value={config.description} max={LIMITS.question} />
-              </span>
-              <input
-                className="input-base"
-                maxLength={LIMITS.question}
-                value={config.description}
-                onChange={(e) => setConfig({ ...config, description: e.target.value })}
-              />
-            </label>
+
             <label className="block">
               <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">Порядок вопросов</span>
               <select

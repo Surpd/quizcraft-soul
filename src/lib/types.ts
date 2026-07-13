@@ -69,6 +69,8 @@ export interface JeopardyFinal {
 }
 
 export interface JeopardyConfig {
+  title?: string;
+  roundTitles?: string[];
   theme: PlayerTheme;
   timeBase: number;
   timeStep: number;
@@ -99,6 +101,7 @@ export type MilestoneMode = "classic" | "three" | "none";
 export type PointsMode = "classic" | "double" | "custom";
 
 export interface MillionaireConfig {
+  title?: string;
   theme: PlayerTheme;
   timePerQuestion: number;
   moneyScale: MoneyScale;

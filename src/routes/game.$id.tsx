@@ -77,10 +77,39 @@ function GameDashboard() {
         if (cancel) return;
         setGame(g);
         if (g?.kind === "quiz") setResults(loadQuizResults(g.id));
+        if (g?.kind === "jeopardy") {
+          setJResultsState("loading");
+          getJeopardyResults(g.id)
+            .then((rs) => {
+              if (cancel) return;
+              setJResults(rs);
+              setJResultsState("idle");
+            })
+            .catch(() => { if (!cancel) setJResultsState("error"); });
+        }
       })
       .catch((e) => { if (!cancel) setError(e?.message ?? "Не удалось загрузить"); });
     return () => { cancel = true; };
   }, [id]);
+
+  const jStats = useMemo(() => {
+    if (!jResults.length) return null;
+    const teamTotals = new Map<string, { name: string; total: number }>();
+    let bestScore = -Infinity;
+    for (const r of jResults) {
+      for (const t of r.teams) {
+        const prev = teamTotals.get(t.name) ?? { name: t.name, total: 0 };
+        teamTotals.set(t.name, { name: t.name, total: prev.total + t.score });
+        if (t.score > bestScore) bestScore = t.score;
+      }
+    }
+    const top = [...teamTotals.values()].sort((a, b) => b.total - a.total)[0];
+    return {
+      count: jResults.length,
+      topTeam: top?.name ?? "—",
+      bestScore: Number.isFinite(bestScore) ? bestScore : 0,
+    };
+  }, [jResults]);
 
   const stats = useMemo(() => {
     if (!results.length) return null;

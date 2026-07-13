@@ -441,6 +441,7 @@ function BuilderQuiz() {
             key={q.id}
             index={idx}
             question={q}
+            topic={config.title}
             onPatch={(p) => patchQuestion(q.id, p)}
             onRemove={() => removeQuestion(q.id)}
           />

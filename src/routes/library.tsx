@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Library as LibraryIcon, Plus, Sparkles, FileText, Grid3x3, Coins } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { listGames } from "@/lib/api";
+import { cleanupInvalidGames } from "@/lib/storage";
 import type { GameKind, QuizData, StoredGame } from "@/lib/types";
 
 export const Route = createFileRoute("/library")({

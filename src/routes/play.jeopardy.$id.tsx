@@ -96,6 +96,35 @@ function PlayJeopardy() {
     };
   }, [stage, config]);
 
+  // Persist game result when reaching results stage.
+  useEffect(() => {
+    if (stage !== "results" || savedRef.current) return;
+    savedRef.current = true;
+    const sorted = [...teams].sort((a, b) => b.score - a.score);
+    const winner = sorted[0] ?? null;
+    const hasFinal = Object.keys(bets).length > 0;
+    submitJeopardyResult({
+      gameId: id,
+      hasFinal,
+      winnerId: winner?.id ?? null,
+      teams: teams.map((t) => ({
+        id: t.id,
+        name: t.name,
+        score: t.score,
+        correct: correctCounts[t.id] ?? 0,
+        wrong: wrongCounts[t.id] ?? 0,
+        finalBet: hasFinal ? (bets[t.id] ?? 0) : undefined,
+        finalCorrect: hasFinal ? (finalAnswers[t.id] ?? false) : undefined,
+      })),
+    })
+      .then(() => console.log("[jeopardy] результат сохранён"))
+      .catch((err) => {
+        console.error("[jeopardy] ошибка сохранения результата", err);
+        savedRef.current = false;
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stage]);
+
   if (!data || !config) {
     return (
       <PlayerShell theme="amber">

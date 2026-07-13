@@ -328,8 +328,10 @@ export async function listRooms() {
 export interface GeneratedQuestion {
   difficulty: "easy" | "medium" | "hard";
   question: string;
-  options: string[];
-  correct: number | boolean;
+  options?: string[];
+  correct?: number | boolean;
+  correctAnswer?: string;
+  pairs?: { left: string; right: string }[];
 }
 
 export interface GeneratedQuizQuestion {
@@ -362,17 +364,41 @@ export async function improveQuestion(input: {
   reroll?: boolean;
 }): Promise<{ variants: GeneratedQuestion[] }> {
   const salt = input.reroll ? ` (reroll ${Math.floor(Math.random() * 100)})` : "";
-  return fake(
-    {
-      variants: (["easy", "medium", "hard"] as const).map((difficulty) => ({
-        difficulty,
-        question: `[MOCK] [${difficulty}] Улучшено под ${input.format}: ${input.currentText}${salt}`,
-        options: ["A", "B", "C", "D"],
-        correct: 0,
-      })),
-    },
-    350,
-  );
+  const difficulties = ["easy", "medium", "hard"] as const;
+  const variants: GeneratedQuestion[] = difficulties.map((difficulty) => {
+    const base = {
+      difficulty,
+      question: `[MOCK] [${difficulty}] Улучшено под ${input.format}: ${input.currentText}${salt}`,
+    };
+    if (input.format === "quiz-bool") {
+      return { ...base, options: ["Да", "Нет"], correct: Math.random() > 0.5 };
+    }
+    if (input.format === "quiz-text" || input.format === "jeopardy") {
+      return { ...base, correctAnswer: `[MOCK] Улучшенный ответ` };
+    }
+    if (input.format === "quiz-matching") {
+      return {
+        ...base,
+        pairs: [
+          { left: "[MOCK] A", right: "[MOCK] 1" },
+          { left: "[MOCK] B", right: "[MOCK] 2" },
+          { left: "[MOCK] C", right: "[MOCK] 3" },
+        ],
+      };
+    }
+    // quiz-choice / millionaire / default
+    return {
+      ...base,
+      options: [
+        "[MOCK] Правильный",
+        "[MOCK] Неправильный 1",
+        "[MOCK] Неправильный 2",
+        "[MOCK] Неправильный 3",
+      ],
+      correct: Math.floor(Math.random() * 4),
+    };
+  });
+  return fake({ variants }, 350);
 }
 
 // TODO(server): POST /api/ai/generate-question
@@ -394,17 +420,33 @@ export async function generateQuestion(input: {
       reroll: input.reroll,
     });
   }
-  const topic = input.topic?.trim() || "Неожиданные факты"; // ИИ сам придумал тему
+  const topic = input.topic?.trim() || "Неожиданные факты";
+  const type = input.type ?? "choice";
   const salt = input.reroll ? ` (reroll ${Math.floor(Math.random() * 100)})` : "";
-  const variants = (["easy", "medium", "hard"] as const).map((difficulty, i) => ({
-    difficulty,
-    question: `[MOCK] [${difficulty}] Вопрос ${i + 1} по теме "${topic}"${salt}`,
-    options:
-      input.type === "bool"
-        ? ["Да", "Нет"]
-        : ["Вариант A", "Вариант B", "Вариант C", "Вариант D"],
-    correct: 0 as number | boolean,
-  }));
+  const difficulties = ["easy", "medium", "hard"] as const;
+  const variants: GeneratedQuestion[] = difficulties.map((difficulty, i) => {
+    const base = {
+      difficulty,
+      question: `[MOCK] [${difficulty}] Вопрос ${i + 1} по теме "${topic}"${salt}`,
+    };
+    if (type === "bool") {
+      return { ...base, options: ["Да", "Нет"], correct: Math.random() > 0.5 };
+    }
+    if (type === "text") {
+      return { ...base, correctAnswer: `[MOCK] Правильный ответ на вопрос` };
+    }
+    // choice (default)
+    return {
+      ...base,
+      options: [
+        "[MOCK] Правильный ответ",
+        "[MOCK] Неправильный ответ 1",
+        "[MOCK] Неправильный ответ 2",
+        "[MOCK] Неправильный ответ 3",
+      ],
+      correct: Math.floor(Math.random() * 4),
+    };
+  });
   return fake({ variants }, 350);
 }
 
@@ -414,7 +456,7 @@ export async function generateQuiz(input: {
   count?: number;
   wishes?: string;
 }): Promise<{ title: string; questions: GeneratedQuizQuestion[] }> {
-  const topic = input.topic?.trim() || "Удивительные открытия"; // ИИ сам придумал тему
+  const topic = input.topic?.trim() || "Удивительные открытия";
   const count = Math.min(20, Math.max(5, input.count ?? 10));
   const questions: GeneratedQuizQuestion[] = Array.from({ length: count }).map((_, i) => {
     const pos = i % 10;
@@ -423,25 +465,44 @@ export async function generateQuiz(input: {
     else if (pos < 8) type = "text";
     else if (pos === 8) type = "bool";
     else type = "matching";
+    const question = `[MOCK] Вопрос ${i + 1} (${type}) по теме "${topic}"`;
+    if (type === "choice") {
+      return {
+        type,
+        question,
+        options: [
+          "[MOCK] Правильный",
+          "[MOCK] Неправильный 1",
+          "[MOCK] Неправильный 2",
+          "[MOCK] Неправильный 3",
+        ],
+        correct: Math.floor(Math.random() * 4),
+      };
+    }
+    if (type === "bool") {
+      return {
+        type,
+        question,
+        options: ["Да", "Нет"],
+        correct: Math.random() > 0.5,
+      };
+    }
+    if (type === "text") {
+      return {
+        type,
+        question,
+        correctAnswer: "[MOCK] Правильный ответ",
+      };
+    }
+    // matching
     return {
       type,
-      question: `[MOCK] Вопрос ${i + 1} (${type}) по теме "${topic}"`,
-      options:
-        type === "bool"
-          ? ["Да", "Нет"]
-          : type === "choice"
-            ? ["Вариант A", "Вариант B", "Вариант C", "Вариант D"]
-            : undefined,
-      correct: type === "bool" ? true : type === "choice" ? 0 : undefined,
-      pairs:
-        type === "matching"
-          ? [
-              { left: "A", right: "1" },
-              { left: "B", right: "2" },
-              { left: "C", right: "3" },
-            ]
-          : undefined,
-      correctAnswer: type === "text" ? "[MOCK] Пример ответа" : undefined,
+      question,
+      pairs: [
+        { left: "[MOCK] A", right: "[MOCK] 1" },
+        { left: "[MOCK] B", right: "[MOCK] 2" },
+        { left: "[MOCK] C", right: "[MOCK] 3" },
+      ],
     };
   });
   return fake({ title: `[MOCK] Квиз: ${topic}`, questions }, 500);

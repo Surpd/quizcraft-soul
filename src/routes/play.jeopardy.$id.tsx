@@ -399,13 +399,19 @@ function PlayJeopardy() {
                     >
                       <span className="flex-1 truncate font-semibold">{t.name}</span>
                       <button
-                        onClick={() => patchTeam(t.id, { score: t.score - q.points })}
+                        onClick={() => {
+                          patchTeam(t.id, { score: t.score - q.points });
+                          setWrongCounts((prev) => ({ ...prev, [t.id]: (prev[t.id] ?? 0) + 1 }));
+                        }}
                         className="rounded-lg bg-danger/20 px-3 py-1.5 font-bold text-danger"
                       >
                         −{q.points}
                       </button>
                       <button
-                        onClick={() => patchTeam(t.id, { score: t.score + q.points })}
+                        onClick={() => {
+                          patchTeam(t.id, { score: t.score + q.points });
+                          setCorrectCounts((prev) => ({ ...prev, [t.id]: (prev[t.id] ?? 0) + 1 }));
+                        }}
                         className="rounded-lg bg-success/20 px-3 py-1.5 font-bold text-success"
                       >
                         +{q.points}

@@ -237,7 +237,7 @@ function BuilderJeopardy() {
         </button>
       </div>
     ),
-    [rounds],
+    [rounds, config.roundTitles],
   );
 
   const toolbar = (

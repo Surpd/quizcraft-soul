@@ -122,6 +122,7 @@ function PlayQuiz() {
     setCurrent("");
     setFeedback(null);
     startedAt.current = Date.now();
+    savedRef.current = false;
     setPhase("playing");
   };
 

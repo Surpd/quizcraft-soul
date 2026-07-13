@@ -377,6 +377,7 @@ function BuilderMillionaire() {
           key={idx}
           idx={idx}
           q={q}
+          topic={config.title ?? ""}
           onRemove={() => removeQuestion(idx)}
           onPatch={(patch) => patchQuestion(idx, patch)}
           onPatchOption={(oi, patch) => patchOption(idx, oi, patch)}

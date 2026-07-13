@@ -10,7 +10,7 @@ import {
   deleteGame as _deleteGame,
   newId,
 } from "./storage";
-import { saveResult, listResults } from "./results";
+import { saveQuizResult, loadQuizResults } from "./results";
 import type {
   GameKind,
   JeopardyData,

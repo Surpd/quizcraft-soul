@@ -155,13 +155,16 @@ function BuilderJeopardy() {
     const data: JeopardyData = { config, rounds, final };
     saveGame<JeopardyData>("jeopardy", id, data);
     setSavedId(id);
-    showToast("Игра сохранена!");
+    showToast(savedId ? "Изменения сохранены" : "Игра сохранена!");
     return id;
   };
 
-  const openPlayer = () => {
-    const id = handleSave();
-    if (id) window.open(`/play/jeopardy/${id}`, "_blank", "noopener");
+  const handleSaveAsCopy = (): string | null => {
+    const id = newId();
+    saveGame<JeopardyData>("jeopardy", id, { config, rounds, final });
+    setSavedId(id);
+    showToast("Создана копия");
+    return id;
   };
 
   const handleImport = async (file: File) => {

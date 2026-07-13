@@ -479,22 +479,35 @@ function BuilderJeopardy() {
 
       <section id="final-block" className="surface-card space-y-3 border-2 border-amber/30 p-6 scroll-mt-24">
         <h2 className="font-display text-xl font-black text-amber">Финал</h2>
-        <input
-          className="input-base"
-          placeholder="Категория финала"
-          value={final.category}
-          onChange={(e) => setFinal({ ...final, category: e.target.value })}
-        />
-        <textarea
-          rows={2}
-          className="input-base"
-          placeholder="Финальный вопрос"
-          value={final.q}
-          onChange={(e) => setFinal({ ...final, q: e.target.value })}
-        />
+        <div>
+          <input
+            className="input-base"
+            placeholder="Категория финала"
+            maxLength={LIMITS.category}
+            value={final.category}
+            onChange={(e) => setFinal({ ...final, category: e.target.value })}
+          />
+          <div className="mt-1 flex justify-end">
+            <CharCounter value={final.category} max={LIMITS.category} />
+          </div>
+        </div>
+        <div>
+          <textarea
+            rows={2}
+            className="input-base"
+            placeholder="Финальный вопрос"
+            maxLength={LIMITS.question}
+            value={final.q}
+            onChange={(e) => setFinal({ ...final, q: e.target.value })}
+          />
+          <div className="mt-1 flex justify-end">
+            <CharCounter value={final.q} max={LIMITS.question} />
+          </div>
+        </div>
         <input
           className="input-base"
           placeholder="Правильный ответ"
+          maxLength={LIMITS.option}
           value={final.a}
           onChange={(e) => setFinal({ ...final, a: e.target.value })}
         />
@@ -550,6 +563,7 @@ function QuestionModal({
             <textarea
               ref={qRef}
               rows={3}
+              maxLength={LIMITS.question}
               className="input-base pr-10"
               placeholder="Текст вопроса"
               value={q}
@@ -558,11 +572,15 @@ function QuestionModal({
             <div className="absolute right-2 top-2">
               <FormulaButton inputRef={qRef} value={q} onChange={setQ} />
             </div>
+            <div className="mt-1 flex justify-end">
+              <CharCounter value={q} max={LIMITS.question} />
+            </div>
           </div>
           <div className="relative">
             <input
               ref={aRef}
               className="input-base pr-10"
+              maxLength={LIMITS.option}
               placeholder="Ответ"
               value={a}
               onChange={(e) => setA(e.target.value)}

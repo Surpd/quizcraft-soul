@@ -42,6 +42,9 @@ function PlayJeopardy() {
   const [timeLeft, setTimeLeft] = useState(0);
   const [bets, setBets] = useState<Bets>({});
   const [finalAnswers, setFinalAnswers] = useState<Record<string, boolean>>({});
+  const [correctCounts, setCorrectCounts] = useState<Record<string, number>>({});
+  const [wrongCounts, setWrongCounts] = useState<Record<string, number>>({});
+  const savedRef = useRef(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {

@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
   Play,
@@ -36,9 +36,18 @@ export const Route = createFileRoute("/room/$code")({
 
 function TeacherRoom() {
   const { code } = Route.useParams();
+  const navigate = useNavigate();
   const [state, setState] = useState<RoomState | null>(null);
   const [quiz, setQuiz] = useState<QuizData | null>(null);
   const [copied, setCopied] = useState(false);
+
+  // Bug 1.1: если пользователь присоединился как игрок — перенаправить в плеер.
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(`islandquiz.me.${code}`);
+      if (raw) navigate({ to: "/room/$code/play", params: { code }, replace: true });
+    } catch { /* ignore */ }
+  }, [code, navigate]);
 
   useEffect(() => subscribeRoom(code, setState), [code]);
 

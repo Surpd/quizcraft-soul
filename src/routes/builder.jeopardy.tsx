@@ -1,25 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Grid3x3,
   Plus,
   Trash2,
-  FileSpreadsheet,
-  Printer,
-  Upload,
-  Settings2,
   LayoutGrid,
   List,
-  FileText,
   Pencil,
-  Play,
 } from "lucide-react";
 import { BuilderShell } from "@/components/builder-shell";
 import { HelpButton } from "@/components/help-modal";
 import { FormulaButton } from "@/components/formula-popover";
 import { ImageDrop } from "@/lib/image-drop";
 import { ThemeSelect } from "@/components/theme-select";
-import { newId, saveGame } from "@/lib/storage";
+import { newId, saveGame, loadGame } from "@/lib/storage";
+import { BuilderToolbar, BuilderFabs } from "@/components/builder-actions";
 import {
   downloadExcelTemplate,
   exportJeopardyExcel,
@@ -36,6 +31,9 @@ import type {
 } from "@/lib/types";
 
 export const Route = createFileRoute("/builder/jeopardy")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    id: typeof search.id === "string" ? search.id : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Своя игра — конструктор — IslandQuiz" },
@@ -62,6 +60,7 @@ interface ModalTarget {
 }
 
 function BuilderJeopardy() {
+  const { id: urlId } = Route.useSearch();
   const [config, setConfig] = useState<JeopardyConfig>({
     theme: "amber",
     timeBase: 30,
@@ -78,6 +77,25 @@ function BuilderJeopardy() {
   const [toast, setToast] = useState<string | null>(null);
   const [modal, setModal] = useState<ModalTarget | null>(null);
   const [printAnswers, setPrintAnswers] = useState(true);
+  const [loadState, setLoadState] = useState<"idle" | "loading" | "error">(urlId ? "loading" : "idle");
+
+  useEffect(() => {
+    if (!urlId) return;
+    try {
+      const rec = loadGame<JeopardyData>("jeopardy", urlId);
+      if (rec) {
+        setConfig(rec.data.config);
+        setRounds(rec.data.rounds);
+        setFinal(rec.data.final);
+        setSavedId(urlId);
+        setLoadState("idle");
+      } else setLoadState("error");
+    } catch (err) {
+      console.error(err);
+      setLoadState("error");
+    }
+  }, [urlId]);
+
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -137,13 +155,16 @@ function BuilderJeopardy() {
     const data: JeopardyData = { config, rounds, final };
     saveGame<JeopardyData>("jeopardy", id, data);
     setSavedId(id);
-    showToast("Игра сохранена!");
+    showToast(savedId ? "Изменения сохранены" : "Игра сохранена!");
     return id;
   };
 
-  const openPlayer = () => {
-    const id = handleSave();
-    if (id) window.open(`/play/jeopardy/${id}`, "_blank", "noopener");
+  const handleSaveAsCopy = (): string | null => {
+    const id = newId();
+    saveGame<JeopardyData>("jeopardy", id, { config, rounds, final });
+    setSavedId(id);
+    showToast("Создана копия");
+    return id;
   };
 
   const handleImport = async (file: File) => {
@@ -218,7 +239,7 @@ function BuilderJeopardy() {
   );
 
   const toolbar = (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap items-center justify-center gap-2">
       <button
         className="btn-ghost"
         onClick={() => setMode((m) => (m === "list" ? "grid" : "list"))}
@@ -226,36 +247,31 @@ function BuilderJeopardy() {
         {mode === "list" ? <LayoutGrid className="h-4 w-4" /> : <List className="h-4 w-4" />}
         {mode === "list" ? "Плитки" : "Список"}
       </button>
-      <button className="btn-ghost" onClick={() => downloadExcelTemplate("jeopardy")}>
-        <FileText className="h-4 w-4" /> Шаблон Excel
-      </button>
-      <label className="btn-ghost cursor-pointer">
-        <Upload className="h-4 w-4" /> Загрузить Excel
-        <input
-          type="file"
-          accept=".xlsx,.xls"
-          className="hidden"
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            if (f) handleImport(f);
-            e.currentTarget.value = "";
-          }}
-        />
-      </label>
-      <button className="btn-ghost" onClick={() => exportJeopardyExcel({ config, rounds, final })}>
-        <FileSpreadsheet className="h-4 w-4" /> Скачать .xlsx
-      </button>
-      <button className="btn-ghost" onClick={() => printJeopardy({ config, rounds, final }, { withAnswers: printAnswers })}>
-        <Printer className="h-4 w-4" /> Печать {printAnswers ? "с ответами" : "без ответов"}
-      </button>
-      <button className="btn-ghost" onClick={() => setShowSettings((s) => !s)}>
-        <Settings2 className="h-4 w-4" /> Настройки
-      </button>
-      <button className="btn-accent" onClick={openPlayer}>
-        <Play className="h-4 w-4" /> Играть (новая вкладка)
-      </button>
+      <BuilderToolbar
+        kind="jeopardy"
+        onImportFile={handleImport}
+        onDownloadTemplate={() => downloadExcelTemplate("jeopardy")}
+        onExportExcel={() => exportJeopardyExcel({ config, rounds, final })}
+        onPrint={(withAnswers) => printJeopardy({ config, rounds, final }, { withAnswers })}
+        printAnswers={printAnswers}
+        onToggleSettings={() => setShowSettings((s) => !s)}
+      />
     </div>
   );
+
+  if (loadState === "loading") {
+    return <div className="min-h-screen grid place-items-center bg-surface text-muted-foreground">Загружаем игру…</div>;
+  }
+  if (loadState === "error") {
+    return (
+      <div className="min-h-screen grid place-items-center bg-surface p-6 text-center">
+        <div>
+          <h1 className="font-display text-2xl font-bold">Игра не найдена</h1>
+          <a href="/library" className="btn-accent mt-4 inline-flex">В библиотеку</a>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <BuilderShell
@@ -265,15 +281,21 @@ function BuilderJeopardy() {
       toolbar={toolbar}
       sidebar={mode === "list" ? sidebar : undefined}
       theme={config.theme}
-      onSave={openPlayer}
       extraFabs={
-        <HelpButton title="Как пользоваться конструктором Своей игры">
-          <p><b>Раунды и категории:</b> в раунде — несколько категорий, в каждой 5 вопросов разной стоимости. Кнопка «Категория» добавляет колонку, «Добавить раунд» — новый раунд.</p>
-          <p><b>Плитки / Список:</b> переключайте вид кнопкой в тулбаре — плитки удобны для обзора, список — для быстрой правки.</p>
-          <p><b>Финал:</b> отдельный вопрос со ставками команд, отображается ниже раундов.</p>
-          <p><b>Excel:</b> скачайте шаблон, заполните — загрузите обратно. Роль «final» — финальный вопрос.</p>
-          <p><b>Слева — быстрая навигация</b> по раундам и категориям.</p>
-        </HelpButton>
+        <>
+          <BuilderFabs
+            kind="jeopardy"
+            savedId={savedId}
+            onSave={handleSave}
+            onSaveAsCopy={handleSaveAsCopy}
+          />
+          <HelpButton title="Как пользоваться конструктором Своей игры">
+            <p><b>Раунды и категории:</b> в раунде — несколько категорий, в каждой 5 вопросов разной стоимости.</p>
+            <p><b>Плитки / Список:</b> переключайте вид кнопкой в тулбаре.</p>
+            <p><b>Финал:</b> отдельный вопрос со ставками команд.</p>
+            <p><b>Играть:</b> открывает плеер в новой вкладке.</p>
+          </HelpButton>
+        </>
       }
     >
       {showSettings && (

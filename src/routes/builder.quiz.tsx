@@ -1,18 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   FileText,
   Plus,
   Trash2,
-  FileSpreadsheet,
-  Printer,
-  Upload,
-  Settings2,
   Circle,
   CheckCircle2,
   Type as TypeIcon,
   Shuffle,
-  Play,
   BarChart3,
 } from "lucide-react";
 import { BuilderShell } from "@/components/builder-shell";
@@ -20,7 +15,8 @@ import { HelpButton } from "@/components/help-modal";
 import { FormulaButton } from "@/components/formula-popover";
 import { ImageDrop } from "@/lib/image-drop";
 import { ThemeSelect } from "@/components/theme-select";
-import { newId, saveGame } from "@/lib/storage";
+import { newId, saveGame, loadGame } from "@/lib/storage";
+import { BuilderToolbar, BuilderFabs } from "@/components/builder-actions";
 import {
   downloadExcelTemplate,
   exportQuizExcel,
@@ -36,6 +32,9 @@ import type {
 } from "@/lib/types";
 
 export const Route = createFileRoute("/builder/quiz")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    id: typeof search.id === "string" ? search.id : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Конструктор квиза — IslandQuiz" },
@@ -61,6 +60,7 @@ function makeQuestion(type: QuizQuestionType, points = 100, time = 30): QuizQues
 }
 
 function BuilderQuiz() {
+  const { id: urlId } = Route.useSearch();
   const [config, setConfig] = useState<QuizConfig>({
     title: "Новый квиз",
     description: "",
@@ -76,7 +76,27 @@ function BuilderQuiz() {
   const [savedId, setSavedId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [printAnswers, setPrintAnswers] = useState(true);
+  const [loadState, setLoadState] = useState<"idle" | "loading" | "error">(urlId ? "loading" : "idle");
   const listRef = useRef<HTMLDivElement>(null);
+
+  // Bug 1.2: подгружаем сохранённый квиз по ?id=
+  useEffect(() => {
+    if (!urlId) return;
+    try {
+      const rec = loadGame<QuizData>("quiz", urlId);
+      if (rec) {
+        setConfig(rec.data.config);
+        setQuestions(rec.data.questions);
+        setSavedId(urlId);
+        setLoadState("idle");
+      } else {
+        setLoadState("error");
+      }
+    } catch (err) {
+      console.error(err);
+      setLoadState("error");
+    }
+  }, [urlId]);
 
   const addQuestion = (type: QuizQuestionType) => {
     const q = makeQuestion(type, 100, config.defaultTime);
@@ -99,21 +119,34 @@ function BuilderQuiz() {
     setTimeout(() => setToast(null), 2500);
   };
 
-  const handleSave = (): string | null => {
+  const validate = (): boolean => {
     if (questions.some((q) => !q.q.trim())) {
       showToast("Заполните текст всех вопросов");
-      return null;
+      return false;
     }
+    return true;
+  };
+
+  // Bug 1.3: если есть savedId — обновляем, иначе создаём.
+  const handleSave = (): string | null => {
+    if (!validate()) return null;
     const id = savedId ?? newId();
     saveGame<QuizData>("quiz", id, { config, questions });
     setSavedId(id);
-    showToast("Квиз сохранён!");
+    showToast(savedId ? "Изменения сохранены" : "Квиз сохранён!");
     return id;
   };
 
-  const openPlayer = () => {
-    const id = handleSave();
-    if (id) window.open(`/play/quiz/${id}`, "_blank", "noopener");
+  const handleSaveAsCopy = (): string | null => {
+    if (!validate()) return null;
+    const id = newId();
+    saveGame<QuizData>("quiz", id, {
+      config: { ...config, title: `${config.title} (копия)` },
+      questions,
+    });
+    setSavedId(id);
+    showToast("Создана копия квиза");
+    return id;
   };
 
   const openResults = () => {
@@ -177,40 +210,40 @@ function BuilderQuiz() {
   );
 
   const toolbar = (
-    <div className="flex flex-wrap gap-2">
-      <button className="btn-ghost" onClick={() => downloadExcelTemplate("quiz")}>
-        <FileText className="h-4 w-4" /> Шаблон Excel
-      </button>
-      <label className="btn-ghost cursor-pointer">
-        <Upload className="h-4 w-4" /> Загрузить Excel
-        <input
-          type="file"
-          accept=".xlsx,.xls"
-          className="hidden"
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            if (f) handleImport(f);
-            e.currentTarget.value = "";
-          }}
-        />
-      </label>
-      <button className="btn-ghost" onClick={() => exportQuizExcel({ config, questions })}>
-        <FileSpreadsheet className="h-4 w-4" /> Скачать .xlsx
-      </button>
-      <button className="btn-ghost" onClick={() => printQuiz({ config, questions }, { withAnswers: printAnswers })}>
-        <Printer className="h-4 w-4" /> Печать {printAnswers ? "с ответами" : "без ответов"}
-      </button>
+    <div className="flex flex-wrap items-center justify-center gap-2">
+      <BuilderToolbar
+        kind="quiz"
+        onImportFile={handleImport}
+        onDownloadTemplate={() => downloadExcelTemplate("quiz")}
+        onExportExcel={() => exportQuizExcel({ config, questions })}
+        onPrint={(withAnswers) => printQuiz({ config, questions }, { withAnswers })}
+        printAnswers={printAnswers}
+        onToggleSettings={() => setShowSettings((s) => !s)}
+      />
       <button className="btn-ghost" onClick={openResults}>
         <BarChart3 className="h-4 w-4" /> Результаты
       </button>
-      <button className="btn-ghost" onClick={() => setShowSettings((s) => !s)}>
-        <Settings2 className="h-4 w-4" /> Настройки
-      </button>
-      <button className="btn-accent" onClick={openPlayer}>
-        <Play className="h-4 w-4" /> Играть (новая вкладка)
-      </button>
     </div>
   );
+
+  if (loadState === "loading") {
+    return (
+      <div className="min-h-screen grid place-items-center bg-surface text-muted-foreground">
+        Загружаем квиз…
+      </div>
+    );
+  }
+  if (loadState === "error") {
+    return (
+      <div className="min-h-screen grid place-items-center bg-surface p-6 text-center">
+        <div>
+          <h1 className="font-display text-2xl font-bold">Квиз не найден</h1>
+          <p className="mt-2 text-sm text-muted-foreground">Возможно, он был удалён.</p>
+          <a href="/library" className="btn-accent mt-4 inline-flex">В библиотеку</a>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <BuilderShell
@@ -220,16 +253,22 @@ function BuilderQuiz() {
       toolbar={toolbar}
       sidebar={sidebar}
       theme={config.theme}
-      onSave={openPlayer}
       extraFabs={
-        <HelpButton title="Как пользоваться конструктором квиза">
-          <p><b>Типы вопросов:</b> ABCD — 4 варианта, отметьте верный кликом по букве. Да/Нет — простой бинарный вопрос. Текст — принимаются несколько вариантов через запятую. Пары — сопоставление левого и правого списка.</p>
-          <p><b>Картинка:</b> перетащите файл в зону или вставьте URL.</p>
-          <p><b>Тема плеера:</b> в «Настройки» → выбираете тему; конструктор сразу подсветит её акцентом.</p>
-          <p><b>Панель слева:</b> клик по номеру — переход к вопросу. Клик «+ …» — добавить новый.</p>
-          <p><b>Ссылки:</b> «Играть» и «Результаты» открываются в новой вкладке.</p>
-          <p><b>Excel:</b> скачайте шаблон, заполните — загрузите обратно кнопкой «Загрузить Excel».</p>
-        </HelpButton>
+        <>
+          <BuilderFabs
+            kind="quiz"
+            savedId={savedId}
+            onSave={handleSave}
+            onSaveAsCopy={handleSaveAsCopy}
+          />
+          <HelpButton title="Как пользоваться конструктором квиза">
+            <p><b>Типы вопросов:</b> ABCD — 4 варианта, отметьте верный кликом по букве. Да/Нет — простой бинарный вопрос. Текст — принимаются несколько вариантов через запятую. Пары — сопоставление левого и правого списка.</p>
+            <p><b>Картинка:</b> перетащите файл в зону или вставьте URL.</p>
+            <p><b>Тема плеера:</b> в «Настройки» → выбираете тему; конструктор сразу подсветит её акцентом.</p>
+            <p><b>Панель слева:</b> клик по номеру — переход к вопросу. Клик «+ …» — добавить новый.</p>
+            <p><b>Играть:</b> для квиза — выбор между онлайн-комнатой и офлайн-режимом с QR.</p>
+          </HelpButton>
+        </>
       }
     >
       {showSettings && (

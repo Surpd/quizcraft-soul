@@ -1,22 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useRef, useState } from "react";
-import {
-  Coins,
-  Plus,
-  Trash2,
-  FileSpreadsheet,
-  Upload,
-  Settings2,
-  Printer,
-  FileText,
-  Play,
-} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Coins, Plus, Trash2 } from "lucide-react";
 import { BuilderShell } from "@/components/builder-shell";
 import { HelpButton } from "@/components/help-modal";
 import { ImageDrop } from "@/lib/image-drop";
 import { ThemeSelect } from "@/components/theme-select";
 import { FormulaButton } from "@/components/formula-popover";
-import { newId, saveGame } from "@/lib/storage";
+import { newId, saveGame, loadGame } from "@/lib/storage";
+import { BuilderToolbar, BuilderFabs } from "@/components/builder-actions";
 import {
   downloadExcelTemplate,
   exportMillionaireExcel,
@@ -34,6 +25,9 @@ import type {
 } from "@/lib/types";
 
 export const Route = createFileRoute("/builder/millionaire")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    id: typeof search.id === "string" ? search.id : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Миллионер — конструктор — IslandQuiz" },
@@ -64,6 +58,7 @@ function makeQuestion(money: number): MillionaireQuestion {
 }
 
 function BuilderMillionaire() {
+  const { id: urlId } = Route.useSearch();
   const [config, setConfig] = useState<MillionaireConfig>({
     theme: "amber",
     timePerQuestion: 30,
@@ -78,6 +73,23 @@ function BuilderMillionaire() {
   const [savedId, setSavedId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [printAnswers, setPrintAnswers] = useState(true);
+  const [loadState, setLoadState] = useState<"idle" | "loading" | "error">(urlId ? "loading" : "idle");
+
+  useEffect(() => {
+    if (!urlId) return;
+    try {
+      const rec = loadGame<MillionaireData>("millionaire", urlId);
+      if (rec) {
+        setConfig(rec.data.config);
+        setQuestions(rec.data.questions);
+        setSavedId(urlId);
+        setLoadState("idle");
+      } else setLoadState("error");
+    } catch (err) {
+      console.error(err);
+      setLoadState("error");
+    }
+  }, [urlId]);
 
   const moneyForIndex = (idx: number, scale: MoneyScale, mode: PointsMode): number => {
     const base = LADDERS[scale][idx] ?? LADDERS[scale].at(-1)!;
@@ -138,21 +150,30 @@ function BuilderMillionaire() {
     });
   };
 
-  const handleSave = (): string | null => {
+  const validate = (): boolean => {
     if (questions.some((q) => !q.q.trim() || !q.options.some((o) => o.correct && o.text.trim()))) {
       showToast("В каждом вопросе укажите текст и верный ответ");
-      return null;
+      return false;
     }
+    return true;
+  };
+
+  const handleSave = (): string | null => {
+    if (!validate()) return null;
     const id = savedId ?? newId();
     saveGame<MillionaireData>("millionaire", id, { config, questions });
     setSavedId(id);
-    showToast("Игра сохранена!");
+    showToast(savedId ? "Изменения сохранены" : "Игра сохранена!");
     return id;
   };
 
-  const openPlayer = () => {
-    const id = handleSave();
-    if (id) window.open(`/play/millionaire/${id}`, "_blank", "noopener");
+  const handleSaveAsCopy = (): string | null => {
+    if (!validate()) return null;
+    const id = newId();
+    saveGame<MillionaireData>("millionaire", id, { config, questions });
+    setSavedId(id);
+    showToast("Создана копия");
+    return id;
   };
 
   const handleImport = async (file: File) => {
@@ -206,37 +227,30 @@ function BuilderMillionaire() {
   );
 
   const toolbar = (
-    <div className="flex flex-wrap gap-2">
-      <button className="btn-ghost" onClick={() => downloadExcelTemplate("millionaire")}>
-        <FileText className="h-4 w-4" /> Шаблон Excel
-      </button>
-      <label className="btn-ghost cursor-pointer">
-        <Upload className="h-4 w-4" /> Загрузить Excel
-        <input
-          type="file"
-          accept=".xlsx,.xls"
-          className="hidden"
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            if (f) handleImport(f);
-            e.currentTarget.value = "";
-          }}
-        />
-      </label>
-      <button className="btn-ghost" onClick={() => exportMillionaireExcel({ config, questions })}>
-        <FileSpreadsheet className="h-4 w-4" /> Скачать .xlsx
-      </button>
-      <button className="btn-ghost" onClick={() => printMillionaire({ config, questions }, { withAnswers: printAnswers })}>
-        <Printer className="h-4 w-4" /> Печать {printAnswers ? "с ответами" : "без ответов"}
-      </button>
-      <button className="btn-ghost" onClick={() => setShowSettings((s) => !s)}>
-        <Settings2 className="h-4 w-4" /> Настройки
-      </button>
-      <button className="btn-accent" onClick={openPlayer}>
-        <Play className="h-4 w-4" /> Играть (новая вкладка)
-      </button>
-    </div>
+    <BuilderToolbar
+      kind="millionaire"
+      onImportFile={handleImport}
+      onDownloadTemplate={() => downloadExcelTemplate("millionaire")}
+      onExportExcel={() => exportMillionaireExcel({ config, questions })}
+      onPrint={(withAnswers) => printMillionaire({ config, questions }, { withAnswers })}
+      printAnswers={printAnswers}
+      onToggleSettings={() => setShowSettings((s) => !s)}
+    />
   );
+
+  if (loadState === "loading") {
+    return <div className="min-h-screen grid place-items-center bg-surface text-muted-foreground">Загружаем игру…</div>;
+  }
+  if (loadState === "error") {
+    return (
+      <div className="min-h-screen grid place-items-center bg-surface p-6 text-center">
+        <div>
+          <h1 className="font-display text-2xl font-bold">Игра не найдена</h1>
+          <a href="/library" className="btn-accent mt-4 inline-flex">В библиотеку</a>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <BuilderShell
@@ -246,15 +260,21 @@ function BuilderMillionaire() {
       toolbar={toolbar}
       sidebar={sidebar}
       theme={config.theme}
-      onSave={openPlayer}
       extraFabs={
-        <HelpButton title="Как пользоваться конструктором «Миллионера»">
-          <p><b>Лестница:</b> 15 вопросов от лёгких к сложным. Сумма растёт по выбранной шкале (Лёгкая / Средняя / Хард).</p>
-          <p><b>Верный ответ:</b> кликните по букве A/B/C/D — она станет зелёной.</p>
-          <p><b>Несгораемые:</b> в настройках — «Классика» (2 точки), «Три точки» или «Без».</p>
-          <p><b>Слева</b> — быстрая навигация по всем 15 вопросам; зелёный значок = вопрос готов.</p>
-          <p><b>Excel:</b> шаблон включает колонки money, question, a, b, c, d, correct (буква).</p>
-        </HelpButton>
+        <>
+          <BuilderFabs
+            kind="millionaire"
+            savedId={savedId}
+            onSave={handleSave}
+            onSaveAsCopy={handleSaveAsCopy}
+          />
+          <HelpButton title="Как пользоваться конструктором «Миллионера»">
+            <p><b>Лестница:</b> 15 вопросов от лёгких к сложным. Сумма растёт по выбранной шкале.</p>
+            <p><b>Верный ответ:</b> кликните по букве A/B/C/D — она станет зелёной.</p>
+            <p><b>Несгораемые:</b> в настройках — «Классика», «Три точки» или «Без».</p>
+            <p><b>Играть:</b> открывает плеер в новой вкладке.</p>
+          </HelpButton>
+        </>
       }
     >
       {showSettings && (

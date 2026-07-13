@@ -18,6 +18,7 @@ export function saveGame<T>(kind: GameKind, id: string, data: T): StoredGame<T> 
   if (typeof window === "undefined") return record;
   try {
     localStorage.setItem(key(kind, id), JSON.stringify(record));
+    cleanupInvalidGames();
   } catch (err) {
     console.error("Failed to save game", err);
   }

@@ -13,31 +13,28 @@ export function SiteHeader({ compact = false }: { compact?: boolean }) {
           </div>
           <span className="font-display text-lg font-bold tracking-tight">IslandQuiz</span>
         </Link>
-        <nav className="hidden gap-8 md:flex">
-          <Link
-            to="/builder/quiz"
-            className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-          >
+        <nav className="hidden gap-6 md:flex">
+          <Link to="/library" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
+            Библиотека
+          </Link>
+          <Link to="/builder/quiz" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
             Квиз
           </Link>
-          <Link
-            to="/builder/jeopardy"
-            className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-          >
+          <Link to="/builder/jeopardy" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
             Своя игра
           </Link>
-          <Link
-            to="/builder/millionaire"
-            className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-          >
+          <Link to="/builder/millionaire" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
             Миллионер
+          </Link>
+          <Link to="/join" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
+            Присоединиться
           </Link>
         </nav>
         <Link
-          to="/builder/quiz"
+          to="/library"
           className="rounded-full bg-foreground px-4 py-2 text-sm font-semibold text-white transition-transform hover:scale-105 active:scale-95"
         >
-          Создать
+          Мои квизы
         </Link>
       </div>
     </header>

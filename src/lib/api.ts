@@ -84,6 +84,30 @@ export async function submitResult(payload: Parameters<typeof saveQuizResult>[0]
   return fake({ ok: true });
 }
 
+// ---------- Jeopardy results ----------
+// TODO(server): заменить на GET /api/jeopardy/:gameId/results
+export async function getJeopardyResults(gameId: string): Promise<JeopardyResult[]> {
+  return fake(loadJeopardyResults(gameId));
+}
+
+// TODO(server): заменить на GET /api/jeopardy/:gameId/results/:resultId
+export async function getJeopardyGameDetail(
+  gameId: string,
+  resultId: string,
+): Promise<JeopardyResult | null> {
+  const all = loadJeopardyResults(gameId);
+  return fake(all.find((r) => r.id === resultId) ?? null);
+}
+
+// TODO(server): заменить на POST /api/jeopardy/:gameId/results
+export async function submitJeopardyResult(
+  payload: Parameters<typeof saveJeopardyResult>[0],
+) {
+  const rec = saveJeopardyResult(payload);
+  return fake({ ok: true, id: rec.id });
+}
+
+
 // ---------- Online rooms (Sync Mode, TZ §3) ----------
 // Хранение: localStorage + BroadcastChannel("islandquiz.room.<code>").
 // Заменяется на WebSocket без изменения UI.

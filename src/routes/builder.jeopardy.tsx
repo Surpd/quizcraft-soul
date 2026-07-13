@@ -657,7 +657,7 @@ function QuestionModal({
                 currentValue={a}
                 topic={topic}
                 format="jeopardy-answer"
-                onPick={setA}
+                onPick={(v) => setA(v.correctAnswer ?? v.question)}
               />
               <FormulaButton inputRef={aRef} value={a} onChange={setA} />
             </div>

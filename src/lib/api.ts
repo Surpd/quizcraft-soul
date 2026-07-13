@@ -328,8 +328,10 @@ export async function listRooms() {
 export interface GeneratedQuestion {
   difficulty: "easy" | "medium" | "hard";
   question: string;
-  options: string[];
-  correct: number | boolean;
+  options?: string[];
+  correct?: number | boolean;
+  correctAnswer?: string;
+  pairs?: { left: string; right: string }[];
 }
 
 export interface GeneratedQuizQuestion {

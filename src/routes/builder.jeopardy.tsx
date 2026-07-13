@@ -464,6 +464,20 @@ function BuilderJeopardy() {
                         <CharCounter value={cat.category} max={LIMITS.category} />
                       </div>
                     </div>
+                    <div className="flex h-10 items-center">
+                      <AIJeopardyCategoryButton
+                        categoryName={cat.category}
+                        gameTopic={config.title}
+                        emptySlots={cat.questions.filter((q) => !q.q.trim()).map((q) => q.points)}
+                        onPickCategory={(name) => updateCategory(ri, ci, { category: name })}
+                        onFillQuestions={(items) => {
+                          items.forEach((it) => {
+                            const qi = cat.questions.findIndex((q) => q.points === it.points && !q.q.trim());
+                            if (qi >= 0) updateQuestion(ri, ci, qi, { q: it.q, a: it.a });
+                          });
+                        }}
+                      />
+                    </div>
                     <button
                       onClick={() => removeCategory(ri, ci)}
                       className="h-10 rounded-lg p-2 text-muted-foreground hover:bg-danger-soft hover:text-danger"

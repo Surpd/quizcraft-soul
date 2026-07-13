@@ -368,8 +368,19 @@ function BuilderJeopardy() {
 
       {rounds.map((round, ri) => (
         <section key={ri} id={`round-${ri}`} className="surface-card space-y-4 p-6 scroll-mt-24">
-          <div className="flex items-center justify-between">
-            <h2 className="font-display text-xl font-black text-primary">Раунд {ri + 1}</h2>
+          <div className="flex items-center gap-2">
+            <input
+              className="input-base flex-1 font-display text-xl font-black text-primary"
+              placeholder={`Раунд ${ri + 1}`}
+              maxLength={LIMITS.title}
+              value={config.roundTitles?.[ri] ?? ""}
+              onChange={(e) => {
+                const next = [...(config.roundTitles ?? [])];
+                while (next.length < rounds.length) next.push("");
+                next[ri] = e.target.value;
+                setConfig({ ...config, roundTitles: next });
+              }}
+            />
             {rounds.length > 1 && (
               <button
                 onClick={() => removeRound(ri)}
@@ -380,6 +391,7 @@ function BuilderJeopardy() {
               </button>
             )}
           </div>
+
 
           {mode === "grid" ? (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

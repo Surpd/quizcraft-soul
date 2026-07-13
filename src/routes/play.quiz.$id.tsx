@@ -57,6 +57,7 @@ function checkAnswer(q: QuizQuestion, given: string): boolean {
 function PlayQuiz() {
   const { id } = Route.useParams();
   const [stored, setStored] = useState<QuizData | null>(null);
+  const [loading, setLoading] = useState(true);
   const [phase, setPhase] = useState<"start" | "playing" | "done">("start");
   const [name, setName] = useState("");
   const [order, setOrder] = useState<number[]>([]);
@@ -66,10 +67,12 @@ function PlayQuiz() {
   const [current, setCurrent] = useState<string>("");
   const [feedback, setFeedback] = useState<"correct" | "wrong" | null>(null);
   const startedAt = useRef<number>(0);
+  const savedRef = useRef(false);
 
   useEffect(() => {
     const g = loadGame<QuizData>("quiz", id);
     if (g) setStored(g.data);
+    setLoading(false);
   }, [id]);
 
   const config = stored?.config;

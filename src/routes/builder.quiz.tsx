@@ -213,8 +213,68 @@ function BuilderQuiz() {
     </div>
   );
 
+  const applyGeneratedQuiz = (result: { title: string; questions: import("@/lib/api").GeneratedQuizQuestion[] }) => {
+    const next: QuizQuestion[] = result.questions.map((g) => {
+      if (g.type === "choice") {
+        const opts = g.options ?? ["", "", "", ""];
+        const correctIdx = typeof g.correct === "number" ? g.correct : 0;
+        return {
+          id: newId(),
+          type: "choice",
+          q: g.question,
+          image: "",
+          options: opts,
+          answer: opts[correctIdx] ?? opts[0] ?? "",
+          points: 100,
+          time: config.defaultTime,
+        };
+      }
+      if (g.type === "bool") {
+        return {
+          id: newId(),
+          type: "bool",
+          q: g.question,
+          image: "",
+          options: [],
+          answer: g.correct === true ? "true" : "false",
+          points: 100,
+          time: config.defaultTime,
+        };
+      }
+      if (g.type === "text") {
+        return {
+          id: newId(),
+          type: "text",
+          q: g.question,
+          image: "",
+          options: [],
+          answer: g.correctAnswer ?? "",
+          points: 100,
+          time: config.defaultTime,
+        };
+      }
+      // matching
+      return {
+        id: newId(),
+        type: "matching",
+        q: g.question,
+        image: "",
+        options: [],
+        answer: JSON.stringify(g.pairs ?? [{ left: "", right: "" }]),
+        points: 100,
+        time: config.defaultTime,
+      };
+    });
+    setQuestions(next);
+    if (!config.title.trim() || config.title === "Новый квиз") {
+      setConfig({ ...config, title: result.title });
+    }
+    showToast(`AI сгенерировал вопросов: ${next.length}`);
+  };
+
   const toolbar = (
     <div className="flex flex-wrap items-center justify-center gap-2">
+      <AIGenerateQuizButton currentTitle={config.title} onGenerated={applyGeneratedQuiz} />
       <BuilderToolbar
         kind="quiz"
         onImportFile={handleImport}

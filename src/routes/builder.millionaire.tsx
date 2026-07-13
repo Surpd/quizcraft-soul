@@ -6,6 +6,7 @@ import { HelpButton } from "@/components/help-modal";
 import { ImageDrop } from "@/lib/image-drop";
 import { ThemeSelect } from "@/components/theme-select";
 import { FormulaButton } from "@/components/formula-popover";
+import { AIHelperButton } from "@/components/ai-helper";
 import { CharCounter } from "@/components/char-counter";
 import { LIMITS } from "@/lib/limits";
 import { newId, saveGame, loadGame } from "@/lib/storage";

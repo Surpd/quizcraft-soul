@@ -1,25 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Grid3x3,
   Plus,
   Trash2,
-  FileSpreadsheet,
-  Printer,
-  Upload,
-  Settings2,
   LayoutGrid,
   List,
-  FileText,
   Pencil,
-  Play,
 } from "lucide-react";
 import { BuilderShell } from "@/components/builder-shell";
 import { HelpButton } from "@/components/help-modal";
 import { FormulaButton } from "@/components/formula-popover";
 import { ImageDrop } from "@/lib/image-drop";
 import { ThemeSelect } from "@/components/theme-select";
-import { newId, saveGame } from "@/lib/storage";
+import { newId, saveGame, loadGame } from "@/lib/storage";
+import { BuilderToolbar, BuilderFabs } from "@/components/builder-actions";
 import {
   downloadExcelTemplate,
   exportJeopardyExcel,
@@ -36,6 +31,9 @@ import type {
 } from "@/lib/types";
 
 export const Route = createFileRoute("/builder/jeopardy")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    id: typeof search.id === "string" ? search.id : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Своя игра — конструктор — IslandQuiz" },

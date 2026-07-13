@@ -66,6 +66,12 @@ function Home() {
             <a href="#features" className="text-sm font-medium text-muted-foreground hover:text-primary">
               Возможности
             </a>
+            <Link to="/library" className="text-sm font-medium text-muted-foreground hover:text-primary">
+              Библиотека
+            </Link>
+            <Link to="/join" className="text-sm font-medium text-muted-foreground hover:text-primary">
+              Присоединиться
+            </Link>
           </nav>
           <div className="flex items-center gap-4">
             <Link to="/builder/quiz" className="btn-primary">

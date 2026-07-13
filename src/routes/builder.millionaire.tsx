@@ -6,6 +6,8 @@ import { HelpButton } from "@/components/help-modal";
 import { ImageDrop } from "@/lib/image-drop";
 import { ThemeSelect } from "@/components/theme-select";
 import { FormulaButton } from "@/components/formula-popover";
+import { CharCounter } from "@/components/char-counter";
+import { LIMITS } from "@/lib/limits";
 import { newId, saveGame, loadGame } from "@/lib/storage";
 import { BuilderToolbar, BuilderFabs } from "@/components/builder-actions";
 import {
@@ -412,6 +414,7 @@ function MillionaireQuestionCard({
         <textarea
           ref={qRef}
           rows={2}
+          maxLength={LIMITS.question}
           className="input-base pr-10"
           placeholder="Текст вопроса..."
           value={q.q}
@@ -419,6 +422,9 @@ function MillionaireQuestionCard({
         />
         <div className="absolute right-2 top-2">
           <FormulaButton inputRef={qRef} value={q.q} onChange={(v) => onPatch({ q: v })} />
+        </div>
+        <div className="mt-1 flex justify-end">
+          <CharCounter value={q.q} max={LIMITS.question} />
         </div>
       </div>
       <ImageDrop value={q.image} onChange={(image) => onPatch({ image })} />
@@ -442,11 +448,15 @@ function MillionaireQuestionCard({
                 ref={(el) => {
                   optRefs.current[oi] = el;
                 }}
-                className="input-base pr-10"
+                className="input-base pr-16"
+                maxLength={LIMITS.option}
                 placeholder={`Вариант ${String.fromCharCode(65 + oi)}`}
                 value={opt.text}
                 onChange={(e) => onPatchOption(oi, { text: e.target.value })}
               />
+              <div className="pointer-events-none absolute right-9 top-1/2 -translate-y-1/2">
+                <CharCounter value={opt.text} max={LIMITS.option} />
+              </div>
               <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
                 <FormulaButton
                   inputRef={{ current: optRefs.current[oi] } as React.RefObject<HTMLInputElement | null>}

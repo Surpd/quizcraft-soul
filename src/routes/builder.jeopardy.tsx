@@ -11,6 +11,8 @@ import {
 import { BuilderShell } from "@/components/builder-shell";
 import { HelpButton } from "@/components/help-modal";
 import { FormulaButton } from "@/components/formula-popover";
+import { CharCounter } from "@/components/char-counter";
+import { LIMITS } from "@/lib/limits";
 import { ImageDrop } from "@/lib/image-drop";
 import { ThemeSelect } from "@/components/theme-select";
 import { newId, saveGame, loadGame } from "@/lib/storage";
@@ -368,11 +370,15 @@ function BuilderJeopardy() {
               {round.map((cat, ci) => (
                 <div key={ci} id={`cat-${ri}-${ci}`} className="rounded-2xl border border-border bg-surface-muted p-3">
                   <input
-                    className="input-base mb-2 bg-white text-center font-bold"
+                    className="input-base mb-1 bg-white text-center font-bold"
                     placeholder={`Категория ${ci + 1}`}
+                    maxLength={LIMITS.category}
                     value={cat.category}
                     onChange={(e) => updateCategory(ri, ci, { category: e.target.value })}
                   />
+                  <div className="mb-2 flex justify-end">
+                    <CharCounter value={cat.category} max={LIMITS.category} />
+                  </div>
                   <div className="grid grid-rows-5 gap-1">
                     {cat.questions.map((q, qi) => (
                       <button
@@ -402,15 +408,21 @@ function BuilderJeopardy() {
               {round.map((cat, ci) => (
                 <div key={ci} id={`cat-${ri}-${ci}`} className="rounded-2xl border border-border p-4 scroll-mt-24">
                   <div className="mb-3 flex gap-2">
-                    <input
-                      className="input-base font-bold"
-                      placeholder={`Категория ${ci + 1}`}
-                      value={cat.category}
-                      onChange={(e) => updateCategory(ri, ci, { category: e.target.value })}
-                    />
+                    <div className="flex-1">
+                      <input
+                        className="input-base font-bold"
+                        placeholder={`Категория ${ci + 1}`}
+                        maxLength={LIMITS.category}
+                        value={cat.category}
+                        onChange={(e) => updateCategory(ri, ci, { category: e.target.value })}
+                      />
+                      <div className="mt-1 flex justify-end">
+                        <CharCounter value={cat.category} max={LIMITS.category} />
+                      </div>
+                    </div>
                     <button
                       onClick={() => removeCategory(ri, ci)}
-                      className="rounded-lg p-2 text-muted-foreground hover:bg-danger-soft hover:text-danger"
+                      className="h-10 rounded-lg p-2 text-muted-foreground hover:bg-danger-soft hover:text-danger"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -421,15 +433,22 @@ function BuilderJeopardy() {
                         <span className="grid h-10 w-16 flex-shrink-0 place-items-center rounded-lg bg-primary font-bold text-primary-foreground">
                           {q.points}
                         </span>
-                        <input
-                          className="input-base flex-1"
-                          placeholder="Вопрос"
-                          value={q.q}
-                          onChange={(e) => updateQuestion(ri, ci, qi, { q: e.target.value })}
-                        />
+                        <div className="flex-1">
+                          <input
+                            className="input-base"
+                            placeholder="Вопрос"
+                            maxLength={LIMITS.question}
+                            value={q.q}
+                            onChange={(e) => updateQuestion(ri, ci, qi, { q: e.target.value })}
+                          />
+                          <div className="mt-0.5 flex justify-end">
+                            <CharCounter value={q.q} max={LIMITS.question} />
+                          </div>
+                        </div>
                         <input
                           className="input-base flex-1"
                           placeholder="Ответ"
+                          maxLength={LIMITS.option}
                           value={q.a}
                           onChange={(e) => updateQuestion(ri, ci, qi, { a: e.target.value })}
                         />
@@ -460,22 +479,35 @@ function BuilderJeopardy() {
 
       <section id="final-block" className="surface-card space-y-3 border-2 border-amber/30 p-6 scroll-mt-24">
         <h2 className="font-display text-xl font-black text-amber">Финал</h2>
-        <input
-          className="input-base"
-          placeholder="Категория финала"
-          value={final.category}
-          onChange={(e) => setFinal({ ...final, category: e.target.value })}
-        />
-        <textarea
-          rows={2}
-          className="input-base"
-          placeholder="Финальный вопрос"
-          value={final.q}
-          onChange={(e) => setFinal({ ...final, q: e.target.value })}
-        />
+        <div>
+          <input
+            className="input-base"
+            placeholder="Категория финала"
+            maxLength={LIMITS.category}
+            value={final.category}
+            onChange={(e) => setFinal({ ...final, category: e.target.value })}
+          />
+          <div className="mt-1 flex justify-end">
+            <CharCounter value={final.category} max={LIMITS.category} />
+          </div>
+        </div>
+        <div>
+          <textarea
+            rows={2}
+            className="input-base"
+            placeholder="Финальный вопрос"
+            maxLength={LIMITS.question}
+            value={final.q}
+            onChange={(e) => setFinal({ ...final, q: e.target.value })}
+          />
+          <div className="mt-1 flex justify-end">
+            <CharCounter value={final.q} max={LIMITS.question} />
+          </div>
+        </div>
         <input
           className="input-base"
           placeholder="Правильный ответ"
+          maxLength={LIMITS.option}
           value={final.a}
           onChange={(e) => setFinal({ ...final, a: e.target.value })}
         />
@@ -531,6 +563,7 @@ function QuestionModal({
             <textarea
               ref={qRef}
               rows={3}
+              maxLength={LIMITS.question}
               className="input-base pr-10"
               placeholder="Текст вопроса"
               value={q}
@@ -539,11 +572,15 @@ function QuestionModal({
             <div className="absolute right-2 top-2">
               <FormulaButton inputRef={qRef} value={q} onChange={setQ} />
             </div>
+            <div className="mt-1 flex justify-end">
+              <CharCounter value={q} max={LIMITS.question} />
+            </div>
           </div>
           <div className="relative">
             <input
               ref={aRef}
               className="input-base pr-10"
+              maxLength={LIMITS.option}
               placeholder="Ответ"
               value={a}
               onChange={(e) => setA(e.target.value)}

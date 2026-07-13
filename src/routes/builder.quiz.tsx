@@ -13,6 +13,8 @@ import {
 import { BuilderShell } from "@/components/builder-shell";
 import { HelpButton } from "@/components/help-modal";
 import { FormulaButton } from "@/components/formula-popover";
+import { CharCounter } from "@/components/char-counter";
+import { LIMITS } from "@/lib/limits";
 import { ImageDrop } from "@/lib/image-drop";
 import { ThemeSelect } from "@/components/theme-select";
 import { newId, saveGame, loadGame } from "@/lib/storage";
@@ -276,17 +278,25 @@ function BuilderQuiz() {
           <h3 className="font-display font-bold">Настройки квиза</h3>
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="block sm:col-span-2">
-              <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">Название</span>
+              <span className="mb-1.5 flex items-center justify-between text-xs font-semibold text-muted-foreground">
+                Название
+                <CharCounter value={config.title} max={LIMITS.title} />
+              </span>
               <input
                 className="input-base"
+                maxLength={LIMITS.title}
                 value={config.title}
                 onChange={(e) => setConfig({ ...config, title: e.target.value })}
               />
             </label>
             <label className="block sm:col-span-2">
-              <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">Описание</span>
+              <span className="mb-1.5 flex items-center justify-between text-xs font-semibold text-muted-foreground">
+                Описание
+                <CharCounter value={config.description} max={LIMITS.question} />
+              </span>
               <input
                 className="input-base"
+                maxLength={LIMITS.question}
                 value={config.description}
                 onChange={(e) => setConfig({ ...config, description: e.target.value })}
               />
@@ -425,6 +435,7 @@ function QuestionCard({
         <textarea
           ref={qRef}
           rows={2}
+          maxLength={LIMITS.question}
           className="input-base pr-10"
           placeholder="Текст вопроса... (можно \\(x^2\\))"
           value={question.q}
@@ -432,6 +443,9 @@ function QuestionCard({
         />
         <div className="absolute right-2 top-2">
           <FormulaButton inputRef={qRef} value={question.q} onChange={(v) => onPatch({ q: v })} />
+        </div>
+        <div className="mt-1 flex justify-end">
+          <CharCounter value={question.q} max={LIMITS.question} />
         </div>
       </div>
 
@@ -458,7 +472,8 @@ function QuestionCard({
                   ref={(el) => {
                     optRefs.current[i] = el;
                   }}
-                  className="input-base pr-10"
+                  className="input-base pr-16"
+                  maxLength={LIMITS.option}
                   placeholder={`Вариант ${String.fromCharCode(65 + i)}`}
                   value={opt}
                   onChange={(e) => {
@@ -469,6 +484,9 @@ function QuestionCard({
                     onPatch({ options, answer });
                   }}
                 />
+                <div className="pointer-events-none absolute right-9 top-1/2 -translate-y-1/2">
+                  <CharCounter value={opt} max={LIMITS.option} />
+                </div>
                 <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
                   <FormulaButton
                     inputRef={{ current: optRefs.current[i] } as React.RefObject<HTMLInputElement | null>}

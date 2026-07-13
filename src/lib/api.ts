@@ -239,7 +239,6 @@ export async function startRoom(code: string) {
 export async function revealAnswer(code: string) {
   const s = readRoom(code); if (!s) return fake(null);
   s.status = "reveal";
-  // fastest badge
   const answered = s.players.filter((p) => p.lastAnswer?.questionIdx === s.questionIdx && p.lastAnswer.correct);
   const fastest = answered.sort((a, b) => (a.lastAnswer!.timeMs - b.lastAnswer!.timeMs))[0];
   s.fastestPlayerId = fastest?.id;
@@ -286,7 +285,6 @@ export async function submitAnswer(
   if (!s) return fake({ correct: false, score: 0 });
   const p = s.players.find((pl) => pl.id === playerId);
   if (!p) return fake({ correct: false, score: 0 });
-  // Ignore duplicate answers for the same question
   if (p.lastAnswer?.questionIdx === s.questionIdx) {
     return fake({ correct: p.lastAnswer.correct, score: p.score });
   }
@@ -320,57 +318,174 @@ export async function listRooms() {
   return fake(out.sort((a, b) => b.createdAt - a.createdAt));
 }
 
-// ---------- AI helpers (TZ §7 из AI_LOGIC.md; заглушка) ----------
-// Замените на реальный вызов к OpenAI/Anthropic/Lovable AI Gateway.
+// =========================================================================
+//                        AI HELPERS (TZ AI v2.0)
+// =========================================================================
+// Все функции — заглушки с [MOCK]-маркером. При интеграции с бэкендом
+// меняем только тело функций, сигнатуры сохраняем. Промпты, роли и модель
+// формируются на сервере — фронт передаёт только input-параметры.
 
 export interface GeneratedQuestion {
+  difficulty: "easy" | "medium" | "hard";
   question: string;
   options: string[];
-  correct: number;
+  correct: number | boolean;
 }
 
-const SAMPLES = [
-  { question: "Столица Франции?", options: ["Париж", "Лион", "Марсель", "Ницца"], correct: 0 },
-  { question: "Кто написал «Войну и мир»?", options: ["Толстой", "Достоевский", "Чехов", "Пушкин"], correct: 0 },
-  { question: "Химический символ золота?", options: ["Au", "Ag", "Gd", "Go"], correct: 0 },
-];
+export interface GeneratedQuizQuestion {
+  type: "choice" | "bool" | "text" | "matching";
+  question: string;
+  options?: string[];
+  correct?: number | boolean;
+  correctAnswer?: string;
+  pairs?: { left: string; right: string }[];
+}
 
+export interface GeneratedJeopardyCategory {
+  name: string;
+  description: string;
+}
+
+export interface GeneratedJeopardyQuestion {
+  points: number;
+  difficulty: string;
+  q: string;
+  a: string;
+}
+
+// TODO(server): POST /api/ai/improve-question
+export async function improveQuestion(input: {
+  currentText: string;
+  format: string; // "quiz-choice" | "quiz-bool" | "quiz-text" | "quiz-matching" | "jeopardy" | "millionaire"
+  topic?: string;
+  wishes?: string;
+  reroll?: boolean;
+}): Promise<{ variants: GeneratedQuestion[] }> {
+  const salt = input.reroll ? ` (reroll ${Math.floor(Math.random() * 100)})` : "";
+  return fake(
+    {
+      variants: (["easy", "medium", "hard"] as const).map((difficulty) => ({
+        difficulty,
+        question: `[MOCK] [${difficulty}] Улучшено под ${input.format}: ${input.currentText}${salt}`,
+        options: ["A", "B", "C", "D"],
+        correct: 0,
+      })),
+    },
+    350,
+  );
+}
+
+// TODO(server): POST /api/ai/generate-question
 export async function generateQuestion(input: {
   topic?: string;
   type?: "choice" | "bool" | "text";
+  currentText?: string;
   wishes?: string;
+  format?: string; // расширение для передачи точного формата билдера
+  reroll?: boolean;
 }): Promise<{ variants: GeneratedQuestion[] }> {
-  const topic = (input.topic ?? "").trim();
-  const seed = topic ? topic : "общей эрудиции";
-  const variants: GeneratedQuestion[] = Array.from({ length: 3 }).map((_, i) => {
-    const base = SAMPLES[i % SAMPLES.length];
-    return {
-      question: topic
-        ? `Вопрос ${i + 1} по теме «${seed}»${input.wishes ? " — " + input.wishes : ""}`
-        : base.question,
-      options: base.options,
-      correct: base.correct,
-    };
-  });
+  const isImprovement = !!input.currentText && input.currentText.trim().length > 0;
+  if (isImprovement) {
+    return improveQuestion({
+      currentText: input.currentText!,
+      format: input.format ?? input.type ?? "quiz-choice",
+      topic: input.topic,
+      wishes: input.wishes,
+      reroll: input.reroll,
+    });
+  }
+  const topic = input.topic?.trim() || "Неожиданные факты"; // ИИ сам придумал тему
+  const salt = input.reroll ? ` (reroll ${Math.floor(Math.random() * 100)})` : "";
+  const variants = (["easy", "medium", "hard"] as const).map((difficulty, i) => ({
+    difficulty,
+    question: `[MOCK] [${difficulty}] Вопрос ${i + 1} по теме "${topic}"${salt}`,
+    options:
+      input.type === "bool"
+        ? ["Да", "Нет"]
+        : ["Вариант A", "Вариант B", "Вариант C", "Вариант D"],
+    correct: 0 as number | boolean,
+  }));
   return fake({ variants }, 350);
 }
 
-export async function generateQuiz(input: { topic: string; count?: number; wishes?: string }) {
-  const count = Math.min(20, Math.max(1, input.count ?? 10));
-  const { variants } = await generateQuestion({ topic: input.topic, wishes: input.wishes });
-  const questions = Array.from({ length: count }).map((_, i) => variants[i % variants.length]);
-  return fake({ title: `Квиз: ${input.topic}`, questions }, 500);
+// TODO(server): POST /api/ai/generate-quiz
+export async function generateQuiz(input: {
+  topic?: string;
+  count?: number;
+  wishes?: string;
+}): Promise<{ title: string; questions: GeneratedQuizQuestion[] }> {
+  const topic = input.topic?.trim() || "Удивительные открытия"; // ИИ сам придумал тему
+  const count = Math.min(20, Math.max(5, input.count ?? 10));
+  const questions: GeneratedQuizQuestion[] = Array.from({ length: count }).map((_, i) => {
+    const pos = i % 10;
+    let type: GeneratedQuizQuestion["type"];
+    if (pos < 6) type = "choice";
+    else if (pos < 8) type = "text";
+    else if (pos === 8) type = "bool";
+    else type = "matching";
+    return {
+      type,
+      question: `[MOCK] Вопрос ${i + 1} (${type}) по теме "${topic}"`,
+      options:
+        type === "bool"
+          ? ["Да", "Нет"]
+          : type === "choice"
+            ? ["Вариант A", "Вариант B", "Вариант C", "Вариант D"]
+            : undefined,
+      correct: type === "bool" ? true : type === "choice" ? 0 : undefined,
+      pairs:
+        type === "matching"
+          ? [
+              { left: "A", right: "1" },
+              { left: "B", right: "2" },
+              { left: "C", right: "3" },
+            ]
+          : undefined,
+      correctAnswer: type === "text" ? "[MOCK] Пример ответа" : undefined,
+    };
+  });
+  return fake({ title: `[MOCK] Квиз: ${topic}`, questions }, 500);
 }
 
-export async function generateJeopardyCategory(topic: string) {
-  const values = [100, 200, 300, 400, 500];
-  const items = values.map((v) => ({
-    points: v,
-    q: `Вопрос за ${v} по теме «${topic}»`,
-    a: "Пример ответа",
+// TODO(server): POST /api/ai/generate-jeopardy-categories
+export async function generateJeopardyCategories(input: {
+  topic?: string;
+  wishes?: string;
+}): Promise<{ categories: GeneratedJeopardyCategory[] }> {
+  const topic = input.topic?.trim() || "Удивительные явления";
+  return fake(
+    {
+      categories: [
+        { name: `[MOCK] ${topic}: ключевые события`, description: "Основные даты и факты" },
+        { name: `[MOCK] ${topic}: личности`, description: "Выдающиеся деятели" },
+        { name: `[MOCK] ${topic}: малоизвестные факты`, description: "Удивительные подробности" },
+      ],
+    },
+    400,
+  );
+}
+
+// TODO(server): POST /api/ai/generate-jeopardy-questions
+export async function generateJeopardyQuestions(input: {
+  category: string;
+  emptySlots: number[];
+  wishes?: string;
+}): Promise<{ questions: GeneratedJeopardyQuestion[] }> {
+  const difficultyMap: Record<number, string> = {
+    100: "easy",
+    200: "easy-medium",
+    300: "medium",
+    400: "medium-hard",
+    500: "hard",
+  };
+  const questions = input.emptySlots.map((points) => ({
+    points,
+    difficulty: difficultyMap[points] ?? "medium",
+    q: `[MOCK] [${points}] Вопрос по теме "${input.category}"`,
+    a: `[MOCK] Ответ на ${points}`,
   }));
-  return fake({ category: topic, questions: items }, 400);
+  return fake({ questions }, 400);
 }
 
 // ---------- Public export for debugging / migration audits ----------
-export const __apiVersion = "1.0.0-facade";
+export const __apiVersion = "1.1.0-facade-ai";

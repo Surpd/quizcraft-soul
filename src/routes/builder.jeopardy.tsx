@@ -11,6 +11,8 @@ import {
 import { BuilderShell } from "@/components/builder-shell";
 import { HelpButton } from "@/components/help-modal";
 import { FormulaButton } from "@/components/formula-popover";
+import { AIHelperButton } from "@/components/ai-helper";
+import { AIJeopardyCategoryButton } from "@/components/ai-jeopardy-category";
 import { CharCounter } from "@/components/char-counter";
 import { LIMITS } from "@/lib/limits";
 import { ImageDrop } from "@/lib/image-drop";
@@ -397,13 +399,27 @@ function BuilderJeopardy() {
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {round.map((cat, ci) => (
                 <div key={ci} id={`cat-${ri}-${ci}`} className="rounded-2xl border border-border bg-surface-muted p-3">
-                  <input
-                    className="input-base mb-1 bg-white text-center font-bold"
-                    placeholder={`Категория ${ci + 1}`}
-                    maxLength={LIMITS.category}
-                    value={cat.category}
-                    onChange={(e) => updateCategory(ri, ci, { category: e.target.value })}
-                  />
+                  <div className="mb-1 flex items-center gap-1">
+                    <input
+                      className="input-base bg-white text-center font-bold"
+                      placeholder={`Категория ${ci + 1}`}
+                      maxLength={LIMITS.category}
+                      value={cat.category}
+                      onChange={(e) => updateCategory(ri, ci, { category: e.target.value })}
+                    />
+                    <AIJeopardyCategoryButton
+                      categoryName={cat.category}
+                      gameTopic={config.title}
+                      emptySlots={cat.questions.filter((q) => !q.q.trim()).map((q) => q.points)}
+                      onPickCategory={(name) => updateCategory(ri, ci, { category: name })}
+                      onFillQuestions={(items) => {
+                        items.forEach((it) => {
+                          const qi = cat.questions.findIndex((q) => q.points === it.points && !q.q.trim());
+                          if (qi >= 0) updateQuestion(ri, ci, qi, { q: it.q, a: it.a });
+                        });
+                      }}
+                    />
+                  </div>
                   <div className="mb-2 flex justify-end">
                     <CharCounter value={cat.category} max={LIMITS.category} />
                   </div>
@@ -447,6 +463,20 @@ function BuilderJeopardy() {
                       <div className="mt-1 flex justify-end">
                         <CharCounter value={cat.category} max={LIMITS.category} />
                       </div>
+                    </div>
+                    <div className="flex h-10 items-center">
+                      <AIJeopardyCategoryButton
+                        categoryName={cat.category}
+                        gameTopic={config.title}
+                        emptySlots={cat.questions.filter((q) => !q.q.trim()).map((q) => q.points)}
+                        onPickCategory={(name) => updateCategory(ri, ci, { category: name })}
+                        onFillQuestions={(items) => {
+                          items.forEach((it) => {
+                            const qi = cat.questions.findIndex((q) => q.points === it.points && !q.q.trim());
+                            if (qi >= 0) updateQuestion(ri, ci, qi, { q: it.q, a: it.a });
+                          });
+                        }}
+                      />
                     </div>
                     <button
                       onClick={() => removeCategory(ri, ci)}
@@ -545,6 +575,7 @@ function BuilderJeopardy() {
       {modal && (
         <QuestionModal
           data={rounds[modal.roundIdx][modal.catIdx].questions[modal.qIdx]}
+          topic={rounds[modal.roundIdx][modal.catIdx].category || config.title || ""}
           onClose={() => setModal(null)}
           onSave={(patch) => {
             updateQuestion(modal.roundIdx, modal.catIdx, modal.qIdx, patch);
@@ -564,10 +595,12 @@ function BuilderJeopardy() {
 
 function QuestionModal({
   data,
+  topic,
   onClose,
   onSave,
 }: {
   data: JeopardyQuestion;
+  topic: string;
   onClose: () => void;
   onSave: (patch: Partial<JeopardyQuestion>) => void;
 }) {
@@ -592,12 +625,18 @@ function QuestionModal({
               ref={qRef}
               rows={3}
               maxLength={LIMITS.question}
-              className="input-base pr-10"
+              className="input-base pr-20"
               placeholder="Текст вопроса"
               value={q}
               onChange={(e) => setQ(e.target.value)}
             />
-            <div className="absolute right-2 top-2">
+            <div className="absolute right-2 top-2 flex items-center gap-1">
+              <AIHelperButton
+                currentValue={q}
+                topic={topic}
+                format="jeopardy"
+                onPick={setQ}
+              />
               <FormulaButton inputRef={qRef} value={q} onChange={setQ} />
             </div>
             <div className="mt-1 flex justify-end">
@@ -607,13 +646,19 @@ function QuestionModal({
           <div className="relative">
             <input
               ref={aRef}
-              className="input-base pr-10"
+              className="input-base pr-20"
               maxLength={LIMITS.option}
               placeholder="Ответ"
               value={a}
               onChange={(e) => setA(e.target.value)}
             />
-            <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
+            <div className="absolute right-1.5 top-1/2 flex -translate-y-1/2 items-center gap-1">
+              <AIHelperButton
+                currentValue={a}
+                topic={topic}
+                format="jeopardy-answer"
+                onPick={setA}
+              />
               <FormulaButton inputRef={aRef} value={a} onChange={setA} />
             </div>
           </div>

@@ -13,6 +13,8 @@ import {
 import { BuilderShell } from "@/components/builder-shell";
 import { HelpButton } from "@/components/help-modal";
 import { FormulaButton } from "@/components/formula-popover";
+import { AIHelperButton } from "@/components/ai-helper";
+import { AIGenerateQuizButton } from "@/components/ai-generate-quiz";
 import { CharCounter } from "@/components/char-counter";
 import { LIMITS } from "@/lib/limits";
 import { ImageDrop } from "@/lib/image-drop";
@@ -211,8 +213,68 @@ function BuilderQuiz() {
     </div>
   );
 
+  const applyGeneratedQuiz = (result: { title: string; questions: import("@/lib/api").GeneratedQuizQuestion[] }) => {
+    const next: QuizQuestion[] = result.questions.map((g) => {
+      if (g.type === "choice") {
+        const opts = g.options ?? ["", "", "", ""];
+        const correctIdx = typeof g.correct === "number" ? g.correct : 0;
+        return {
+          id: newId(),
+          type: "choice",
+          q: g.question,
+          image: "",
+          options: opts,
+          answer: opts[correctIdx] ?? opts[0] ?? "",
+          points: 100,
+          time: config.defaultTime,
+        };
+      }
+      if (g.type === "bool") {
+        return {
+          id: newId(),
+          type: "bool",
+          q: g.question,
+          image: "",
+          options: [],
+          answer: g.correct === true ? "true" : "false",
+          points: 100,
+          time: config.defaultTime,
+        };
+      }
+      if (g.type === "text") {
+        return {
+          id: newId(),
+          type: "text",
+          q: g.question,
+          image: "",
+          options: [],
+          answer: g.correctAnswer ?? "",
+          points: 100,
+          time: config.defaultTime,
+        };
+      }
+      // matching
+      return {
+        id: newId(),
+        type: "matching",
+        q: g.question,
+        image: "",
+        options: [],
+        answer: JSON.stringify(g.pairs ?? [{ left: "", right: "" }]),
+        points: 100,
+        time: config.defaultTime,
+      };
+    });
+    setQuestions(next);
+    if (!config.title.trim() || config.title === "Новый квиз") {
+      setConfig({ ...config, title: result.title });
+    }
+    showToast(`AI сгенерировал вопросов: ${next.length}`);
+  };
+
   const toolbar = (
     <div className="flex flex-wrap items-center justify-center gap-2">
+      <AIGenerateQuizButton currentTitle={config.title} onGenerated={applyGeneratedQuiz} />
       <BuilderToolbar
         kind="quiz"
         onImportFile={handleImport}
@@ -379,6 +441,7 @@ function BuilderQuiz() {
             key={q.id}
             index={idx}
             question={q}
+            topic={config.title}
             onPatch={(p) => patchQuestion(q.id, p)}
             onRemove={() => removeQuestion(q.id)}
           />
@@ -410,17 +473,22 @@ function BuilderQuiz() {
 function QuestionCard({
   index,
   question,
+  topic,
   onPatch,
   onRemove,
 }: {
   index: number;
   question: QuizQuestion;
+  topic: string;
   onPatch: (p: Partial<QuizQuestion>) => void;
   onRemove: () => void;
 }) {
   const Icon = TYPE_META[question.type].icon;
   const qRef = useRef<HTMLTextAreaElement>(null);
   const optRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const aiType: "choice" | "bool" | "text" | undefined =
+    question.type === "matching" ? undefined : question.type;
+  const aiFormat = `quiz-${question.type}`;
   return (
     <div id={`q-${question.id}`} className="surface-card space-y-4 p-6 scroll-mt-24">
       <div className="flex items-center justify-between">
@@ -442,12 +510,19 @@ function QuestionCard({
           ref={qRef}
           rows={2}
           maxLength={LIMITS.question}
-          className="input-base pr-10"
+          className="input-base pr-20"
           placeholder="Текст вопроса... (можно \\(x^2\\))"
           value={question.q}
           onChange={(e) => onPatch({ q: e.target.value })}
         />
-        <div className="absolute right-2 top-2">
+        <div className="absolute right-2 top-2 flex items-center gap-1">
+          <AIHelperButton
+            currentValue={question.q}
+            topic={topic}
+            type={aiType}
+            format={aiFormat}
+            onPick={(v) => onPatch({ q: v })}
+          />
           <FormulaButton inputRef={qRef} value={question.q} onChange={(v) => onPatch({ q: v })} />
         </div>
         <div className="mt-1 flex justify-end">

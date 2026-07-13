@@ -408,15 +408,21 @@ function BuilderJeopardy() {
               {round.map((cat, ci) => (
                 <div key={ci} id={`cat-${ri}-${ci}`} className="rounded-2xl border border-border p-4 scroll-mt-24">
                   <div className="mb-3 flex gap-2">
-                    <input
-                      className="input-base font-bold"
-                      placeholder={`Категория ${ci + 1}`}
-                      value={cat.category}
-                      onChange={(e) => updateCategory(ri, ci, { category: e.target.value })}
-                    />
+                    <div className="flex-1">
+                      <input
+                        className="input-base font-bold"
+                        placeholder={`Категория ${ci + 1}`}
+                        maxLength={LIMITS.category}
+                        value={cat.category}
+                        onChange={(e) => updateCategory(ri, ci, { category: e.target.value })}
+                      />
+                      <div className="mt-1 flex justify-end">
+                        <CharCounter value={cat.category} max={LIMITS.category} />
+                      </div>
+                    </div>
                     <button
                       onClick={() => removeCategory(ri, ci)}
-                      className="rounded-lg p-2 text-muted-foreground hover:bg-danger-soft hover:text-danger"
+                      className="h-10 rounded-lg p-2 text-muted-foreground hover:bg-danger-soft hover:text-danger"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -427,15 +433,22 @@ function BuilderJeopardy() {
                         <span className="grid h-10 w-16 flex-shrink-0 place-items-center rounded-lg bg-primary font-bold text-primary-foreground">
                           {q.points}
                         </span>
-                        <input
-                          className="input-base flex-1"
-                          placeholder="Вопрос"
-                          value={q.q}
-                          onChange={(e) => updateQuestion(ri, ci, qi, { q: e.target.value })}
-                        />
+                        <div className="flex-1">
+                          <input
+                            className="input-base"
+                            placeholder="Вопрос"
+                            maxLength={LIMITS.question}
+                            value={q.q}
+                            onChange={(e) => updateQuestion(ri, ci, qi, { q: e.target.value })}
+                          />
+                          <div className="mt-0.5 flex justify-end">
+                            <CharCounter value={q.q} max={LIMITS.question} />
+                          </div>
+                        </div>
                         <input
                           className="input-base flex-1"
                           placeholder="Ответ"
+                          maxLength={LIMITS.option}
                           value={q.a}
                           onChange={(e) => updateQuestion(ri, ci, qi, { a: e.target.value })}
                         />

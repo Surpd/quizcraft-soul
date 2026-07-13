@@ -60,6 +60,7 @@ export function listGames(kind?: GameKind): StoredGame[] {
 export function isValidGame(rec: unknown): rec is StoredGame {
   if (!rec || typeof rec !== "object") return false;
   const r = rec as { kind?: unknown; data?: { config?: unknown } };
+  // Ignore non-game records (e.g. result keys) — only quiz/jeopardy/millionaire are games
   if (r.kind !== "quiz" && r.kind !== "jeopardy" && r.kind !== "millionaire") return false;
   if (!r.data || typeof r.data !== "object") return false;
   if (!r.data.config) return false;
@@ -72,6 +73,8 @@ export function cleanupInvalidGames(): number {
   for (let i = 0; i < localStorage.length; i++) {
     const k = localStorage.key(i);
     if (!k || !k.startsWith(`${NS}.`)) continue;
+    // Never touch result keys
+    if (k.startsWith(`${NS}.results.`)) continue;
     try {
       const rec = JSON.parse(localStorage.getItem(k)!);
       if (!isValidGame(rec)) toRemove.push(k);

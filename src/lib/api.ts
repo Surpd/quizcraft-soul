@@ -421,7 +421,7 @@ export async function generateQuestion(input: {
     });
   }
   const topic = input.topic?.trim() || "Неожиданные факты";
-  const type = input.type ?? "choice";
+  const effectiveFormat = input.format ?? input.type ?? "choice";
   const salt = input.reroll ? ` (reroll ${Math.floor(Math.random() * 100)})` : "";
   const difficulties = ["easy", "medium", "hard"] as const;
   const variants: GeneratedQuestion[] = difficulties.map((difficulty, i) => {
@@ -429,13 +429,23 @@ export async function generateQuestion(input: {
       difficulty,
       question: `[MOCK] [${difficulty}] Вопрос ${i + 1} по теме "${topic}"${salt}`,
     };
-    if (type === "bool") {
+    if (effectiveFormat === "quiz-bool" || input.type === "bool") {
       return { ...base, options: ["Да", "Нет"], correct: Math.random() > 0.5 };
     }
-    if (type === "text") {
+    if (effectiveFormat === "quiz-text" || input.type === "text") {
       return { ...base, correctAnswer: `[MOCK] Правильный ответ на вопрос` };
     }
-    // choice (default)
+    if (effectiveFormat === "quiz-matching") {
+      return {
+        ...base,
+        pairs: [
+          { left: "[MOCK] A", right: "[MOCK] 1" },
+          { left: "[MOCK] B", right: "[MOCK] 2" },
+          { left: "[MOCK] C", right: "[MOCK] 3" },
+        ],
+      };
+    }
+    // choice / millionaire / default
     return {
       ...base,
       options: [

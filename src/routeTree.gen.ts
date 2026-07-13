@@ -17,6 +17,7 @@ import { Route as GameIdRouteImport } from './routes/game.$id'
 import { Route as BuilderQuizRouteImport } from './routes/builder.quiz'
 import { Route as BuilderMillionaireRouteImport } from './routes/builder.millionaire'
 import { Route as BuilderJeopardyRouteImport } from './routes/builder.jeopardy'
+import { Route as RoomCodeIndexRouteImport } from './routes/room.$code.index'
 import { Route as RoomCodePlayRouteImport } from './routes/room.$code.play'
 import { Route as QuizGameIdResultsRouteImport } from './routes/quiz.$gameId.results'
 import { Route as PlayQuizIdRouteImport } from './routes/play.quiz.$id'
@@ -63,6 +64,11 @@ const BuilderJeopardyRoute = BuilderJeopardyRouteImport.update({
   path: '/builder/jeopardy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RoomCodeIndexRoute = RoomCodeIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => RoomCodeRoute,
+} as any)
 const RoomCodePlayRoute = RoomCodePlayRouteImport.update({
   id: '/play',
   path: '/play',
@@ -103,6 +109,7 @@ export interface FileRoutesByFullPath {
   '/play/quiz/$id': typeof PlayQuizIdRoute
   '/quiz/$gameId/results': typeof QuizGameIdResultsRoute
   '/room/$code/play': typeof RoomCodePlayRoute
+  '/room/$code/': typeof RoomCodeIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -112,12 +119,12 @@ export interface FileRoutesByTo {
   '/builder/millionaire': typeof BuilderMillionaireRoute
   '/builder/quiz': typeof BuilderQuizRoute
   '/game/$id': typeof GameIdRoute
-  '/room/$code': typeof RoomCodeRouteWithChildren
   '/play/jeopardy/$id': typeof PlayJeopardyIdRoute
   '/play/millionaire/$id': typeof PlayMillionaireIdRoute
   '/play/quiz/$id': typeof PlayQuizIdRoute
   '/quiz/$gameId/results': typeof QuizGameIdResultsRoute
   '/room/$code/play': typeof RoomCodePlayRoute
+  '/room/$code': typeof RoomCodeIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -134,6 +141,7 @@ export interface FileRoutesById {
   '/play/quiz/$id': typeof PlayQuizIdRoute
   '/quiz/$gameId/results': typeof QuizGameIdResultsRoute
   '/room/$code/play': typeof RoomCodePlayRoute
+  '/room/$code/': typeof RoomCodeIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -151,6 +159,7 @@ export interface FileRouteTypes {
     | '/play/quiz/$id'
     | '/quiz/$gameId/results'
     | '/room/$code/play'
+    | '/room/$code/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -160,12 +169,12 @@ export interface FileRouteTypes {
     | '/builder/millionaire'
     | '/builder/quiz'
     | '/game/$id'
-    | '/room/$code'
     | '/play/jeopardy/$id'
     | '/play/millionaire/$id'
     | '/play/quiz/$id'
     | '/quiz/$gameId/results'
     | '/room/$code/play'
+    | '/room/$code'
   id:
     | '__root__'
     | '/'
@@ -181,6 +190,7 @@ export interface FileRouteTypes {
     | '/play/quiz/$id'
     | '/quiz/$gameId/results'
     | '/room/$code/play'
+    | '/room/$code/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -256,6 +266,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BuilderJeopardyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/room/$code/': {
+      id: '/room/$code/'
+      path: '/'
+      fullPath: '/room/$code/'
+      preLoaderRoute: typeof RoomCodeIndexRouteImport
+      parentRoute: typeof RoomCodeRoute
+    }
     '/room/$code/play': {
       id: '/room/$code/play'
       path: '/play'
@@ -296,10 +313,12 @@ declare module '@tanstack/react-router' {
 
 interface RoomCodeRouteChildren {
   RoomCodePlayRoute: typeof RoomCodePlayRoute
+  RoomCodeIndexRoute: typeof RoomCodeIndexRoute
 }
 
 const RoomCodeRouteChildren: RoomCodeRouteChildren = {
   RoomCodePlayRoute: RoomCodePlayRoute,
+  RoomCodeIndexRoute: RoomCodeIndexRoute,
 }
 
 const RoomCodeRouteWithChildren = RoomCodeRoute._addFileChildren(
@@ -323,13 +342,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

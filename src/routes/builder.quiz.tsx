@@ -435,6 +435,7 @@ function QuestionCard({
         <textarea
           ref={qRef}
           rows={2}
+          maxLength={LIMITS.question}
           className="input-base pr-10"
           placeholder="Текст вопроса... (можно \\(x^2\\))"
           value={question.q}
@@ -442,6 +443,9 @@ function QuestionCard({
         />
         <div className="absolute right-2 top-2">
           <FormulaButton inputRef={qRef} value={question.q} onChange={(v) => onPatch({ q: v })} />
+        </div>
+        <div className="mt-1 flex justify-end">
+          <CharCounter value={question.q} max={LIMITS.question} />
         </div>
       </div>
 
@@ -468,7 +472,8 @@ function QuestionCard({
                   ref={(el) => {
                     optRefs.current[i] = el;
                   }}
-                  className="input-base pr-10"
+                  className="input-base pr-16"
+                  maxLength={LIMITS.option}
                   placeholder={`Вариант ${String.fromCharCode(65 + i)}`}
                   value={opt}
                   onChange={(e) => {
@@ -479,6 +484,9 @@ function QuestionCard({
                     onPatch({ options, answer });
                   }}
                 />
+                <div className="pointer-events-none absolute right-9 top-1/2 -translate-y-1/2">
+                  <CharCounter value={opt} max={LIMITS.option} />
+                </div>
                 <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
                   <FormulaButton
                     inputRef={{ current: optRefs.current[i] } as React.RefObject<HTMLInputElement | null>}

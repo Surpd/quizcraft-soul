@@ -227,37 +227,30 @@ function BuilderMillionaire() {
   );
 
   const toolbar = (
-    <div className="flex flex-wrap gap-2">
-      <button className="btn-ghost" onClick={() => downloadExcelTemplate("millionaire")}>
-        <FileText className="h-4 w-4" /> Шаблон Excel
-      </button>
-      <label className="btn-ghost cursor-pointer">
-        <Upload className="h-4 w-4" /> Загрузить Excel
-        <input
-          type="file"
-          accept=".xlsx,.xls"
-          className="hidden"
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            if (f) handleImport(f);
-            e.currentTarget.value = "";
-          }}
-        />
-      </label>
-      <button className="btn-ghost" onClick={() => exportMillionaireExcel({ config, questions })}>
-        <FileSpreadsheet className="h-4 w-4" /> Скачать .xlsx
-      </button>
-      <button className="btn-ghost" onClick={() => printMillionaire({ config, questions }, { withAnswers: printAnswers })}>
-        <Printer className="h-4 w-4" /> Печать {printAnswers ? "с ответами" : "без ответов"}
-      </button>
-      <button className="btn-ghost" onClick={() => setShowSettings((s) => !s)}>
-        <Settings2 className="h-4 w-4" /> Настройки
-      </button>
-      <button className="btn-accent" onClick={openPlayer}>
-        <Play className="h-4 w-4" /> Играть (новая вкладка)
-      </button>
-    </div>
+    <BuilderToolbar
+      kind="millionaire"
+      onImportFile={handleImport}
+      onDownloadTemplate={() => downloadExcelTemplate("millionaire")}
+      onExportExcel={() => exportMillionaireExcel({ config, questions })}
+      onPrint={(withAnswers) => printMillionaire({ config, questions }, { withAnswers })}
+      printAnswers={printAnswers}
+      onToggleSettings={() => setShowSettings((s) => !s)}
+    />
   );
+
+  if (loadState === "loading") {
+    return <div className="min-h-screen grid place-items-center bg-surface text-muted-foreground">Загружаем игру…</div>;
+  }
+  if (loadState === "error") {
+    return (
+      <div className="min-h-screen grid place-items-center bg-surface p-6 text-center">
+        <div>
+          <h1 className="font-display text-2xl font-bold">Игра не найдена</h1>
+          <a href="/library" className="btn-accent mt-4 inline-flex">В библиотеку</a>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <BuilderShell
@@ -267,15 +260,21 @@ function BuilderMillionaire() {
       toolbar={toolbar}
       sidebar={sidebar}
       theme={config.theme}
-      onSave={openPlayer}
       extraFabs={
-        <HelpButton title="Как пользоваться конструктором «Миллионера»">
-          <p><b>Лестница:</b> 15 вопросов от лёгких к сложным. Сумма растёт по выбранной шкале (Лёгкая / Средняя / Хард).</p>
-          <p><b>Верный ответ:</b> кликните по букве A/B/C/D — она станет зелёной.</p>
-          <p><b>Несгораемые:</b> в настройках — «Классика» (2 точки), «Три точки» или «Без».</p>
-          <p><b>Слева</b> — быстрая навигация по всем 15 вопросам; зелёный значок = вопрос готов.</p>
-          <p><b>Excel:</b> шаблон включает колонки money, question, a, b, c, d, correct (буква).</p>
-        </HelpButton>
+        <>
+          <BuilderFabs
+            kind="millionaire"
+            savedId={savedId}
+            onSave={handleSave}
+            onSaveAsCopy={handleSaveAsCopy}
+          />
+          <HelpButton title="Как пользоваться конструктором «Миллионера»">
+            <p><b>Лестница:</b> 15 вопросов от лёгких к сложным. Сумма растёт по выбранной шкале.</p>
+            <p><b>Верный ответ:</b> кликните по букве A/B/C/D — она станет зелёной.</p>
+            <p><b>Несгораемые:</b> в настройках — «Классика», «Три точки» или «Без».</p>
+            <p><b>Играть:</b> открывает плеер в новой вкладке.</p>
+          </HelpButton>
+        </>
       }
     >
       {showSettings && (

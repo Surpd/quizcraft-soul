@@ -150,21 +150,30 @@ function BuilderMillionaire() {
     });
   };
 
-  const handleSave = (): string | null => {
+  const validate = (): boolean => {
     if (questions.some((q) => !q.q.trim() || !q.options.some((o) => o.correct && o.text.trim()))) {
       showToast("В каждом вопросе укажите текст и верный ответ");
-      return null;
+      return false;
     }
+    return true;
+  };
+
+  const handleSave = (): string | null => {
+    if (!validate()) return null;
     const id = savedId ?? newId();
     saveGame<MillionaireData>("millionaire", id, { config, questions });
     setSavedId(id);
-    showToast("Игра сохранена!");
+    showToast(savedId ? "Изменения сохранены" : "Игра сохранена!");
     return id;
   };
 
-  const openPlayer = () => {
-    const id = handleSave();
-    if (id) window.open(`/play/millionaire/${id}`, "_blank", "noopener");
+  const handleSaveAsCopy = (): string | null => {
+    if (!validate()) return null;
+    const id = newId();
+    saveGame<MillionaireData>("millionaire", id, { config, questions });
+    setSavedId(id);
+    showToast("Создана копия");
+    return id;
   };
 
   const handleImport = async (file: File) => {

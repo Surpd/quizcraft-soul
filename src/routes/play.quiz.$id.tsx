@@ -128,13 +128,14 @@ function PlayQuiz() {
 
   const persistResult = (finalAnswers: QAnswer[]) => {
     if (savedRef.current) return;
+    if (!questions.length) return;
     savedRef.current = true;
     const totalPts = questions.reduce((s, q) => s + q.points, 0);
     const earned = finalAnswers.reduce((s, a) => s + a.earned, 0);
     const correct = finalAnswers.filter((a) => a.correct).length;
     const timeSec = Math.max(0, Math.floor((Date.now() - startedAt.current) / 1000));
     try {
-      saveQuizResult({
+      const saved = saveQuizResult({
         gameId: id,
         playerName: name.trim(),
         score: earned,
@@ -143,10 +144,18 @@ function PlayQuiz() {
         totalQuestions: questions.length,
         timeSec,
       });
+      console.log("[quiz] результат сохранён", saved);
     } catch (e) {
+      savedRef.current = false;
       console.error("Не удалось сохранить результат", e);
     }
   };
+
+  // Safety net: whenever phase transitions to "done", persist result.
+  useEffect(() => {
+    if (phase === "done") persistResult(answers);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
 
   const submit = (timeout = false) => {
     if (!config) return;

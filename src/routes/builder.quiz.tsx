@@ -60,6 +60,7 @@ function makeQuestion(type: QuizQuestionType, points = 100, time = 30): QuizQues
 }
 
 function BuilderQuiz() {
+  const { id: urlId } = Route.useSearch();
   const [config, setConfig] = useState<QuizConfig>({
     title: "Новый квиз",
     description: "",
@@ -75,7 +76,27 @@ function BuilderQuiz() {
   const [savedId, setSavedId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [printAnswers, setPrintAnswers] = useState(true);
+  const [loadState, setLoadState] = useState<"idle" | "loading" | "error">(urlId ? "loading" : "idle");
   const listRef = useRef<HTMLDivElement>(null);
+
+  // Bug 1.2: подгружаем сохранённый квиз по ?id=
+  useEffect(() => {
+    if (!urlId) return;
+    try {
+      const rec = loadGame<QuizData>("quiz", urlId);
+      if (rec) {
+        setConfig(rec.data.config);
+        setQuestions(rec.data.questions);
+        setSavedId(urlId);
+        setLoadState("idle");
+      } else {
+        setLoadState("error");
+      }
+    } catch (err) {
+      console.error(err);
+      setLoadState("error");
+    }
+  }, [urlId]);
 
   const addQuestion = (type: QuizQuestionType) => {
     const q = makeQuestion(type, 100, config.defaultTime);
@@ -98,21 +119,34 @@ function BuilderQuiz() {
     setTimeout(() => setToast(null), 2500);
   };
 
-  const handleSave = (): string | null => {
+  const validate = (): boolean => {
     if (questions.some((q) => !q.q.trim())) {
       showToast("Заполните текст всех вопросов");
-      return null;
+      return false;
     }
+    return true;
+  };
+
+  // Bug 1.3: если есть savedId — обновляем, иначе создаём.
+  const handleSave = (): string | null => {
+    if (!validate()) return null;
     const id = savedId ?? newId();
     saveGame<QuizData>("quiz", id, { config, questions });
     setSavedId(id);
-    showToast("Квиз сохранён!");
+    showToast(savedId ? "Изменения сохранены" : "Квиз сохранён!");
     return id;
   };
 
-  const openPlayer = () => {
-    const id = handleSave();
-    if (id) window.open(`/play/quiz/${id}`, "_blank", "noopener");
+  const handleSaveAsCopy = (): string | null => {
+    if (!validate()) return null;
+    const id = newId();
+    saveGame<QuizData>("quiz", id, {
+      config: { ...config, title: `${config.title} (копия)` },
+      questions,
+    });
+    setSavedId(id);
+    showToast("Создана копия квиза");
+    return id;
   };
 
   const openResults = () => {

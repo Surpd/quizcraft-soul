@@ -41,8 +41,16 @@ function LibraryPage() {
 
   useEffect(() => {
     let cancel = false;
+    try { cleanupInvalidGames(); } catch { /* ignore */ }
     listGames()
-      .then((g) => { if (!cancel) setGames(g); })
+      .then((g) => {
+        if (cancel) return;
+        const clean = g.filter((x) => {
+          const d = x?.data as { config?: unknown } | undefined;
+          return !!x && !!x.kind && !!d && !!d.config;
+        });
+        setGames(clean);
+      })
       .catch((e) => { if (!cancel) setError(e?.message ?? "Не удалось загрузить"); });
     return () => { cancel = true; };
   }, []);

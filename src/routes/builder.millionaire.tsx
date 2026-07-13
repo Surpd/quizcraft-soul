@@ -58,6 +58,7 @@ function makeQuestion(money: number): MillionaireQuestion {
 }
 
 function BuilderMillionaire() {
+  const { id: urlId } = Route.useSearch();
   const [config, setConfig] = useState<MillionaireConfig>({
     theme: "amber",
     timePerQuestion: 30,
@@ -72,6 +73,23 @@ function BuilderMillionaire() {
   const [savedId, setSavedId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [printAnswers, setPrintAnswers] = useState(true);
+  const [loadState, setLoadState] = useState<"idle" | "loading" | "error">(urlId ? "loading" : "idle");
+
+  useEffect(() => {
+    if (!urlId) return;
+    try {
+      const rec = loadGame<MillionaireData>("millionaire", urlId);
+      if (rec) {
+        setConfig(rec.data.config);
+        setQuestions(rec.data.questions);
+        setSavedId(urlId);
+        setLoadState("idle");
+      } else setLoadState("error");
+    } catch (err) {
+      console.error(err);
+      setLoadState("error");
+    }
+  }, [urlId]);
 
   const moneyForIndex = (idx: number, scale: MoneyScale, mode: PointsMode): number => {
     const base = LADDERS[scale][idx] ?? LADDERS[scale].at(-1)!;

@@ -252,45 +252,47 @@ function GameDashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {results.map((r) => {
+                    {results.flatMap((r) => {
                       const pct = r.totalQuestions
                         ? Math.round((r.correctCount / r.totalQuestions) * 100)
                         : 0;
                       const isOpen = expanded === r.id;
-                      return (
-                        <>
-                          <tr
-                            key={r.id}
-                            onClick={() => setExpanded(isOpen ? null : r.id)}
-                            className="cursor-pointer border-t border-border hover:bg-surface-muted/60"
-                          >
-                            <td className="px-3 py-2 text-muted-foreground">
-                              {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                      const rows = [
+                        <tr
+                          key={r.id}
+                          onClick={() => setExpanded(isOpen ? null : r.id)}
+                          className="cursor-pointer border-t border-border hover:bg-surface-muted/60"
+                        >
+                          <td className="px-3 py-2 text-muted-foreground">
+                            {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                          </td>
+                          <td className="px-3 py-2 font-semibold">{r.playerName || "Аноним"}</td>
+                          <td className="px-3 py-2 font-mono">
+                            {r.score}
+                            <span className="text-muted-foreground">/{r.maxScore}</span>
+                          </td>
+                          <td className="px-3 py-2">{pct}%</td>
+                          <td className="px-3 py-2 text-muted-foreground">
+                            {Math.floor(r.timeSec / 60)}:{String(r.timeSec % 60).padStart(2, "0")}
+                          </td>
+                          <td className="px-3 py-2 text-muted-foreground">
+                            {new Date(r.finishedAt).toLocaleString("ru-RU")}
+                          </td>
+                        </tr>,
+                      ];
+                      if (isOpen) {
+                        rows.push(
+                          <tr key={r.id + "-d"} className="bg-surface-muted/40">
+                            <td colSpan={6} className="px-5 py-3 text-xs text-muted-foreground">
+                              Детализация по вопросам появится, когда плеер начнёт передавать
+                              ответы (сейчас сохраняется только сводка).
                             </td>
-                            <td className="px-3 py-2 font-semibold">{r.playerName || "Аноним"}</td>
-                            <td className="px-3 py-2 font-mono">
-                              {r.score}
-                              <span className="text-muted-foreground">/{r.maxScore}</span>
-                            </td>
-                            <td className="px-3 py-2">{pct}%</td>
-                            <td className="px-3 py-2 text-muted-foreground">
-                              {Math.floor(r.timeSec / 60)}:{String(r.timeSec % 60).padStart(2, "0")}
-                            </td>
-                            <td className="px-3 py-2 text-muted-foreground">
-                              {new Date(r.finishedAt).toLocaleString("ru-RU")}
-                            </td>
-                          </tr>
-                          {isOpen && (
-                            <tr key={r.id + "-d"} className="bg-surface-muted/40">
-                              <td colSpan={6} className="px-5 py-3 text-xs text-muted-foreground">
-                                Детализация по вопросам появится, когда плеер начнёт передавать
-                                ответы (сейчас сохраняется только сводка).
-                              </td>
-                            </tr>
-                          )}
-                        </>
-                      );
+                          </tr>,
+                        );
+                      }
+                      return rows;
                     })}
+
                   </tbody>
                 </table>
               )}

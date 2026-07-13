@@ -21,8 +21,8 @@ interface Props {
   format: string;
   /** Тип вопроса для API (только для choice/bool/text). */
   type?: "choice" | "bool" | "text";
-  /** Подставляет выбранный текст в поле. */
-  onPick: (text: string) => void;
+  /** Подставляет выбранный вариант (весь объект: question + options/correct/correctAnswer/pairs). */
+  onPick: (variant: GeneratedQuestion) => void;
   /** Опциональный tooltip. */
   title?: string;
 }
@@ -137,7 +137,7 @@ export function AIHelperButton({
   };
 
   const handlePick = (v: GeneratedQuestion) => {
-    onPick(v.question);
+    onPick(v);
     setOpen(false);
   };
 

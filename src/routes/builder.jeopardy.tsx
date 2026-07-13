@@ -595,10 +595,12 @@ function BuilderJeopardy() {
 
 function QuestionModal({
   data,
+  topic,
   onClose,
   onSave,
 }: {
   data: JeopardyQuestion;
+  topic: string;
   onClose: () => void;
   onSave: (patch: Partial<JeopardyQuestion>) => void;
 }) {
@@ -623,12 +625,18 @@ function QuestionModal({
               ref={qRef}
               rows={3}
               maxLength={LIMITS.question}
-              className="input-base pr-10"
+              className="input-base pr-20"
               placeholder="Текст вопроса"
               value={q}
               onChange={(e) => setQ(e.target.value)}
             />
-            <div className="absolute right-2 top-2">
+            <div className="absolute right-2 top-2 flex items-center gap-1">
+              <AIHelperButton
+                currentValue={q}
+                topic={topic}
+                format="jeopardy"
+                onPick={setQ}
+              />
               <FormulaButton inputRef={qRef} value={q} onChange={setQ} />
             </div>
             <div className="mt-1 flex justify-end">
@@ -638,13 +646,19 @@ function QuestionModal({
           <div className="relative">
             <input
               ref={aRef}
-              className="input-base pr-10"
+              className="input-base pr-20"
               maxLength={LIMITS.option}
               placeholder="Ответ"
               value={a}
               onChange={(e) => setA(e.target.value)}
             />
-            <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
+            <div className="absolute right-1.5 top-1/2 flex -translate-y-1/2 items-center gap-1">
+              <AIHelperButton
+                currentValue={a}
+                topic={topic}
+                format="jeopardy-answer"
+                onPick={setA}
+              />
               <FormulaButton inputRef={aRef} value={a} onChange={setA} />
             </div>
           </div>

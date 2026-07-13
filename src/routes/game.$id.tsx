@@ -58,6 +58,8 @@ function GameDashboard() {
   const [game, setGame] = useState<StoredGame | null | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<QuizResult[]>([]);
+  const [jResults, setJResults] = useState<JeopardyResult[]>([]);
+  const [jResultsState, setJResultsState] = useState<"idle" | "loading" | "error">("idle");
   const [expanded, setExpanded] = useState<string | null>(null);
   const [openHost, setOpenHost] = useState(false);
   const [busyMsg, setBusyMsg] = useState<string | null>(null);

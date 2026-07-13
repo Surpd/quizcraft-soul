@@ -9,79 +9,31 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as LibraryRouteImport } from './routes/library'
-import { Route as JoinRouteImport } from './routes/join'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as RoomCodeRouteImport } from './routes/room.$code'
+import { Route as JoinRouteImport } from './routes/join'
+import { Route as LibraryRouteImport } from './routes/library'
 import { Route as BuilderQuizRouteImport } from './routes/builder.quiz'
 import { Route as BuilderMillionaireRouteImport } from './routes/builder.millionaire'
 import { Route as BuilderJeopardyRouteImport } from './routes/builder.jeopardy'
+import { Route as RoomCodeRouteImport } from './routes/room.$code'
 import { Route as RoomCodePlayRouteImport } from './routes/room.$code.play'
 import { Route as QuizGameIdResultsRouteImport } from './routes/quiz.$gameId.results'
 import { Route as PlayQuizIdRouteImport } from './routes/play.quiz.$id'
 import { Route as PlayMillionaireIdRouteImport } from './routes/play.millionaire.$id'
 import { Route as PlayJeopardyIdRouteImport } from './routes/play.jeopardy.$id'
 
-const LibraryRoute = LibraryRouteImport.update({
-  id: '/library',
-  path: '/library',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const JoinRoute = JoinRouteImport.update({
-  id: '/join',
-  path: '/join',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RoomCodeRoute = RoomCodeRouteImport.update({
-  id: '/room/$code',
-  path: '/room/$code',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BuilderQuizRoute = BuilderQuizRouteImport.update({
-  id: '/builder/quiz',
-  path: '/builder/quiz',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BuilderMillionaireRoute = BuilderMillionaireRouteImport.update({
-  id: '/builder/millionaire',
-  path: '/builder/millionaire',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BuilderJeopardyRoute = BuilderJeopardyRouteImport.update({
-  id: '/builder/jeopardy',
-  path: '/builder/jeopardy',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RoomCodePlayRoute = RoomCodePlayRouteImport.update({
-  id: '/play',
-  path: '/play',
-  getParentRoute: () => RoomCodeRoute,
-} as any)
-const QuizGameIdResultsRoute = QuizGameIdResultsRouteImport.update({
-  id: '/quiz/$gameId/results',
-  path: '/quiz/$gameId/results',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PlayQuizIdRoute = PlayQuizIdRouteImport.update({
-  id: '/play/quiz/$id',
-  path: '/play/quiz/$id',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PlayMillionaireIdRoute = PlayMillionaireIdRouteImport.update({
-  id: '/play/millionaire/$id',
-  path: '/play/millionaire/$id',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PlayJeopardyIdRoute = PlayJeopardyIdRouteImport.update({
-  id: '/play/jeopardy/$id',
-  path: '/play/jeopardy/$id',
-  getParentRoute: () => rootRouteImport,
-} as any)
+const IndexRoute = IndexRouteImport.update({ id: '/', path: '/', getParentRoute: () => rootRouteImport } as any)
+const JoinRoute = JoinRouteImport.update({ id: '/join', path: '/join', getParentRoute: () => rootRouteImport } as any)
+const LibraryRoute = LibraryRouteImport.update({ id: '/library', path: '/library', getParentRoute: () => rootRouteImport } as any)
+const BuilderQuizRoute = BuilderQuizRouteImport.update({ id: '/builder/quiz', path: '/builder/quiz', getParentRoute: () => rootRouteImport } as any)
+const BuilderMillionaireRoute = BuilderMillionaireRouteImport.update({ id: '/builder/millionaire', path: '/builder/millionaire', getParentRoute: () => rootRouteImport } as any)
+const BuilderJeopardyRoute = BuilderJeopardyRouteImport.update({ id: '/builder/jeopardy', path: '/builder/jeopardy', getParentRoute: () => rootRouteImport } as any)
+const RoomCodeRoute = RoomCodeRouteImport.update({ id: '/room/$code', path: '/room/$code', getParentRoute: () => rootRouteImport } as any)
+const RoomCodePlayRoute = RoomCodePlayRouteImport.update({ id: '/room/$code/play', path: '/room/$code/play', getParentRoute: () => rootRouteImport } as any)
+const QuizGameIdResultsRoute = QuizGameIdResultsRouteImport.update({ id: '/quiz/$gameId/results', path: '/quiz/$gameId/results', getParentRoute: () => rootRouteImport } as any)
+const PlayQuizIdRoute = PlayQuizIdRouteImport.update({ id: '/play/quiz/$id', path: '/play/quiz/$id', getParentRoute: () => rootRouteImport } as any)
+const PlayMillionaireIdRoute = PlayMillionaireIdRouteImport.update({ id: '/play/millionaire/$id', path: '/play/millionaire/$id', getParentRoute: () => rootRouteImport } as any)
+const PlayJeopardyIdRoute = PlayJeopardyIdRouteImport.update({ id: '/play/jeopardy/$id', path: '/play/jeopardy/$id', getParentRoute: () => rootRouteImport } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -90,12 +42,12 @@ export interface FileRoutesByFullPath {
   '/builder/jeopardy': typeof BuilderJeopardyRoute
   '/builder/millionaire': typeof BuilderMillionaireRoute
   '/builder/quiz': typeof BuilderQuizRoute
-  '/room/$code': typeof RoomCodeRouteWithChildren
+  '/room/$code': typeof RoomCodeRoute
+  '/room/$code/play': typeof RoomCodePlayRoute
   '/play/jeopardy/$id': typeof PlayJeopardyIdRoute
   '/play/millionaire/$id': typeof PlayMillionaireIdRoute
   '/play/quiz/$id': typeof PlayQuizIdRoute
   '/quiz/$gameId/results': typeof QuizGameIdResultsRoute
-  '/room/$code/play': typeof RoomCodePlayRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -104,12 +56,12 @@ export interface FileRoutesByTo {
   '/builder/jeopardy': typeof BuilderJeopardyRoute
   '/builder/millionaire': typeof BuilderMillionaireRoute
   '/builder/quiz': typeof BuilderQuizRoute
-  '/room/$code': typeof RoomCodeRouteWithChildren
+  '/room/$code': typeof RoomCodeRoute
+  '/room/$code/play': typeof RoomCodePlayRoute
   '/play/jeopardy/$id': typeof PlayJeopardyIdRoute
   '/play/millionaire/$id': typeof PlayMillionaireIdRoute
   '/play/quiz/$id': typeof PlayQuizIdRoute
   '/quiz/$gameId/results': typeof QuizGameIdResultsRoute
-  '/room/$code/play': typeof RoomCodePlayRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -119,12 +71,12 @@ export interface FileRoutesById {
   '/builder/jeopardy': typeof BuilderJeopardyRoute
   '/builder/millionaire': typeof BuilderMillionaireRoute
   '/builder/quiz': typeof BuilderQuizRoute
-  '/room/$code': typeof RoomCodeRouteWithChildren
+  '/room/$code': typeof RoomCodeRoute
+  '/room/$code/play': typeof RoomCodePlayRoute
   '/play/jeopardy/$id': typeof PlayJeopardyIdRoute
   '/play/millionaire/$id': typeof PlayMillionaireIdRoute
   '/play/quiz/$id': typeof PlayQuizIdRoute
   '/quiz/$gameId/results': typeof QuizGameIdResultsRoute
-  '/room/$code/play': typeof RoomCodePlayRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -136,11 +88,11 @@ export interface FileRouteTypes {
     | '/builder/millionaire'
     | '/builder/quiz'
     | '/room/$code'
+    | '/room/$code/play'
     | '/play/jeopardy/$id'
     | '/play/millionaire/$id'
     | '/play/quiz/$id'
     | '/quiz/$gameId/results'
-    | '/room/$code/play'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -150,11 +102,11 @@ export interface FileRouteTypes {
     | '/builder/millionaire'
     | '/builder/quiz'
     | '/room/$code'
+    | '/room/$code/play'
     | '/play/jeopardy/$id'
     | '/play/millionaire/$id'
     | '/play/quiz/$id'
     | '/quiz/$gameId/results'
-    | '/room/$code/play'
   id:
     | '__root__'
     | '/'
@@ -164,11 +116,11 @@ export interface FileRouteTypes {
     | '/builder/millionaire'
     | '/builder/quiz'
     | '/room/$code'
+    | '/room/$code/play'
     | '/play/jeopardy/$id'
     | '/play/millionaire/$id'
     | '/play/quiz/$id'
     | '/quiz/$gameId/results'
-    | '/room/$code/play'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -178,7 +130,8 @@ export interface RootRouteChildren {
   BuilderJeopardyRoute: typeof BuilderJeopardyRoute
   BuilderMillionaireRoute: typeof BuilderMillionaireRoute
   BuilderQuizRoute: typeof BuilderQuizRoute
-  RoomCodeRoute: typeof RoomCodeRouteWithChildren
+  RoomCodeRoute: typeof RoomCodeRoute
+  RoomCodePlayRoute: typeof RoomCodePlayRoute
   PlayJeopardyIdRoute: typeof PlayJeopardyIdRoute
   PlayMillionaireIdRoute: typeof PlayMillionaireIdRoute
   PlayQuizIdRoute: typeof PlayQuizIdRoute
@@ -187,118 +140,45 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/library': {
-      id: '/library'
-      path: '/library'
-      fullPath: '/library'
-      preLoaderRoute: typeof LibraryRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/join': {
-      id: '/join'
-      path: '/join'
-      fullPath: '/join'
-      preLoaderRoute: typeof JoinRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/room/$code': {
-      id: '/room/$code'
-      path: '/room/$code'
-      fullPath: '/room/$code'
-      preLoaderRoute: typeof RoomCodeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/builder/quiz': {
-      id: '/builder/quiz'
-      path: '/builder/quiz'
-      fullPath: '/builder/quiz'
-      preLoaderRoute: typeof BuilderQuizRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/builder/millionaire': {
-      id: '/builder/millionaire'
-      path: '/builder/millionaire'
-      fullPath: '/builder/millionaire'
-      preLoaderRoute: typeof BuilderMillionaireRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/builder/jeopardy': {
-      id: '/builder/jeopardy'
-      path: '/builder/jeopardy'
-      fullPath: '/builder/jeopardy'
-      preLoaderRoute: typeof BuilderJeopardyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/room/$code/play': {
-      id: '/room/$code/play'
-      path: '/play'
-      fullPath: '/room/$code/play'
-      preLoaderRoute: typeof RoomCodePlayRouteImport
-      parentRoute: typeof RoomCodeRoute
-    }
-    '/quiz/$gameId/results': {
-      id: '/quiz/$gameId/results'
-      path: '/quiz/$gameId/results'
-      fullPath: '/quiz/$gameId/results'
-      preLoaderRoute: typeof QuizGameIdResultsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/play/quiz/$id': {
-      id: '/play/quiz/$id'
-      path: '/play/quiz/$id'
-      fullPath: '/play/quiz/$id'
-      preLoaderRoute: typeof PlayQuizIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/play/millionaire/$id': {
-      id: '/play/millionaire/$id'
-      path: '/play/millionaire/$id'
-      fullPath: '/play/millionaire/$id'
-      preLoaderRoute: typeof PlayMillionaireIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/play/jeopardy/$id': {
-      id: '/play/jeopardy/$id'
-      path: '/play/jeopardy/$id'
-      fullPath: '/play/jeopardy/$id'
-      preLoaderRoute: typeof PlayJeopardyIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
+    '/': { id: '/'; path: '/'; fullPath: '/'; preLoaderRoute: typeof IndexRouteImport; parentRoute: typeof rootRouteImport }
+    '/join': { id: '/join'; path: '/join'; fullPath: '/join'; preLoaderRoute: typeof JoinRouteImport; parentRoute: typeof rootRouteImport }
+    '/library': { id: '/library'; path: '/library'; fullPath: '/library'; preLoaderRoute: typeof LibraryRouteImport; parentRoute: typeof rootRouteImport }
+    '/builder/quiz': { id: '/builder/quiz'; path: '/builder/quiz'; fullPath: '/builder/quiz'; preLoaderRoute: typeof BuilderQuizRouteImport; parentRoute: typeof rootRouteImport }
+    '/builder/millionaire': { id: '/builder/millionaire'; path: '/builder/millionaire'; fullPath: '/builder/millionaire'; preLoaderRoute: typeof BuilderMillionaireRouteImport; parentRoute: typeof rootRouteImport }
+    '/builder/jeopardy': { id: '/builder/jeopardy'; path: '/builder/jeopardy'; fullPath: '/builder/jeopardy'; preLoaderRoute: typeof BuilderJeopardyRouteImport; parentRoute: typeof rootRouteImport }
+    '/room/$code': { id: '/room/$code'; path: '/room/$code'; fullPath: '/room/$code'; preLoaderRoute: typeof RoomCodeRouteImport; parentRoute: typeof rootRouteImport }
+    '/room/$code/play': { id: '/room/$code/play'; path: '/room/$code/play'; fullPath: '/room/$code/play'; preLoaderRoute: typeof RoomCodePlayRouteImport; parentRoute: typeof rootRouteImport }
+    '/quiz/$gameId/results': { id: '/quiz/$gameId/results'; path: '/quiz/$gameId/results'; fullPath: '/quiz/$gameId/results'; preLoaderRoute: typeof QuizGameIdResultsRouteImport; parentRoute: typeof rootRouteImport }
+    '/play/quiz/$id': { id: '/play/quiz/$id'; path: '/play/quiz/$id'; fullPath: '/play/quiz/$id'; preLoaderRoute: typeof PlayQuizIdRouteImport; parentRoute: typeof rootRouteImport }
+    '/play/millionaire/$id': { id: '/play/millionaire/$id'; path: '/play/millionaire/$id'; fullPath: '/play/millionaire/$id'; preLoaderRoute: typeof PlayMillionaireIdRouteImport; parentRoute: typeof rootRouteImport }
+    '/play/jeopardy/$id': { id: '/play/jeopardy/$id'; path: '/play/jeopardy/$id'; fullPath: '/play/jeopardy/$id'; preLoaderRoute: typeof PlayJeopardyIdRouteImport; parentRoute: typeof rootRouteImport }
   }
 }
 
-interface RoomCodeRouteChildren {
-  RoomCodePlayRoute: typeof RoomCodePlayRoute
-}
-
-const RoomCodeRouteChildren: RoomCodeRouteChildren = {
-  RoomCodePlayRoute: RoomCodePlayRoute,
-}
-
-const RoomCodeRouteWithChildren = RoomCodeRoute._addFileChildren(
-  RoomCodeRouteChildren,
-)
-
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  JoinRoute: JoinRoute,
-  LibraryRoute: LibraryRoute,
-  BuilderJeopardyRoute: BuilderJeopardyRoute,
-  BuilderMillionaireRoute: BuilderMillionaireRoute,
-  BuilderQuizRoute: BuilderQuizRoute,
-  RoomCodeRoute: RoomCodeRouteWithChildren,
-  PlayJeopardyIdRoute: PlayJeopardyIdRoute,
-  PlayMillionaireIdRoute: PlayMillionaireIdRoute,
-  PlayQuizIdRoute: PlayQuizIdRoute,
-  QuizGameIdResultsRoute: QuizGameIdResultsRoute,
+  IndexRoute,
+  JoinRoute,
+  LibraryRoute,
+  BuilderJeopardyRoute,
+  BuilderMillionaireRoute,
+  BuilderQuizRoute,
+  RoomCodeRoute,
+  RoomCodePlayRoute,
+  PlayJeopardyIdRoute,
+  PlayMillionaireIdRoute,
+  PlayQuizIdRoute,
+  QuizGameIdResultsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

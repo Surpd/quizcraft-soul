@@ -446,7 +446,15 @@ function MillionaireQuestionCard({
             topic={topic}
             type="choice"
             format="millionaire"
-            onPick={(v) => onPatch({ q: v })}
+            onPick={(v) => {
+              onPatch({ q: v.question });
+              if (v.options && v.options.length === 4) {
+                const correctIdx = typeof v.correct === "number" ? v.correct : 0;
+                v.options.forEach((opt, oi) => {
+                  onPatchOption(oi, { text: opt, correct: oi === correctIdx });
+                });
+              }
+            }}
           />
           <FormulaButton inputRef={qRef} value={q.q} onChange={(v) => onPatch({ q: v })} />
         </div>

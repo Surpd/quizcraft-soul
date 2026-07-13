@@ -369,9 +369,17 @@ function GameDashboard() {
               )}
             </div>
           </>
+        ) : game.kind === "jeopardy" ? (
+          <JeopardyDashboard
+            results={jResults}
+            state={jResultsState}
+            stats={jStats}
+            expanded={expanded}
+            onToggle={(rid) => setExpanded(expanded === rid ? null : rid)}
+          />
         ) : (
           <div className="surface-card p-6 text-sm text-muted-foreground">
-            Статистика прохождений доступна для формата «Квиз».
+            Статистика прохождений доступна для форматов «Квиз» и «Своя игра».
           </div>
         )}
       </main>

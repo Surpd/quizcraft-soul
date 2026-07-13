@@ -575,6 +575,7 @@ function BuilderJeopardy() {
       {modal && (
         <QuestionModal
           data={rounds[modal.roundIdx][modal.catIdx].questions[modal.qIdx]}
+          topic={rounds[modal.roundIdx][modal.catIdx].category || config.title || ""}
           onClose={() => setModal(null)}
           onSave={(patch) => {
             updateQuestion(modal.roundIdx, modal.catIdx, modal.qIdx, patch);

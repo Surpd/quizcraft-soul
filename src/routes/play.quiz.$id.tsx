@@ -422,7 +422,7 @@ function QuestionCard({
           className="mx-auto mb-4 max-h-56 rounded-xl border border-[color:var(--pt-border)] object-contain"
         />
       )}
-      <div className="mb-6 text-center text-2xl font-semibold leading-snug">
+      <div className={`mb-6 text-center font-semibold leading-snug ${fitQuestionSize(question.q)}`}>
         <LaTeX>{question.q}</LaTeX>
       </div>
 

@@ -10,6 +10,8 @@ import {
   Library as LibraryIcon,
   Radio,
   ArrowRight,
+  Flame,
+
 } from "lucide-react";
 
 export const Route = createFileRoute("/")({

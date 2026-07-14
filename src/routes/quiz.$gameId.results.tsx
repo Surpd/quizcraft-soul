@@ -259,7 +259,7 @@ function ResultsPage() {
                               </td>
                             </tr>
                           )}
-                        </>
+                        </FragmentWithKey>
                       );
                     })}
                   </tbody>

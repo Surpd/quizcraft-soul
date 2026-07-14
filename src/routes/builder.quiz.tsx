@@ -9,6 +9,10 @@ import {
   Type as TypeIcon,
   Shuffle,
   BarChart3,
+  Blocks,
+  ListOrdered,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import { BuilderShell } from "@/components/builder-shell";
 import { HelpButton } from "@/components/help-modal";

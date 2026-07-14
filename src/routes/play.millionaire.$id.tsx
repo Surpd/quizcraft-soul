@@ -172,7 +172,7 @@ function PlayMillionaire() {
                   className="mx-auto mt-6 max-h-56 rounded-xl object-contain"
                 />
               )}
-              <div className="mt-6 rounded-3xl border border-[color:var(--pt-border)] bg-[color:var(--pt-surface)] p-8 text-center text-2xl font-semibold backdrop-blur-md">
+              <div className={`mt-6 rounded-3xl border border-[color:var(--pt-border)] bg-[color:var(--pt-surface)] p-8 text-center font-semibold backdrop-blur-md ${fitQuestionSize(current.q)}`}>
                 <LaTeX>{current.q}</LaTeX>
               </div>
 

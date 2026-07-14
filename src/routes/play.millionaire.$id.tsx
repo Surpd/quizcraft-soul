@@ -141,6 +141,12 @@ function PlayMillionaire() {
 
   return (
     <PlayerShell theme={config.theme}>
+      {user && (
+        <div className="fixed left-4 top-4 z-40 flex items-center gap-2 rounded-full border border-[color:var(--pt-border)] bg-[color:var(--pt-surface)] px-3 py-1.5 backdrop-blur-md">
+          <Avatar name={user.name} avatar={user.avatar} size={26} />
+          <span className="text-sm font-semibold">{user.name}</span>
+        </div>
+      )}
       <div className="mx-auto flex min-h-screen max-w-5xl items-center justify-center gap-6 px-4 py-16 lg:pr-56">
         <div className="min-w-0 flex-1">
           {phase === "playing" && (

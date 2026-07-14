@@ -105,7 +105,7 @@ export function QuizQuestionCard({
                 <span className="grid h-9 w-9 flex-shrink-0 place-items-center rounded-full bg-[color:var(--pt-accent)] text-sm font-bold text-black">
                   {String.fromCharCode(65 + i)}
                 </span>
-                <span className="min-w-0"><LaTeX>{opt}</LaTeX></span>
+                <span className={`min-w-0 break-words ${fitOptionSize(opt)}`}><LaTeX>{opt}</LaTeX></span>
               </button>
             );
           })}

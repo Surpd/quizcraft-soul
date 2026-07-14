@@ -209,7 +209,13 @@ function ResultsPage() {
                                 </span>
                               )}
                             </td>
-                            <td className="px-4 py-3 font-semibold">{r.playerName}</td>
+                            <td className="px-4 py-3 font-semibold">
+                              <PlayerCell
+                                name={r.playerName}
+                                avatar={isOffline ? r.raw.avatar : undefined}
+                                userId={isOffline ? r.raw.userId : undefined}
+                              />
+                            </td>
                             <td className="px-4 py-3 font-mono">
                               {r.score}
                               {isOffline && (

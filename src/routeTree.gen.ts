@@ -9,10 +9,12 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LibraryRouteImport } from './routes/library'
 import { Route as JoinRouteImport } from './routes/join'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProfileIndexRouteImport } from './routes/profile.index'
 import { Route as RoomCodeRouteImport } from './routes/room.$code'
@@ -31,6 +33,11 @@ import { Route as PlayJeopardyIdRouteImport } from './routes/play.jeopardy.$id'
 import { Route as MillionaireGameIdResultsRouteImport } from './routes/millionaire.$gameId.results'
 import { Route as JeopardyGameIdResultsRouteImport } from './routes/jeopardy.$gameId.results'
 
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
@@ -49,6 +56,11 @@ const LibraryRoute = LibraryRouteImport.update({
 const JoinRoute = JoinRouteImport.update({
   id: '/join',
   path: '/join',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -140,10 +152,12 @@ const JeopardyGameIdResultsRoute = JeopardyGameIdResultsRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/join': typeof JoinRoute
   '/library': typeof LibraryRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/builder/jeopardy': typeof BuilderJeopardyRoute
   '/builder/millionaire': typeof BuilderMillionaireRoute
   '/builder/quiz': typeof BuilderQuizRoute
@@ -163,10 +177,12 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/join': typeof JoinRoute
   '/library': typeof LibraryRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/builder/jeopardy': typeof BuilderJeopardyRoute
   '/builder/millionaire': typeof BuilderMillionaireRoute
   '/builder/quiz': typeof BuilderQuizRoute
@@ -186,10 +202,12 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/join': typeof JoinRoute
   '/library': typeof LibraryRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/builder/jeopardy': typeof BuilderJeopardyRoute
   '/builder/millionaire': typeof BuilderMillionaireRoute
   '/builder/quiz': typeof BuilderQuizRoute
@@ -211,10 +229,12 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/forgot-password'
     | '/join'
     | '/library'
     | '/login'
     | '/register'
+    | '/reset-password'
     | '/builder/jeopardy'
     | '/builder/millionaire'
     | '/builder/quiz'
@@ -234,10 +254,12 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/forgot-password'
     | '/join'
     | '/library'
     | '/login'
     | '/register'
+    | '/reset-password'
     | '/builder/jeopardy'
     | '/builder/millionaire'
     | '/builder/quiz'
@@ -256,10 +278,12 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/forgot-password'
     | '/join'
     | '/library'
     | '/login'
     | '/register'
+    | '/reset-password'
     | '/builder/jeopardy'
     | '/builder/millionaire'
     | '/builder/quiz'
@@ -280,10 +304,12 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
   JoinRoute: typeof JoinRoute
   LibraryRoute: typeof LibraryRoute
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   BuilderJeopardyRoute: typeof BuilderJeopardyRoute
   BuilderMillionaireRoute: typeof BuilderMillionaireRoute
   BuilderQuizRoute: typeof BuilderQuizRoute
@@ -301,6 +327,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/register': {
       id: '/register'
       path: '/register'
@@ -327,6 +360,13 @@ declare module '@tanstack/react-router' {
       path: '/join'
       fullPath: '/join'
       preLoaderRoute: typeof JoinRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -469,10 +509,12 @@ const RoomCodeRouteWithChildren = RoomCodeRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ForgotPasswordRoute: ForgotPasswordRoute,
   JoinRoute: JoinRoute,
   LibraryRoute: LibraryRoute,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   BuilderJeopardyRoute: BuilderJeopardyRoute,
   BuilderMillionaireRoute: BuilderMillionaireRoute,
   BuilderQuizRoute: BuilderQuizRoute,

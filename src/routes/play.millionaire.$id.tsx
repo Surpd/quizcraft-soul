@@ -2,9 +2,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Sparkles, RefreshCw } from "lucide-react";
 import { PlayerShell, TimerBar } from "@/components/player-shell";
+import { Avatar } from "@/components/avatar";
 import { LaTeX } from "@/lib/latex";
 import { loadGame } from "@/lib/storage";
 import { fitOptionSize, fitQuestionSize } from "@/lib/fit-text";
+import { useAuth } from "@/hooks/use-auth";
 import type { MilestoneMode, MillionaireData, MillionaireQuestion } from "@/lib/types";
 
 export const Route = createFileRoute("/play/millionaire/$id")({

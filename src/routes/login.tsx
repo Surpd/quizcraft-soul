@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { SiteHeader } from "@/components/site-header";
+import { PasswordInput } from "@/components/password-input";
 import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/login")({
@@ -48,14 +49,14 @@ function LoginPage() {
           </label>
           <label className="text-sm font-semibold">
             Пароль
-            <input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="input-base mt-1 w-full"
-              autoComplete="current-password"
-            />
+            <div className="mt-1">
+              <PasswordInput
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
+              />
+            </div>
           </label>
           {err && (
             <p className="rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger">{err}</p>

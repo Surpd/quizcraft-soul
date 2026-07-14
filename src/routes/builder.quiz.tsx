@@ -59,6 +59,8 @@ const TYPE_META: Record<QuizQuestionType, { label: string; icon: typeof Circle; 
   bool: { label: "Да/Нет", icon: CheckCircle2, tone: "text-success" },
   text: { label: "Текст", icon: TypeIcon, tone: "text-amber" },
   matching: { label: "Пары", icon: Shuffle, tone: "text-accent" },
+  close: { label: "Пропуски", icon: Blocks, tone: "text-primary" },
+  ordering: { label: "Порядок", icon: ListOrdered, tone: "text-accent" },
 };
 
 function makeQuestion(type: QuizQuestionType, points = 100, time = 30): QuizQuestion {
@@ -66,6 +68,8 @@ function makeQuestion(type: QuizQuestionType, points = 100, time = 30): QuizQues
   if (type === "choice") return { ...base, options: ["", "", "", ""], answer: "" };
   if (type === "bool") return { ...base, answer: "true" };
   if (type === "matching") return { ...base, answer: JSON.stringify([{ left: "", right: "" }]) };
+  if (type === "close") return { ...base, answer: JSON.stringify([""]) };
+  if (type === "ordering") return { ...base, answer: JSON.stringify(["", "", ""]) };
   return base;
 }
 

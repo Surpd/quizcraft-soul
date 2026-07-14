@@ -410,7 +410,7 @@ function PlayJeopardy() {
                   className="mx-auto mt-4 max-h-56 rounded-xl object-contain"
                 />
               )}
-              <div className="mt-6 text-center text-2xl font-semibold">
+              <div className={`mt-6 text-center font-semibold ${fitQuestionSize(q.q)}`}>
                 <LaTeX>{q.q}</LaTeX>
               </div>
               {showAnswer && (

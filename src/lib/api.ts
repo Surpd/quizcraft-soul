@@ -534,11 +534,11 @@ export async function finishRoom(code: string) {
           const hist = p.answerHistory ?? [];
           const answers: OnlineQuizPlayerAnswer[] = hist.map((a) => {
             const q: QuizQuestion | undefined = questions[a.questionIdx];
-            const correctAnswer = q?.answer ?? "";
+            const correctAnswer = q ? formatQuizAnswer(q) : "";
             return {
               questionIdx: a.questionIdx,
               question: q?.q ?? `Вопрос ${a.questionIdx + 1}`,
-              given: a.given,
+              given: q ? formatGivenAnswer(q, a.given) : a.given,
               correctAnswer,
               correct: a.correct,
               earned: a.delta,

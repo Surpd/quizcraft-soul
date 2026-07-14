@@ -18,7 +18,6 @@ type StoredUser = User & {
 
 const USERS_KEY = "islandquiz.v1.auth.users";
 export const SESSION_KEY = "islandquiz.v1.auth.session";
-let allowAuthKeyRemoval = false;
 
 declare global {
   interface Window {
@@ -75,7 +74,7 @@ function patchLocalStorageForAuthKeys() {
   window.localStorage.removeItem = (key: string) => {
     // storage.cleanupInvalidGames() scans all islandquiz.v1.* keys and would
     // otherwise delete auth records because they are not game-shaped objects.
-    if ((key === USERS_KEY || key === SESSION_KEY) && !allowAuthKeyRemoval) return;
+    if ((key === USERS_KEY || key === SESSION_KEY) && new Error().stack?.includes("cleanupInvalidGames")) return;
     nativeRemoveItem(key);
   };
 
@@ -124,14 +123,8 @@ export function getSessionUserId(): string | null {
 
 export function setSessionUserId(id: string | null) {
   if (typeof window === "undefined") return;
-  if (id === null) {
-    allowAuthKeyRemoval = true;
-    try {
-      localStorage.removeItem(SESSION_KEY);
-    } finally {
-      allowAuthKeyRemoval = false;
-    }
-  } else localStorage.setItem(SESSION_KEY, id);
+  if (id === null) localStorage.removeItem(SESSION_KEY);
+  else localStorage.setItem(SESSION_KEY, id);
 }
 
 export function findUserById(id: string): User | null {

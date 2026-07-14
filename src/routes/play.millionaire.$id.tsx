@@ -34,7 +34,9 @@ function PlayMillionaire() {
   const [idx, setIdx] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const [revealed, setRevealed] = useState(false);
-  const [phase, setPhase] = useState<"playing" | "won" | "lost">("playing");
+  const [phase, setPhase] = useState<"start" | "playing" | "won" | "lost">("start");
+  const [playerName, setPlayerName] = useState(user?.name ?? "");
+
   const [fiftyUsed, setFiftyUsed] = useState(false);
   const [hidden, setHidden] = useState<Set<number>>(new Set());
   const [timeLeft, setTimeLeft] = useState(0);

@@ -261,7 +261,56 @@ export async function nextQuestion(code: string) {
 }
 export async function finishRoom(code: string) {
   const s = readRoom(code); if (!s) return fake(null);
-  s.status = "finished"; writeRoom(s); return fake(s);
+  s.status = "finished";
+  writeRoom(s);
+  // Save online results for dashboard (quiz only)
+  if (s.gameKind === "quiz") {
+    try {
+      const rec = _loadGame<QuizData>("quiz", s.gameId);
+      if (rec) {
+        const questions = rec.data.questions;
+        const maxScore = questions.reduce((sum, q) => sum + (q.points || 0), 0);
+        const durationSec = Math.max(0, Math.round((Date.now() - s.createdAt) / 1000));
+        const players = s.players.map((p) => {
+          const hist = p.answerHistory ?? [];
+          const answers: OnlineQuizPlayerAnswer[] = hist.map((a) => {
+            const q: QuizQuestion | undefined = questions[a.questionIdx];
+            const correctAnswer = q?.answer ?? "";
+            return {
+              questionIdx: a.questionIdx,
+              question: q?.q ?? `Вопрос ${a.questionIdx + 1}`,
+              given: a.given,
+              correctAnswer,
+              correct: a.correct,
+              earned: a.delta,
+              points: q?.points ?? 0,
+              timeMs: a.timeMs,
+            };
+          });
+          const correctCount = answers.filter((a) => a.correct).length;
+          return {
+            id: p.id,
+            nickname: p.nickname,
+            avatar: p.avatar,
+            score: p.score,
+            maxScore,
+            correctCount,
+            totalQuestions: questions.length,
+            answers,
+          };
+        });
+        saveOnlineQuizResult({
+          roomCode: s.code,
+          gameId: s.gameId,
+          durationSec,
+          players,
+        });
+      }
+    } catch (err) {
+      console.error("Failed to save online room result", err);
+    }
+  }
+  return fake(s);
 }
 export async function kickPlayer(code: string, playerId: string) {
   const s = readRoom(code); if (!s) return fake(null);

@@ -10,17 +10,21 @@ import {
   deleteGame as _deleteGame,
   newId,
 } from "./storage";
-import { saveQuizResult, loadQuizResults } from "./results";
 import {
-  saveJeopardyResult,
-  loadJeopardyResults,
-  type JeopardyResult,
-} from "./jeopardy-results";
+  saveQuizResult,
+  loadQuizResults,
+  saveOnlineQuizResult,
+  loadOnlineQuizResults,
+  type OnlineQuizResult,
+  type OnlineQuizPlayerAnswer,
+} from "./results";
+import { saveJeopardyResult, loadJeopardyResults, type JeopardyResult } from "./jeopardy-results";
 import type {
   GameKind,
   JeopardyData,
   MillionaireData,
   QuizData,
+  QuizQuestion,
   StoredGame,
 } from "./types";
 
@@ -68,7 +72,6 @@ export async function findGame(id: string): Promise<StoredGame | null> {
   return fake(g);
 }
 
-
 export async function deleteGame(kind: GameKind, id: string) {
   _deleteGame(kind, id);
   return fake({ ok: true });
@@ -100,17 +103,22 @@ export async function getJeopardyGameDetail(
 }
 
 // TODO(server): заменить на POST /api/jeopardy/:gameId/results
-export async function submitJeopardyResult(
-  payload: Parameters<typeof saveJeopardyResult>[0],
-) {
+export async function submitJeopardyResult(payload: Parameters<typeof saveJeopardyResult>[0]) {
   const rec = saveJeopardyResult(payload);
   return fake({ ok: true, id: rec.id });
 }
 
-
 // ---------- Online rooms (Sync Mode, TZ §3) ----------
 // Хранение: localStorage + BroadcastChannel("islandquiz.room.<code>").
 // Заменяется на WebSocket без изменения UI.
+
+export interface RoomAnswerRecord {
+  questionIdx: number;
+  correct: boolean;
+  delta: number;
+  timeMs: number;
+  given: string;
+}
 
 export interface RoomPlayer {
   id: string;
@@ -119,12 +127,8 @@ export interface RoomPlayer {
   score: number;
   streak: number;
   connected: boolean;
-  lastAnswer?: {
-    questionIdx: number;
-    correct: boolean;
-    delta: number;
-    timeMs: number;
-  };
+  lastAnswer?: RoomAnswerRecord;
+  answerHistory?: RoomAnswerRecord[];
 }
 
 export type RoomStatus = "waiting" | "active" | "reveal" | "leaderboard" | "finished";
@@ -156,7 +160,9 @@ function writeRoom(state: RoomState) {
   localStorage.setItem(roomKey(state.code), JSON.stringify(state));
   try {
     new BroadcastChannel("islandquiz.rooms").postMessage({ code: state.code });
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 }
 
 export function subscribeRoom(code: string, handler: (s: RoomState) => void) {
@@ -172,7 +178,9 @@ export function subscribeRoom(code: string, handler: (s: RoomState) => void) {
     bc.onmessage = (e) => {
       if (e.data?.code === code) push();
     };
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   const onStorage = (e: StorageEvent) => {
     if (e.key === roomKey(code)) push();
   };
@@ -231,52 +239,133 @@ export async function getRoomState(code: string) {
 
 // Teacher controls
 export async function startRoom(code: string) {
-  const s = readRoom(code); if (!s) return fake(null);
-  s.status = "active"; s.questionIdx = 0; s.questionStartAt = Date.now();
-  s.players.forEach((p) => { p.lastAnswer = undefined; });
-  writeRoom(s); return fake(s);
+  const s = readRoom(code);
+  if (!s) return fake(null);
+  s.status = "active";
+  s.questionIdx = 0;
+  s.questionStartAt = Date.now();
+  s.players.forEach((p) => {
+    p.lastAnswer = undefined;
+    p.answerHistory = [];
+  });
+  writeRoom(s);
+  return fake(s);
 }
 export async function revealAnswer(code: string) {
-  const s = readRoom(code); if (!s) return fake(null);
+  const s = readRoom(code);
+  if (!s) return fake(null);
   s.status = "reveal";
-  const answered = s.players.filter((p) => p.lastAnswer?.questionIdx === s.questionIdx && p.lastAnswer.correct);
-  const fastest = answered.sort((a, b) => (a.lastAnswer!.timeMs - b.lastAnswer!.timeMs))[0];
+  const answered = s.players.filter(
+    (p) => p.lastAnswer?.questionIdx === s.questionIdx && p.lastAnswer.correct,
+  );
+  const fastest = answered.sort((a, b) => a.lastAnswer!.timeMs - b.lastAnswer!.timeMs)[0];
   s.fastestPlayerId = fastest?.id;
-  writeRoom(s); return fake(s);
+  writeRoom(s);
+  return fake(s);
 }
 export async function showLeaderboard(code: string) {
-  const s = readRoom(code); if (!s) return fake(null);
-  s.status = "leaderboard"; writeRoom(s); return fake(s);
+  const s = readRoom(code);
+  if (!s) return fake(null);
+  s.status = "leaderboard";
+  writeRoom(s);
+  return fake(s);
 }
 export async function nextQuestion(code: string) {
-  const s = readRoom(code); if (!s) return fake(null);
-  s.questionIdx += 1; s.status = "active"; s.questionStartAt = Date.now();
+  const s = readRoom(code);
+  if (!s) return fake(null);
+  s.questionIdx += 1;
+  s.status = "active";
+  s.questionStartAt = Date.now();
   s.fastestPlayerId = undefined;
-  writeRoom(s); return fake(s);
+  writeRoom(s);
+  return fake(s);
 }
 export async function finishRoom(code: string) {
-  const s = readRoom(code); if (!s) return fake(null);
-  s.status = "finished"; writeRoom(s); return fake(s);
+  const s = readRoom(code);
+  if (!s) return fake(null);
+  s.status = "finished";
+  writeRoom(s);
+  // Save online results for dashboard (quiz only)
+  if (s.gameKind === "quiz") {
+    try {
+      const rec = _loadGame<QuizData>("quiz", s.gameId);
+      if (rec) {
+        const questions = rec.data.questions;
+        const maxScore = questions.reduce((sum, q) => sum + (q.points || 0), 0);
+        const durationSec = Math.max(0, Math.round((Date.now() - s.createdAt) / 1000));
+        const players = s.players.map((p) => {
+          const hist = p.answerHistory ?? [];
+          const answers: OnlineQuizPlayerAnswer[] = hist.map((a) => {
+            const q: QuizQuestion | undefined = questions[a.questionIdx];
+            const correctAnswer = q?.answer ?? "";
+            return {
+              questionIdx: a.questionIdx,
+              question: q?.q ?? `Вопрос ${a.questionIdx + 1}`,
+              given: a.given,
+              correctAnswer,
+              correct: a.correct,
+              earned: a.delta,
+              points: q?.points ?? 0,
+              timeMs: a.timeMs,
+            };
+          });
+          const correctCount = answers.filter((a) => a.correct).length;
+          return {
+            id: p.id,
+            nickname: p.nickname,
+            avatar: p.avatar,
+            score: p.score,
+            maxScore,
+            correctCount,
+            totalQuestions: questions.length,
+            answers,
+          };
+        });
+        saveOnlineQuizResult({
+          roomCode: s.code,
+          gameId: s.gameId,
+          durationSec,
+          players,
+        });
+      }
+    } catch (err) {
+      console.error("Failed to save online room result", err);
+    }
+  }
+  return fake(s);
 }
 export async function kickPlayer(code: string, playerId: string) {
-  const s = readRoom(code); if (!s) return fake(null);
+  const s = readRoom(code);
+  if (!s) return fake(null);
   s.players = s.players.filter((p) => p.id !== playerId);
-  writeRoom(s); return fake(s);
+  writeRoom(s);
+  return fake(s);
 }
 export async function adjustPlayerScore(code: string, playerId: string, delta: number) {
-  const s = readRoom(code); if (!s) return fake(null);
+  const s = readRoom(code);
+  if (!s) return fake(null);
   const p = s.players.find((pl) => pl.id === playerId);
-  if (p) { p.score = Math.max(0, p.score + delta); }
-  writeRoom(s); return fake(s);
+  if (p) {
+    p.score = Math.max(0, p.score + delta);
+  }
+  writeRoom(s);
+  return fake(s);
 }
 export async function restartRoom(code: string) {
-  const s = readRoom(code); if (!s) return fake(null);
+  const s = readRoom(code);
+  if (!s) return fake(null);
   s.status = "waiting";
   s.questionIdx = 0;
   s.questionStartAt = null;
   s.fastestPlayerId = undefined;
-  s.players.forEach((p) => { p.score = 0; p.streak = 0; p.lastAnswer = undefined; });
-  writeRoom(s); return fake(s);
+  s.players.forEach((p) => {
+    p.score = 0;
+    p.streak = 0;
+    p.lastAnswer = undefined;
+    p.answerHistory = [];
+  });
+  writeRoom(s);
+  return fake(s);
 }
 
 // Kahoot-style scoring (TZ §0)
@@ -291,15 +380,14 @@ export function computeKahootScore(opts: {
   const base = 1000;
   const speed = Math.round(500 * ratio);
   const streakAfter = opts.streakBefore + 1;
-  const streakBonus =
-    streakAfter <= 1 ? 0 : Math.min(400, (streakAfter - 1) * 100);
+  const streakBonus = streakAfter <= 1 ? 0 : Math.min(400, (streakAfter - 1) * 100);
   return { delta: base + speed + streakBonus, streakAfter };
 }
 
 export async function submitAnswer(
   code: string,
   playerId: string,
-  payload: { correct: boolean; timeMs: number; totalMs: number },
+  payload: { correct: boolean; timeMs: number; totalMs: number; given?: string },
 ) {
   const s = readRoom(code);
   if (!s) return fake({ correct: false, score: 0 });
@@ -316,14 +404,25 @@ export async function submitAnswer(
   });
   p.score += delta;
   p.streak = streakAfter;
-  p.lastAnswer = {
+  const rec: RoomAnswerRecord = {
     questionIdx: s.questionIdx,
     correct: payload.correct,
     delta,
     timeMs: payload.timeMs,
+    given: payload.given ?? "",
   };
+  p.lastAnswer = rec;
+  if (!p.answerHistory) p.answerHistory = [];
+  // Replace any earlier record for this question (in case of edge cases)
+  p.answerHistory = p.answerHistory.filter((a) => a.questionIdx !== s.questionIdx);
+  p.answerHistory.push(rec);
   writeRoom(s);
   return fake({ correct: payload.correct, score: p.score, delta });
+}
+
+// TODO(server): GET /api/quiz/:gameId/online-results
+export async function getOnlineResults(gameId: string): Promise<OnlineQuizResult[]> {
+  return fake(loadOnlineQuizResults(gameId));
 }
 
 export async function listRooms() {
@@ -332,7 +431,11 @@ export async function listRooms() {
   for (let i = 0; i < localStorage.length; i++) {
     const k = localStorage.key(i);
     if (k?.startsWith(ROOM_PREFIX)) {
-      try { out.push(JSON.parse(localStorage.getItem(k)!)); } catch { /* skip */ }
+      try {
+        out.push(JSON.parse(localStorage.getItem(k)!));
+      } catch {
+        /* skip */
+      }
     }
   }
   return fake(out.sort((a, b) => b.createdAt - a.createdAt));

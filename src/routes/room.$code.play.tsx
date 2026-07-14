@@ -43,7 +43,9 @@ function StudentPlay() {
     try {
       const raw = sessionStorage.getItem(`islandquiz.me.${code}`);
       if (raw) setMe(JSON.parse(raw));
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }, [code]);
 
   useEffect(() => subscribeRoom(code, setState), [code]);
@@ -56,10 +58,7 @@ function StudentPlay() {
   const theme = quiz?.config.theme ?? "amber";
   const question: QuizQuestion | undefined =
     quiz && state ? quiz.questions[state.questionIdx] : undefined;
-  const myPlayer = useMemo(
-    () => state?.players.find((p) => p.id === me?.playerId),
-    [state, me],
-  );
+  const myPlayer = useMemo(() => state?.players.find((p) => p.id === me?.playerId), [state, me]);
 
   // Reset per-question state
   useEffect(() => {
@@ -68,7 +67,6 @@ function StudentPlay() {
       setSubmitted(false);
       setLastEarned(0);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state?.questionIdx, state?.status]);
 
   // Local timer counting down from question.time
@@ -86,7 +84,13 @@ function StudentPlay() {
 
   // Auto-submit on timeout
   useEffect(() => {
-    if (state?.status === "active" && !submitted && timeLeft === 0 && question && state.questionStartAt) {
+    if (
+      state?.status === "active" &&
+      !submitted &&
+      timeLeft === 0 &&
+      question &&
+      state.questionStartAt
+    ) {
       // only after start
       const elapsed = Date.now() - state.questionStartAt;
       if (elapsed >= (question.time || 30) * 1000) {
@@ -124,12 +128,27 @@ function StudentPlay() {
   const doSubmit = async (timeout = false) => {
     if (!state || !question || !me || submitted) return;
     setSubmitted(true);
-    const correct = timeout ? false : checkQuizAnswer(question, value);
+    // Matching-specific empty-check: if no pairs placed, count as wrong
+    let effectiveValue = value;
+    if (question.type === "matching") {
+      try {
+        const map = JSON.parse(value || "{}") as Record<string, string>;
+        if (Object.keys(map).length === 0) effectiveValue = "";
+      } catch {
+        effectiveValue = "";
+      }
+    }
+    const correct = timeout || !effectiveValue ? false : checkQuizAnswer(question, effectiveValue);
     const total = (question.time || 30) * 1000;
     const timeMs = state.questionStartAt
       ? Math.min(total, Date.now() - state.questionStartAt)
       : total;
-    await submitAnswer(code, me.playerId, { correct, timeMs, totalMs: total });
+    await submitAnswer(code, me.playerId, {
+      correct,
+      timeMs,
+      totalMs: total,
+      given: effectiveValue,
+    });
   };
 
   const onToggleMute = () => setMutedState(toggleMute());
@@ -171,9 +190,7 @@ function StudentPlay() {
           <div className="mt-6 text-6xl iq-pop">{me.avatar}</div>
           <h1 className="mt-3 font-display text-3xl font-black">Вы в комнате!</h1>
           <p className="mt-1 text-[color:var(--pt-text-muted)]">{me.nickname}</p>
-          <p className="mt-6 text-sm text-[color:var(--pt-text-muted)]">
-            Ждём начала игры...
-          </p>
+          <p className="mt-6 text-sm text-[color:var(--pt-text-muted)]">Ждём начала игры...</p>
           <div className="mt-6 rounded-3xl border border-[color:var(--pt-border)] bg-[color:var(--pt-surface)] p-4 text-left backdrop-blur-md">
             <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase text-[color:var(--pt-text-muted)]">
               <Users className="h-3.5 w-3.5" /> В комнате ({state.players.length})
@@ -246,9 +263,7 @@ function StudentPlay() {
               🔥 Стрик {myPlayer.streak}!
             </p>
           ) : null}
-          <p className="mt-6 text-sm text-[color:var(--pt-text-muted)]">
-            Ждём следующий вопрос...
-          </p>
+          <p className="mt-6 text-sm text-[color:var(--pt-text-muted)]">Ждём следующий вопрос...</p>
         </div>
       </PlayerShell>
     );
@@ -260,9 +275,8 @@ function StudentPlay() {
   const totalMs = (question.time || 30) * 1000;
   const timeSec = Math.ceil(timeLeft / 1000);
   const urgent = state.status === "active" && timeSec <= 5;
-  const myAnswer = myPlayer?.lastAnswer?.questionIdx === state.questionIdx
-    ? myPlayer.lastAnswer
-    : undefined;
+  const myAnswer =
+    myPlayer?.lastAnswer?.questionIdx === state.questionIdx ? myPlayer.lastAnswer : undefined;
 
   return (
     <PlayerShell theme={theme}>

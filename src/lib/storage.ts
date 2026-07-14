@@ -76,6 +76,7 @@ export function cleanupInvalidGames(): number {
     // Never touch result keys
     if (k.startsWith(`${NS}.results.`)) continue;
     if (k.startsWith(`${NS}.jresults.`)) continue;
+    if (k.startsWith(`${NS}.online-results.`)) continue;
     try {
       const rec = JSON.parse(localStorage.getItem(k)!);
       if (!isValidGame(rec)) toRemove.push(k);

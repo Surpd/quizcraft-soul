@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { PlayerShell, TimerBar } from "@/components/player-shell";
 import { LaTeX } from "@/lib/latex";
-import { loadGame } from "@/lib/storage";
+import { loadGame } from "@/lib/api";
 import {
   setJeopardyMode,
   startJeopardyGame,

@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { PlayerShell, TimerBar } from "@/components/player-shell";
 import { QuizQuestionCard } from "@/components/quiz-question-card";
+import { JeopardyRoomTeacher } from "@/components/jeopardy-room-teacher";
 import {
   subscribeRoom,
   loadGame,

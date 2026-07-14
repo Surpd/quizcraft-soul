@@ -323,7 +323,7 @@ function StudentPlay() {
       <div className="mx-auto max-w-2xl px-4 py-6">
         <div className="mb-3 flex items-center justify-between text-sm">
           <span className="flex items-center gap-2 font-semibold">
-            <span className="text-lg">{me.avatar}</span> {me.nickname}
+            <Avatar name={me.nickname} size={24} /> {me.nickname}
           </span>
           <div className="flex items-center gap-2">
             {MuteBtn}

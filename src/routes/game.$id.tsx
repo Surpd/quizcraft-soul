@@ -37,7 +37,15 @@ import type {
   JeopardyData,
   MillionaireData,
   StoredGame,
+import type {
+  GameKind,
+  GameVisibility,
+  QuizData,
+  JeopardyData,
+  MillionaireData,
+  StoredGame,
 } from "@/lib/types";
+import { findUserById } from "@/lib/auth";
 
 export const Route = createFileRoute("/game/$id")({
   head: () => ({ meta: [{ title: "Дашборд игры — IslandQuiz" }] }),

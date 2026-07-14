@@ -24,7 +24,7 @@ import {
   Lock,
   Timer as TimerIcon,
   StopCircle,
-  Flame,
+  FileText,
 } from "lucide-react";
 import { PlayerShell } from "@/components/player-shell";
 import { Avatar } from "@/components/avatar";
@@ -42,6 +42,8 @@ import {
   startJeopardyFinalQuestion,
   markJeopardyFinal,
   revealJeopardyFinal,
+  advanceJeopardyFinalReveal,
+  finalizeJeopardyTurnWrong,
   finishJeopardyGame,
   adjustJeopardyScore,
   kickPlayer,

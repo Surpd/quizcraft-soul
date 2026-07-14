@@ -8,6 +8,8 @@ import { ThemeSelect } from "@/components/theme-select";
 import { FormulaButton } from "@/components/formula-popover";
 import { AIHelperButton } from "@/components/ai-helper";
 import { CharCounter } from "@/components/char-counter";
+import { TagInput } from "@/components/tag-input";
+
 import { LIMITS } from "@/lib/limits";
 import { newId, saveGame, loadGame } from "@/lib/storage";
 import { BuilderToolbar, BuilderFabs } from "@/components/builder-actions";
@@ -72,11 +74,13 @@ function BuilderMillionaire() {
   const [questions, setQuestions] = useState<MillionaireQuestion[]>(
     LADDERS.normal.slice(0, 5).map((m) => makeQuestion(m)),
   );
+  const [tags, setTags] = useState<string[]>([]);
   const [showSettings, setShowSettings] = useState(false);
   const [savedId, setSavedId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [printAnswers, setPrintAnswers] = useState(true);
   const [loadState, setLoadState] = useState<"idle" | "loading" | "error">(urlId ? "loading" : "idle");
+
 
   useEffect(() => {
     if (!urlId) return;
@@ -85,9 +89,11 @@ function BuilderMillionaire() {
       if (rec) {
         setConfig(rec.data.config);
         setQuestions(rec.data.questions);
+        setTags(rec.tags ?? []);
         setSavedId(urlId);
         setLoadState("idle");
       } else setLoadState("error");
+
     } catch (err) {
       console.error(err);
       setLoadState("error");
@@ -164,7 +170,8 @@ function BuilderMillionaire() {
   const handleSave = (): string | null => {
     if (!validate()) return null;
     const id = savedId ?? newId();
-    saveGame<MillionaireData>("millionaire", id, { config, questions });
+    saveGame<MillionaireData>("millionaire", id, { config, questions }, { tags });
+
     setSavedId(id);
     showToast(savedId ? "Изменения сохранены" : "Игра сохранена!");
     return id;
@@ -173,7 +180,7 @@ function BuilderMillionaire() {
   const handleSaveAsCopy = (): string | null => {
     if (!validate()) return null;
     const id = newId();
-    saveGame<MillionaireData>("millionaire", id, { config, questions });
+    saveGame<MillionaireData>("millionaire", id, { config, questions }, { tags });
     setSavedId(id);
     showToast("Создана копия");
     return id;
@@ -280,7 +287,7 @@ function BuilderMillionaire() {
         </>
       }
     >
-      <div className="surface-card p-6">
+      <div className="surface-card space-y-3 p-6">
         <label className="block">
           <span className="mb-1.5 flex items-center justify-between text-xs font-semibold text-muted-foreground">
             Название игры
@@ -294,7 +301,12 @@ function BuilderMillionaire() {
             onChange={(e) => setConfig({ ...config, title: e.target.value })}
           />
         </label>
+        <div>
+          <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">Теги</span>
+          <TagInput value={tags} onChange={setTags} />
+        </div>
       </div>
+
 
       {showSettings && (
         <div className="surface-card animate-fade-up space-y-4 p-6">

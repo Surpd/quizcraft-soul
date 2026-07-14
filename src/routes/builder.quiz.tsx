@@ -16,6 +16,8 @@ import { FormulaButton } from "@/components/formula-popover";
 import { AIHelperButton } from "@/components/ai-helper";
 import { AIGenerateQuizButton } from "@/components/ai-generate-quiz";
 import { CharCounter } from "@/components/char-counter";
+import { TagInput } from "@/components/tag-input";
+
 import { LIMITS } from "@/lib/limits";
 import { ImageDrop } from "@/lib/image-drop";
 import { ThemeSelect } from "@/components/theme-select";
@@ -76,11 +78,13 @@ function BuilderQuiz() {
     totalTime: 10,
   });
   const [questions, setQuestions] = useState<QuizQuestion[]>([makeQuestion("choice")]);
+  const [tags, setTags] = useState<string[]>([]);
   const [showSettings, setShowSettings] = useState(false);
   const [savedId, setSavedId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [printAnswers, setPrintAnswers] = useState(true);
   const [loadState, setLoadState] = useState<"idle" | "loading" | "error">(urlId ? "loading" : "idle");
+
   const listRef = useRef<HTMLDivElement>(null);
 
   // Bug 1.2: подгружаем сохранённый квиз по ?id=
@@ -91,9 +95,11 @@ function BuilderQuiz() {
       if (rec) {
         setConfig(rec.data.config);
         setQuestions(rec.data.questions);
+        setTags(rec.tags ?? []);
         setSavedId(urlId);
         setLoadState("idle");
       } else {
+
         setLoadState("error");
       }
     } catch (err) {
@@ -135,7 +141,7 @@ function BuilderQuiz() {
   const handleSave = (): string | null => {
     if (!validate()) return null;
     const id = savedId ?? newId();
-    saveGame<QuizData>("quiz", id, { config, questions });
+    saveGame<QuizData>("quiz", id, { config, questions }, { tags });
     setSavedId(id);
     showToast(savedId ? "Изменения сохранены" : "Квиз сохранён!");
     return id;
@@ -147,11 +153,12 @@ function BuilderQuiz() {
     saveGame<QuizData>("quiz", id, {
       config: { ...config, title: `${config.title} (копия)` },
       questions,
-    });
+    }, { tags });
     setSavedId(id);
     showToast("Создана копия квиза");
     return id;
   };
+
 
   const openResults = () => {
     const id = handleSave();
@@ -362,7 +369,12 @@ function BuilderQuiz() {
             onChange={(e) => setConfig({ ...config, description: e.target.value })}
           />
         </label>
+        <div>
+          <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">Теги</span>
+          <TagInput value={tags} onChange={setTags} />
+        </div>
       </div>
+
 
       {showSettings && (
         <div className="surface-card animate-fade-up space-y-4 p-6">

@@ -87,11 +87,12 @@ export async function getMe(): Promise<User | null> {
 }
 
 // TODO(server): PATCH /api/users/me
-export async function updateProfile(patch: { name?: string; avatar?: string }): Promise<User | null> {
+export async function updateProfile(patch: { name?: string; avatar?: string; bio?: string; subject?: string }): Promise<User | null> {
   const id = getSessionUserId();
   if (!id) return fake(null);
   return fake(updateUserRecord(id, patch));
 }
+
 
 // ---------- Games ----------
 export type AnyGameData = QuizData | JeopardyData | MillionaireData;
@@ -101,6 +102,7 @@ export interface SaveGameInput<T = AnyGameData> {
   kind: GameKind;
   data: T;
   title?: string;
+  tags?: string[];
 }
 
 export async function saveGame<T = AnyGameData>(input: SaveGameInput<T>) {
@@ -108,9 +110,6 @@ export async function saveGame<T = AnyGameData>(input: SaveGameInput<T>) {
   const existing = _loadGame<T>(input.kind, id);
   const me = getCurrentUser();
   const meta: Partial<StoredGame> = {};
-  // Attach ownerId whenever a logged-in user creates OR owns/claims a game
-  // without an owner. Fixes: new games saved as anonymous when logged in,
-  // and orphan binding not persisting ownerId on existing records.
   if (me && (!existing || !existing.ownerId || existing.ownerId === me.id)) {
     meta.ownerId = me.id;
     meta.ownerName = me.name;
@@ -118,9 +117,11 @@ export async function saveGame<T = AnyGameData>(input: SaveGameInput<T>) {
   } else if (!existing && !me) {
     meta.visibility = "link";
   }
+  if (input.tags) meta.tags = input.tags;
   _saveGame<T>(input.kind, id, input.data, meta);
   return fake({ id, play_url: `/play/${input.kind}/${id}` });
 }
+
 
 // TODO(server): POST /api/games/:id/fork
 export async function forkGame(gameId: string): Promise<{ id: string } | null> {
@@ -1284,3 +1285,81 @@ export async function listPlayedGameIdsForUser(userId: string): Promise<Set<stri
   }
   return fake(out);
 }
+
+// ---------- Ratings ----------
+export function computeRatingStats(g: StoredGame): { avg: number; count: number } {
+  const r = g.ratings;
+  if (!r) return { avg: 0, count: 0 };
+  const values = Object.values(r);
+  if (!values.length) return { avg: 0, count: 0 };
+  const sum = values.reduce((a, b) => a + b, 0);
+  return { avg: sum / values.length, count: values.length };
+}
+
+// TODO(server): POST /api/games/:id/rate
+export async function rateGame(gameId: string, rating: number): Promise<{ ok: boolean }> {
+  const me = getCurrentUser();
+  if (!me) return fake({ ok: false });
+  const r = Math.max(1, Math.min(5, Math.round(rating)));
+  const all = _listGames();
+  const g = all.find((x) => x.id === gameId);
+  if (!g) return fake({ ok: false });
+  const ratings = { ...(g.ratings ?? {}), [me.id]: r };
+  _saveGame(g.kind, g.id, g.data, {
+    ownerId: g.ownerId,
+    ownerName: g.ownerName,
+    visibility: g.visibility,
+    forkedFrom: g.forkedFrom,
+    forkedOwnerName: g.forkedOwnerName,
+    tags: g.tags,
+    playCount: g.playCount,
+    ratings,
+  });
+  return fake({ ok: true });
+}
+
+export function getMyRating(g: StoredGame, userId?: string): number | undefined {
+  if (!userId) return undefined;
+  return g.ratings?.[userId];
+}
+
+// ---------- Public profiles ----------
+export interface PublicProfile {
+  user: User;
+  games: StoredGame[];
+  stats: { gamesCount: number; avgRating: number; totalRatings: number };
+}
+
+// TODO(server): GET /api/users/:id
+export async function getUserProfile(userId: string): Promise<PublicProfile | null> {
+  const user = findUserById(userId);
+  if (!user) return fake(null);
+  const me = getCurrentUser();
+  const all = _listGames();
+  const mine = all.filter((g) => g.ownerId === userId);
+  const visible =
+    me?.id === userId ? mine : mine.filter((g) => g.visibility === "public");
+  let totalRatings = 0;
+  let ratingSum = 0;
+  for (const g of mine) {
+    const { avg, count } = computeRatingStats(g);
+    if (count) {
+      totalRatings += count;
+      ratingSum += avg * count;
+    }
+  }
+  const avgRating = totalRatings ? ratingSum / totalRatings : 0;
+  return fake({
+    user,
+    games: visible,
+    stats: { gamesCount: mine.length, avgRating, totalRatings },
+  });
+}
+
+// TODO(server): GET /api/users/:id/games
+export async function getUserGames(userId: string): Promise<StoredGame[]> {
+  const me = getCurrentUser();
+  const all = _listGames().filter((g) => g.ownerId === userId);
+  return fake(me?.id === userId ? all : all.filter((g) => g.visibility === "public"));
+}
+

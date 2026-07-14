@@ -22,10 +22,13 @@ import {
   bindOrphanGames,
   countOrphanGames,
   listPlayedGameIdsForUser,
+  computeRatingStats,
 } from "@/lib/api";
 import { cleanupInvalidGames } from "@/lib/storage";
 import { useAuth } from "@/hooks/use-auth";
+import { RatingStars } from "@/components/rating-stars";
 import type { GameKind, QuizData, StoredGame } from "@/lib/types";
+
 
 type TabKey = "my" | "public" | "added" | "played";
 
@@ -77,6 +80,10 @@ function LibraryPage() {
   const [playedIds, setPlayedIds] = useState<Set<string>>(new Set());
   const [playModal, setPlayModal] = useState<{ id: string; kind: GameKind } | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState<"date" | "rating" | "plays">("date");
+
 
   const showToast = (m: string) => {
     setToast(m);
@@ -105,7 +112,7 @@ function LibraryPage() {
 
   useEffect(reload, [user]);
 
-  const filtered = useMemo(() => {
+  const tabFiltered = useMemo(() => {
     if (!games) return [];
     switch (activeTab) {
       case "my":
@@ -120,6 +127,32 @@ function LibraryPage() {
         return games.filter((g) => playedIds.has(g.id));
     }
   }, [games, activeTab, user, playedIds]);
+
+  const popularTags = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const g of tabFiltered) for (const t of g.tags ?? []) counts.set(t, (counts.get(t) ?? 0) + 1);
+    return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 12).map(([t]) => t);
+  }, [tabFiltered]);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    let list = tabFiltered.filter((g) => {
+      const title = ((g.data as { config?: { title?: string } })?.config?.title ?? "").toLowerCase();
+      const tagsLower = (g.tags ?? []).map((t) => t.toLowerCase());
+      const matchQ = !q || title.includes(q) || tagsLower.some((t) => t.includes(q));
+      const matchTags = !selectedTags.length || selectedTags.every((t) => tagsLower.includes(t.toLowerCase()));
+      return matchQ && matchTags;
+    });
+    if (sortBy === "rating") {
+      list = [...list].sort((a, b) => computeRatingStats(b).avg - computeRatingStats(a).avg);
+    } else if (sortBy === "plays") {
+      list = [...list].sort((a, b) => (b.playCount ?? 0) - (a.playCount ?? 0));
+    } else {
+      list = [...list].sort((a, b) => b.updatedAt - a.updatedAt);
+    }
+    return list;
+  }, [tabFiltered, search, selectedTags, sortBy]);
+
 
   const onBind = async () => {
     const n = await bindOrphanGames();
@@ -192,6 +225,56 @@ function LibraryPage() {
             );
           })}
         </div>
+
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Поиск по названию или тегу…"
+            className="input-base min-w-[220px] flex-1"
+          />
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as "date" | "rating" | "plays")}
+            className="input-base w-auto"
+          >
+            <option value="date">По дате</option>
+            <option value="rating">По рейтингу</option>
+            <option value="plays">По прохождениям</option>
+          </select>
+        </div>
+
+        {popularTags.length > 0 && (
+          <div className="mb-6 flex flex-wrap items-center gap-1.5">
+            {popularTags.map((t) => {
+              const active = selectedTags.includes(t);
+              return (
+                <button
+                  key={t}
+                  onClick={() =>
+                    setSelectedTags((prev) => (active ? prev.filter((x) => x !== t) : [...prev, t]))
+                  }
+                  className={`rounded-full px-2.5 py-1 text-xs font-semibold transition-colors ${
+                    active
+                      ? "bg-primary text-white"
+                      : "bg-surface-muted text-muted-foreground hover:bg-primary-soft hover:text-primary"
+                  }`}
+                >
+                  #{t}
+                </button>
+              );
+            })}
+            {(selectedTags.length > 0 || search) && (
+              <button
+                onClick={() => { setSelectedTags([]); setSearch(""); }}
+                className="ml-1 text-xs font-semibold text-muted-foreground underline hover:text-foreground"
+              >
+                Сбросить
+              </button>
+            )}
+          </div>
+        )}
+
 
         {error && (
           <div className="mb-4 rounded-xl bg-danger-soft px-4 py-3 text-sm text-danger">{error}</div>
@@ -307,9 +390,30 @@ function GameCard({
       {g.forkedOwnerName && (
         <p className="text-xs text-muted-foreground">на основе игры от {g.forkedOwnerName}</p>
       )}
-      {!isMine && g.ownerName && (
-        <p className="text-xs text-muted-foreground">Автор: {g.ownerName}</p>
+      {!isMine && g.ownerName && g.ownerId && (
+        <Link
+          to="/profile/$userId"
+          params={{ userId: g.ownerId }}
+          onClick={(e) => e.stopPropagation()}
+          className="text-xs text-muted-foreground hover:text-primary hover:underline"
+        >
+          от {g.ownerName}
+        </Link>
       )}
+      {g.tags && g.tags.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {g.tags.slice(0, 4).map((t) => (
+            <span key={t} className="rounded-full bg-surface-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+              #{t}
+            </span>
+          ))}
+        </div>
+      )}
+      {(() => {
+        const { avg, count } = computeRatingStats(g);
+        return count > 0 ? <RatingStars value={avg} count={count} size={12} /> : null;
+      })()}
+
       <div className="mt-auto flex flex-wrap items-center gap-2">
         <p className="text-xs text-muted-foreground">
           {new Date(g.updatedAt).toLocaleDateString("ru-RU")}

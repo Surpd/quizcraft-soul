@@ -14,6 +14,8 @@ import { FormulaButton } from "@/components/formula-popover";
 import { AIHelperButton } from "@/components/ai-helper";
 import { AIJeopardyCategoryButton } from "@/components/ai-jeopardy-category";
 import { CharCounter } from "@/components/char-counter";
+import { TagInput } from "@/components/tag-input";
+
 import { LIMITS } from "@/lib/limits";
 import { ImageDrop } from "@/lib/image-drop";
 import { ThemeSelect } from "@/components/theme-select";
@@ -75,6 +77,7 @@ function BuilderJeopardy() {
     [makeCategory(1), makeCategory(1), makeCategory(1)],
   ]);
   const [final, setFinal] = useState<JeopardyFinal>({ category: "", q: "", a: "", image: "" });
+  const [tags, setTags] = useState<string[]>([]);
   const [mode, setMode] = useState<"list" | "grid">("list");
   const [showSettings, setShowSettings] = useState(false);
   const [savedId, setSavedId] = useState<string | null>(null);
@@ -82,6 +85,7 @@ function BuilderJeopardy() {
   const [modal, setModal] = useState<ModalTarget | null>(null);
   const [printAnswers, setPrintAnswers] = useState(true);
   const [loadState, setLoadState] = useState<"idle" | "loading" | "error">(urlId ? "loading" : "idle");
+
 
   useEffect(() => {
     if (!urlId) return;
@@ -91,9 +95,11 @@ function BuilderJeopardy() {
         setConfig(rec.data.config);
         setRounds(rec.data.rounds);
         setFinal(rec.data.final);
+        setTags(rec.tags ?? []);
         setSavedId(urlId);
         setLoadState("idle");
       } else setLoadState("error");
+
     } catch (err) {
       console.error(err);
       setLoadState("error");
@@ -201,7 +207,7 @@ function BuilderJeopardy() {
   const handleSave = (): string | null => {
     const id = savedId ?? newId();
     const data: JeopardyData = { config, rounds, final };
-    saveGame<JeopardyData>("jeopardy", id, data);
+    saveGame<JeopardyData>("jeopardy", id, data, { tags });
     setSavedId(id);
     showToast(savedId ? "Изменения сохранены" : "Игра сохранена!");
     return id;
@@ -209,11 +215,12 @@ function BuilderJeopardy() {
 
   const handleSaveAsCopy = (): string | null => {
     const id = newId();
-    saveGame<JeopardyData>("jeopardy", id, { config, rounds, final });
+    saveGame<JeopardyData>("jeopardy", id, { config, rounds, final }, { tags });
     setSavedId(id);
     showToast("Создана копия");
     return id;
   };
+
 
   const handleImport = async (file: File) => {
     try {
@@ -351,7 +358,7 @@ function BuilderJeopardy() {
         </>
       }
     >
-      <div className="surface-card p-6">
+      <div className="surface-card space-y-3 p-6">
         <label className="block">
           <span className="mb-1.5 flex items-center justify-between text-xs font-semibold text-muted-foreground">
             Название игры
@@ -365,7 +372,13 @@ function BuilderJeopardy() {
             onChange={(e) => setConfig({ ...config, title: e.target.value })}
           />
         </label>
+        <div>
+          <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">Теги</span>
+          <TagInput value={tags} onChange={setTags} />
+        </div>
       </div>
+
+
 
       {showSettings && (
         <div className="surface-card animate-fade-up space-y-4 p-6">

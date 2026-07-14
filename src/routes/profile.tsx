@@ -15,16 +15,23 @@ function ProfilePage() {
   const { user, isLoading, updateProfile, logout } = useAuth();
   const nav = useNavigate();
   const [name, setName] = useState("");
+  const [bio, setBio] = useState("");
+  const [subject, setSubject] = useState("");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [mine, setMine] = useState<StoredGame[]>([]);
+
 
   useEffect(() => {
     if (!isLoading && !user) nav({ to: "/login" });
   }, [isLoading, user, nav]);
 
   useEffect(() => {
-    if (user) setName(user.name);
+    if (user) {
+      setName(user.name);
+      setBio(user.bio ?? "");
+      setSubject(user.subject ?? "");
+    }
   }, [user]);
 
   useEffect(() => {
@@ -42,11 +49,16 @@ function ProfilePage() {
 
   const onSave = async () => {
     setSaving(true);
-    await updateProfile({ name: name.trim() || user.name });
+    await updateProfile({
+      name: name.trim() || user.name,
+      bio: bio.trim(),
+      subject: subject.trim(),
+    });
     setSaving(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 1500);
   };
+
 
   return (
     <div className="min-h-screen bg-surface">

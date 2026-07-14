@@ -6,8 +6,11 @@ export interface User {
   email: string;
   name: string;
   avatar?: string;
+  bio?: string;
+  subject?: string;
   createdAt: number;
 }
+
 
 type StoredUser = User & {
   passwordHash?: string;
@@ -98,9 +101,14 @@ function hashPassword(email: string, password: string): string {
 }
 
 function publicUser(u: StoredUser): User {
-  const { id, email, name, avatar, createdAt } = u;
-  return { id, email, name, avatar, createdAt };
+  const { id, email, name, avatar, bio, subject, createdAt } = u;
+  return { id, email, name, avatar, bio, subject, createdAt };
 }
+
+export function listAllUsers(): User[] {
+  return readUsersRaw().map(publicUser);
+}
+
 
 function readUsersRaw(): StoredUser[] {
   if (typeof window === "undefined") return [];

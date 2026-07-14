@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Trophy, ArrowLeft, ChevronDown, ChevronRight } from "lucide-react";
+import { Trophy, ArrowLeft, ChevronDown, ChevronRight, Check, X } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { getJeopardyResults } from "@/lib/api";
 import { loadGame } from "@/lib/storage";
@@ -182,10 +182,11 @@ function JeopardyResultsPage() {
                                           {r.hasFinal && (
                                             <td className="px-2 py-2">
                                               {t.finalCorrect ? (
-                                                <span className="text-success">✓</span>
+                                                <Check className="h-4 w-4 text-success" />
                                               ) : (
-                                                <span className="text-danger">✕</span>
+                                                <X className="h-4 w-4 text-danger" />
                                               )}
+
                                             </td>
                                           )}
                                         </tr>

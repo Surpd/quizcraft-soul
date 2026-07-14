@@ -304,7 +304,7 @@ function QuizPlayModal({
             <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary-soft text-primary">
               <Radio className="h-5 w-5" />
             </span>
-            <span className="font-display text-base font-bold">🌐 Онлайн-комната</span>
+            <span className="font-display text-base font-bold">Онлайн-комната</span>
             <span className="text-xs text-muted-foreground">
               {loading ? "Создаём..." : "Ученики заходят по коду со своих устройств"}
             </span>

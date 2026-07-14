@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Fragment, useEffect, useMemo, useState } from "react";
-import { RefreshCw, Trophy, ArrowLeft, Home, Globe, ChevronRight, Check, X } from "lucide-react";
+import { RefreshCw, Trophy, ArrowLeft, User, Globe, ChevronRight, Check, X } from "lucide-react";
+import { Avatar } from "@/components/avatar";
+
 import { SiteHeader } from "@/components/site-header";
 import {
   loadQuizResults,
@@ -80,7 +82,7 @@ function ResultsPage() {
       const winner = sorted[0];
       const extra = Math.max(0, sorted.length - 1);
       const name = winner
-        ? `${winner.avatar} ${winner.nickname}${extra > 0 ? ` и ещё ${extra}` : ""}`
+        ? `${winner.nickname}${extra > 0 ? ` и ещё ${extra}` : ""}`
         : `Комната ${r.roomCode}`;
       return {
         kind: "online",
@@ -198,7 +200,7 @@ function ResultsPage() {
                             <td className="px-4 py-3">
                               {isOffline ? (
                                 <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-muted px-2.5 py-1 text-xs font-semibold text-muted-foreground">
-                                  <Home className="h-3 w-3" /> Офлайн
+                                  <User className="h-3 w-3" /> Офлайн
                                 </span>
                               ) : (
                                 <span className="inline-flex items-center gap-1.5 rounded-full bg-primary-soft px-2.5 py-1 text-xs font-semibold text-primary">
@@ -333,7 +335,8 @@ function OnlineRoomPlayers({
   onTogglePlayer: (id: string) => void;
 }) {
   const sorted = [...room.players].sort((a, b) => b.score - a.score);
-  const medal = (i: number) => (i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : "  ");
+  const medalColor = (i: number) =>
+    i === 0 ? "text-amber-500" : i === 1 ? "text-slate-400" : i === 2 ? "text-amber-700" : "";
   return (
     <div className="space-y-2">
       <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -351,8 +354,15 @@ function OnlineRoomPlayers({
               className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-surface-muted/50"
             >
               <span className="flex min-w-0 items-center gap-3">
-                <span className="w-6 text-lg">{medal(i)}</span>
-                <span className="text-xl">{p.avatar}</span>
+                <span className="grid w-6 place-items-center">
+                  {i < 3 ? (
+                    <Trophy className={`h-4 w-4 ${medalColor(i)}`} />
+                  ) : (
+                    <span className="font-mono text-xs text-muted-foreground">{i + 1}</span>
+                  )}
+                </span>
+                <Avatar name={p.nickname} size={28} />
+
                 <span className="truncate font-semibold">{p.nickname}</span>
               </span>
               <span className="flex items-center gap-3 text-sm">

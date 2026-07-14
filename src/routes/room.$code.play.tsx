@@ -5,13 +5,15 @@
 
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Hourglass, Trophy, Timer, Volume2, VolumeX, Users } from "lucide-react";
+import { Hourglass, Trophy, Timer, Volume2, VolumeX, Users, Flame, Check, X } from "lucide-react";
 import { PlayerShell, TimerBar } from "@/components/player-shell";
+import { Avatar } from "@/components/avatar";
 import { QuizQuestionCard, checkQuizAnswer } from "@/components/quiz-question-card";
 import { JeopardyRoomPlayer } from "@/components/jeopardy-room-player";
 import { subscribeRoom, loadGame, submitAnswer, type RoomState } from "@/lib/api";
 import { sfx, isMuted, toggleMute } from "@/lib/sounds";
 import type { QuizData, QuizQuestion } from "@/lib/types";
+
 
 export const Route = createFileRoute("/room/$code/play")({
   head: () => ({
@@ -222,7 +224,7 @@ function StudentPlay() {
       <PlayerShell theme={theme}>
         <div className="mx-auto max-w-lg px-6 py-16 text-center">
           <div className="flex justify-center pt-6">{MuteBtn}</div>
-          <div className="mt-6 text-6xl iq-pop">{me.avatar}</div>
+          <Avatar name={me.nickname} size={80} className="mx-auto mt-6 iq-pop" />
           <h1 className="mt-3 font-display text-3xl font-black">Вы в комнате!</h1>
           <p className="mt-1 text-[color:var(--pt-text-muted)]">{me.nickname}</p>
           <p className="mt-6 text-sm text-[color:var(--pt-text-muted)]">Ждём начала игры...</p>
@@ -240,7 +242,7 @@ function StudentPlay() {
                       : "bg-[color:var(--pt-surface-strong)]"
                   }`}
                 >
-                  <span>{p.avatar}</span>
+                  <Avatar name={p.nickname} size={22} />
                   {p.nickname}
                 </div>
               ))}
@@ -260,7 +262,7 @@ function StudentPlay() {
       <PlayerShell theme={theme}>
         <div className="mx-auto max-w-md px-6 py-16 text-center">
           <div className="flex justify-center">{MuteBtn}</div>
-          <div className={`mt-6 text-7xl ${isPodium ? "iq-bounce" : "iq-pop"}`}>{me.avatar}</div>
+          <Avatar name={me.nickname} size={96} className={`mx-auto mt-6 ${isPodium ? "iq-bounce" : "iq-pop"}`} />
           <Trophy className="mx-auto mt-4 h-10 w-10 text-[color:var(--pt-accent)]" />
           <h1 className="mt-2 font-display text-3xl font-black">Финал</h1>
           <p className="mt-1 text-[color:var(--pt-text-muted)]">
@@ -283,7 +285,7 @@ function StudentPlay() {
       <PlayerShell theme={theme}>
         <div className="mx-auto max-w-md px-6 py-20 text-center">
           <div className="flex justify-center">{MuteBtn}</div>
-          <div className="mt-8 text-6xl iq-bounce">{me.avatar}</div>
+          <Avatar name={me.nickname} size={80} className="mx-auto mt-8 iq-bounce" />
           <p className="mt-4 text-sm uppercase tracking-widest text-[color:var(--pt-text-muted)]">
             Ваше место
           </p>
@@ -295,11 +297,12 @@ function StudentPlay() {
           </p>
           {showStreak && (
             <div
-              className={`fixed left-1/2 bottom-8 z-50 -translate-x-1/2 rounded-full bg-[color:var(--pt-accent)] px-4 py-2 font-bold text-black shadow-lg transition-opacity duration-300 ${streakFading ? "opacity-0" : "opacity-100"} animate-slide-up`}
+              className={`fixed left-1/2 bottom-8 z-50 inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-[color:var(--pt-accent)] px-4 py-2 font-bold text-black shadow-lg transition-opacity duration-300 ${streakFading ? "opacity-0" : "opacity-100"} animate-slide-up`}
             >
-              🔥 Стрик {myPlayer?.streak}!
+              <Flame className="h-4 w-4" /> Стрик {myPlayer?.streak}!
             </div>
           )}
+
           <p className="mt-6 text-sm text-[color:var(--pt-text-muted)]">Ждём следующий вопрос...</p>
         </div>
       </PlayerShell>
@@ -320,7 +323,7 @@ function StudentPlay() {
       <div className="mx-auto max-w-2xl px-4 py-6">
         <div className="mb-3 flex items-center justify-between text-sm">
           <span className="flex items-center gap-2 font-semibold">
-            <span className="text-lg">{me.avatar}</span> {me.nickname}
+            <Avatar name={me.nickname} size={24} /> {me.nickname}
           </span>
           <div className="flex items-center gap-2">
             {MuteBtn}
@@ -378,9 +381,13 @@ function StudentPlay() {
         {isReveal && myAnswer && (
           <div className="relative mt-4 text-center">
             {myAnswer.correct ? (
-              <p className="text-2xl font-bold text-success">✓ Верно!</p>
+              <p className="inline-flex items-center justify-center gap-2 text-2xl font-bold text-success">
+                <Check className="h-6 w-6" /> Верно!
+              </p>
             ) : (
-              <p className="text-2xl font-bold text-danger">✕ Неверно</p>
+              <p className="inline-flex items-center justify-center gap-2 text-2xl font-bold text-danger">
+                <X className="h-6 w-6" /> Неверно
+              </p>
             )}
             {lastEarned > 0 && (
               <span className="iq-points-fly pointer-events-none absolute left-1/2 top-4 -translate-x-1/2 rounded-full bg-success/20 px-3 py-1 font-bold text-success">
@@ -398,11 +405,12 @@ function StudentPlay() {
 
         {showStreak && (
           <div
-            className={`fixed left-1/2 bottom-8 z-50 -translate-x-1/2 rounded-full bg-[color:var(--pt-accent)] px-4 py-2 font-bold text-black shadow-lg transition-opacity duration-300 ${streakFading ? "opacity-0" : "opacity-100"} animate-slide-up`}
+            className={`fixed left-1/2 bottom-8 z-50 inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-[color:var(--pt-accent)] px-4 py-2 font-bold text-black shadow-lg transition-opacity duration-300 ${streakFading ? "opacity-0" : "opacity-100"} animate-slide-up`}
           >
-            🔥 Стрик {myPlayer?.streak}!
+            <Flame className="h-4 w-4" /> Стрик {myPlayer?.streak}!
           </div>
         )}
+
       </div>
     </PlayerShell>
   );

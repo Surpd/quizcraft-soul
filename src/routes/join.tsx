@@ -2,10 +2,9 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { LogIn, Users } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
+import { Avatar } from "@/components/avatar";
 import { joinRoom } from "@/lib/api";
 import { LIMITS } from "@/lib/limits";
-
-const AVATARS = ["🦩", "🐢", "🦜", "🐬", "🦀", "🐙", "🦑", "🐠", "🌴", "🌊", "🍍", "🏝️"];
 
 export const Route = createFileRoute("/join")({
   head: () => ({
@@ -21,7 +20,6 @@ function JoinPage() {
   const navigate = useNavigate();
   const [code, setCode] = useState("");
   const [nickname, setNickname] = useState("");
-  const [avatar, setAvatar] = useState(AVATARS[0]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -33,15 +31,22 @@ function JoinPage() {
       return;
     }
     setLoading(true);
-    const res = await joinRoom(code, nickname.trim(), avatar);
+    // Avatar is derived from nickname (deterministic color + letter);
+    // send the nickname as the avatar payload for legacy shape compatibility.
+    const res = await joinRoom(code, nickname.trim(), nickname.trim());
     setLoading(false);
     if (!res.success) {
       setError(res.error ?? "Не удалось присоединиться");
       return;
     }
     try {
-      sessionStorage.setItem(`islandquiz.me.${code}`, JSON.stringify({ playerId: res.player_id, nickname, avatar }));
-    } catch { /* ignore */ }
+      sessionStorage.setItem(
+        `islandquiz.me.${code}`,
+        JSON.stringify({ playerId: res.player_id, nickname, avatar: nickname }),
+      );
+    } catch {
+      /* ignore */
+    }
     navigate({ to: "/room/$code/play", params: { code } });
   };
 
@@ -57,7 +62,9 @@ function JoinPage() {
 
         <form onSubmit={submit} className="surface-card space-y-5 p-6">
           <label className="block">
-            <span className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Код комнаты</span>
+            <span className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Код комнаты
+            </span>
             <input
               inputMode="numeric"
               maxLength={4}
@@ -69,7 +76,10 @@ function JoinPage() {
           </label>
           <label className="block">
             <span className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Ваше имя <span className="text-muted-foreground/70">({nickname.length}/{LIMITS.nickname})</span>
+              Ваше имя{" "}
+              <span className="text-muted-foreground/70">
+                ({nickname.length}/{LIMITS.nickname})
+              </span>
             </span>
             <input
               className="input-base"
@@ -79,25 +89,25 @@ function JoinPage() {
               onChange={(e) => setNickname(e.target.value)}
             />
           </label>
-          <div>
-            <span className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Аватар</span>
-            <div className="grid grid-cols-6 gap-2">
-              {AVATARS.map((a) => (
-                <button
-                  type="button"
-                  key={a}
-                  onClick={() => setAvatar(a)}
-                  className={`aspect-square rounded-xl text-2xl transition-all ${
-                    avatar === a ? "bg-primary text-primary-foreground scale-110 shadow-lift" : "bg-surface-muted hover:bg-border"
-                  }`}
-                >
-                  {a}
-                </button>
-              ))}
+          {nickname.trim() && (
+            <div className="flex items-center gap-3 rounded-xl bg-surface-muted px-4 py-3">
+              <Avatar name={nickname} size={40} />
+              <div className="text-sm">
+                <p className="font-semibold">{nickname}</p>
+                <p className="text-xs text-muted-foreground">
+                  Цвет и буква создаются автоматически.
+                </p>
+              </div>
             </div>
-          </div>
-          {error && <p className="rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger">{error}</p>}
-          <button type="submit" disabled={loading} className="btn-accent w-full justify-center py-3 text-base">
+          )}
+          {error && (
+            <p className="rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger">{error}</p>
+          )}
+          <button
+            type="submit"
+            disabled={loading}
+            className="btn-accent w-full justify-center py-3 text-base"
+          >
             <LogIn className="h-4 w-4" /> {loading ? "Подключаемся..." : "Присоединиться"}
           </button>
         </form>

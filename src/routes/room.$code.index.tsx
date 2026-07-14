@@ -22,9 +22,15 @@ import {
   Volume2,
   VolumeX,
   RefreshCw,
+  Flame,
+  Target,
+  Check,
+  BarChart3,
 } from "lucide-react";
 import { PlayerShell, TimerBar } from "@/components/player-shell";
+import { Avatar } from "@/components/avatar";
 import { QuizQuestionCard } from "@/components/quiz-question-card";
+
 import { JeopardyRoomTeacher } from "@/components/jeopardy-room-teacher";
 import {
   subscribeRoom,
@@ -417,7 +423,7 @@ function Lobby({
                 key={p.id}
                 className="iq-pop group flex items-center gap-2 rounded-full bg-[color:var(--pt-surface-strong)] px-3 py-1.5 text-sm font-semibold"
               >
-                <span className="text-lg">{p.avatar}</span>
+                <Avatar name={p.nickname} size={22} />
                 {p.nickname}
                 <button
                   onClick={() => onKick(p.id)}
@@ -430,6 +436,7 @@ function Lobby({
             ))}
           </div>
         )}
+
       </div>
     </div>
   );
@@ -457,23 +464,25 @@ function LiveLeaderboard({ state }: { state: RoomState }) {
                 <span className="w-5 font-mono text-xs text-[color:var(--pt-text-muted)]">
                   {i + 1}
                 </span>
-                <span>{p.avatar}</span>
+                <Avatar name={p.nickname} size={22} />
                 <span className="truncate font-semibold">{p.nickname}</span>
                 {p.streak >= 2 && (
-                  <span className="rounded-full bg-[color:var(--pt-accent)]/20 px-1.5 text-[10px] font-bold text-[color:var(--pt-accent)]">
-                    🔥{p.streak}
+                  <span className="inline-flex items-center gap-0.5 rounded-full bg-[color:var(--pt-accent)]/20 px-1.5 text-[10px] font-bold text-[color:var(--pt-accent)]">
+                    <Flame className="h-3 w-3" />
+                    {p.streak}
                   </span>
                 )}
                 {isFastest && (
-                  <span className="rounded-full bg-success/20 px-1.5 text-[10px] font-bold text-success">
-                    🎯
+                  <span className="grid h-4 w-4 place-items-center rounded-full bg-success/20 text-success">
+                    <Target className="h-3 w-3" />
                   </span>
                 )}
                 {answeredHere && state.status === "active" && (
-                  <span className="rounded-full bg-success/20 px-1.5 text-[10px] font-bold text-success">
-                    ✓
+                  <span className="grid h-4 w-4 place-items-center rounded-full bg-success/20 text-success">
+                    <Check className="h-3 w-3" />
                   </span>
                 )}
+
               </div>
               <span className="font-mono text-sm font-bold">{p.score.toLocaleString("ru-RU")}</span>
             </div>
@@ -561,7 +570,7 @@ function AnimatedLeaderboard({ state }: { state: RoomState }) {
                 {phase === "new" && delta < 0 && (
                   <ArrowDown className="h-4 w-4 text-danger iq-pop" />
                 )}
-                <span className="text-2xl">{p.avatar}</span>
+                <Avatar name={p.nickname} size={32} />
                 <span className="font-semibold">{p.nickname}</span>
               </div>
               <div className="relative flex items-center gap-3">
@@ -617,7 +626,8 @@ function PlayerAdmin({
   return (
     <div className="flex items-center justify-between rounded-xl bg-[color:var(--pt-surface-strong)] px-3 py-2 text-sm">
       <div className="flex items-center gap-2 truncate">
-        <span>{p.avatar}</span>
+        <Avatar name={p.nickname} size={22} />
+
         <span className="truncate font-semibold">{p.nickname}</span>
         <span className="ml-2 font-mono text-xs text-[color:var(--pt-text-muted)]">
           {p.score.toLocaleString("ru-RU")}
@@ -674,12 +684,12 @@ function Finale({
           const colors = ["bg-slate-300", "bg-[color:var(--pt-accent)]", "bg-amber-700"];
           return (
             <div key={p.id} className="flex flex-col items-center">
-              <span
-                className={`text-5xl md:text-6xl ${mapIdx === 0 ? "iq-bounce" : "iq-wiggle"}`}
-                style={{ animationDelay: `${col * 0.15}s` }}
-              >
-                {p.avatar}
-              </span>
+              <Avatar
+                name={p.nickname}
+                size={64}
+                className={`${mapIdx === 0 ? "iq-bounce" : "iq-wiggle"}`}
+              />
+
               <span className="mt-2 font-semibold">{p.nickname}</span>
               <span className="font-mono text-lg font-bold">{p.score.toLocaleString("ru-RU")}</span>
               <div
@@ -701,7 +711,7 @@ function Finale({
             >
               <span className="flex items-center gap-2">
                 <span className="font-mono text-xs text-[color:var(--pt-text-muted)]">{i + 4}</span>
-                <span>{p.avatar}</span>
+                <Avatar name={p.nickname} size={22} />
                 <span className="font-semibold">{p.nickname}</span>
               </span>
               <span className="font-mono font-bold">{p.score.toLocaleString("ru-RU")}</span>
@@ -722,7 +732,7 @@ function Finale({
           params={{ gameId }}
           className="inline-flex items-center gap-2 rounded-xl border border-[color:var(--pt-border)] bg-[color:var(--pt-surface-strong)] px-5 py-3 font-bold hover:bg-[color:var(--pt-surface)]"
         >
-          📊 Подробности
+          <BarChart3 className="h-4 w-4" /> Подробности
         </Link>
         <Link
           to="/"

@@ -2,13 +2,25 @@
 // question opens). Buzz button, final-round bet & text answer, personal podium.
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Trophy, Volume2, VolumeX, Bell, Users, Hourglass } from "lucide-react";
+import {
+  Trophy,
+  Volume2,
+  VolumeX,
+  Bell,
+  Users,
+  Hourglass,
+  Mic,
+  Lock,
+  Target,
+  RotateCw,
+  Timer as TimerIcon,
+} from "lucide-react";
 import { PlayerShell } from "@/components/player-shell";
+import { Avatar } from "@/components/avatar";
 import { LaTeX } from "@/lib/latex";
 import {
   loadGame,
   buzzJeopardy,
-  selectJeopardyQuestion,
   submitJeopardyFinalBet,
   submitJeopardyFinalAnswer,
   type RoomState,
@@ -36,6 +48,7 @@ export function JeopardyRoomPlayer({
   const [muted, setMutedState] = useState(true);
   const [betLocal, setBetLocal] = useState<string>("");
   const [answerLocal, setAnswerLocal] = useState<string>("");
+  const [timeLeft, setTimeLeft] = useState(0);
   const navigate = useNavigate();
 
   useEffect(() => setMutedState(isMuted()), []);
@@ -60,6 +73,23 @@ export function JeopardyRoomPlayer({
     j.selectedCat != null && j.selectedQ != null
       ? currentRound[j.selectedCat]?.questions[j.selectedQ]
       : null;
+
+  // Buzz-mode timer display
+  useEffect(() => {
+    if (j.mode !== "buzz") return;
+    if (j.phase !== "question" && j.phase !== "answering") return;
+    const tick = () => {
+      const running =
+        j.phase === "question" && state.questionStartAt
+          ? Date.now() - state.questionStartAt
+          : 0;
+      const elapsed = j.questionElapsedMs + running;
+      setTimeLeft(Math.max(0, j.questionTotalMs - elapsed));
+    };
+    tick();
+    const id = window.setInterval(tick, 200);
+    return () => window.clearInterval(id);
+  }, [j.mode, j.phase, j.questionElapsedMs, j.questionTotalMs, state.questionStartAt]);
 
   const MuteBtn = (
     <button
@@ -87,11 +117,20 @@ export function JeopardyRoomPlayer({
       <PlayerShell theme={theme}>
         <div className="mx-auto max-w-lg px-6 py-16 text-center">
           <div className="flex justify-center">{MuteBtn}</div>
-          <div className="mt-6 text-6xl iq-pop">{me.avatar}</div>
+          <Avatar name={me.nickname} size={80} className="mx-auto mt-6 iq-pop" />
           <h1 className="mt-3 font-display text-3xl font-black">Вы в комнате!</h1>
           <p className="mt-1 text-[color:var(--pt-text-muted)]">{me.nickname}</p>
-          <p className="mt-6 text-sm text-[color:var(--pt-text-muted)]">
-            Режим: {j.mode === "buzz" ? "🔔 по нажатию" : "🔄 по очереди"}
+          <p className="mt-6 inline-flex items-center gap-2 text-sm text-[color:var(--pt-text-muted)]">
+            Режим:
+            {j.mode === "buzz" ? (
+              <>
+                <Bell className="h-4 w-4" /> по нажатию
+              </>
+            ) : (
+              <>
+                <RotateCw className="h-4 w-4" /> по очереди
+              </>
+            )}
           </p>
           <p className="mt-2 text-sm text-[color:var(--pt-text-muted)]">Ждём начала игры...</p>
           <div className="mt-6 rounded-3xl border border-[color:var(--pt-border)] bg-[color:var(--pt-surface)] p-4 text-left">
@@ -108,7 +147,7 @@ export function JeopardyRoomPlayer({
                       : "bg-[color:var(--pt-surface-strong)]"
                   }`}
                 >
-                  <span>{p.avatar}</span>
+                  <Avatar name={p.nickname} size={22} />
                   {p.nickname}
                 </div>
               ))}
@@ -119,7 +158,7 @@ export function JeopardyRoomPlayer({
     );
   }
 
-  // BOARD
+  // BOARD (view-only: teacher / current player picks; players never click)
   if (j.phase === "board") {
     const maxRows = currentRound.reduce((m, c) => Math.max(m, c.questions.length), 0);
     return (
@@ -129,18 +168,17 @@ export function JeopardyRoomPlayer({
           <div className="mb-3 text-center text-sm">
             {j.mode === "turn" ? (
               isMyTurn ? (
-                <p className="rounded-lg bg-[color:var(--pt-accent)]/20 px-3 py-2 font-bold text-[color:var(--pt-accent)]">
-                  🎯 Ваш ход — выберите вопрос
+                <p className="inline-flex items-center gap-2 rounded-lg bg-[color:var(--pt-accent)]/20 px-3 py-2 font-bold text-[color:var(--pt-accent)]">
+                  <Target className="h-4 w-4" /> Ваш ход — выберите вопрос
                 </p>
               ) : (
-                <p className="text-[color:var(--pt-text-muted)]">
-                  Ход: {currentPlayer?.avatar} <b>{currentPlayer?.nickname}</b>
+                <p className="inline-flex items-center gap-2 text-[color:var(--pt-text-muted)]">
+                  Ход: <Avatar name={currentPlayer?.nickname ?? "?"} size={18} />{" "}
+                  <b>{currentPlayer?.nickname}</b>
                 </p>
               )
             ) : (
-              <p className="text-[color:var(--pt-text-muted)]">
-                Учитель выбирает вопрос…
-              </p>
+              <p className="text-[color:var(--pt-text-muted)]">Учитель выбирает вопрос…</p>
             )}
           </div>
           <div
@@ -173,24 +211,17 @@ export function JeopardyRoomPlayer({
                 const key = `${j.round}-${ci}-${ri}`;
                 const used = j.usedKeys.includes(key);
                 return (
-                  <button
+                  <div
                     key={`q-${ci}-${ri}`}
-                    disabled={used || !isMyTurn}
-                    onClick={() => {
-                      sfx.click();
-                      selectJeopardyQuestion(code, me.playerId, ci, ri);
-                    }}
                     style={{ gridColumn: ci + 1, gridRow: ri + 2 }}
-                    className={`rounded-lg border border-[color:var(--pt-border)] py-4 font-display text-lg font-black transition-all ${
+                    className={`grid place-items-center rounded-lg border border-[color:var(--pt-border)] py-4 font-display text-lg font-black ${
                       used
                         ? "opacity-20"
-                        : isMyTurn
-                          ? "bg-[color:var(--pt-accent)]/20 text-[color:var(--pt-accent)] hover:scale-105"
-                          : "bg-[color:var(--pt-surface)] text-[color:var(--pt-text-muted)]"
+                        : "bg-[color:var(--pt-surface)] text-[color:var(--pt-accent)]"
                     }`}
                   >
                     {q.points}
-                  </button>
+                  </div>
                 );
               }),
             )}
@@ -207,15 +238,33 @@ export function JeopardyRoomPlayer({
   ) {
     const iAmBuzzed = j.buzzedPlayerId === me.playerId;
     const isTurnAnswerer = j.mode === "turn" && isMyTurn;
+    const alreadyTried = j.buzzedPlayerIds?.includes(me.playerId);
     const canBuzz =
-      j.mode === "buzz" && j.phase === "question" && !j.buzzedPlayerId;
+      j.mode === "buzz" &&
+      j.phase === "question" &&
+      !j.buzzedPlayerId &&
+      !alreadyTried;
     return (
       <PlayerShell theme={theme}>
         <div className="mx-auto max-w-2xl px-4 py-6">
           <PlayerTop me={me} myScore={myPlayer?.score ?? 0} MuteBtn={MuteBtn} />
-          <p className="mb-2 text-center text-xs uppercase tracking-widest text-[color:var(--pt-text-muted)]">
-            {currentRound[j.selectedCat!]?.category ?? "—"} · {question.points}
-          </p>
+          <div className="mb-2 flex items-center justify-between text-xs uppercase tracking-widest text-[color:var(--pt-text-muted)]">
+            <span>
+              {currentRound[j.selectedCat!]?.category ?? "—"} · {question.points}
+            </span>
+            {j.mode === "buzz" && (j.phase === "question" || j.phase === "answering") && (
+              <span
+                className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-mono ${
+                  timeLeft <= 5000
+                    ? "bg-danger/20 text-danger"
+                    : "bg-[color:var(--pt-surface-strong)]"
+                }`}
+              >
+                <TimerIcon className="h-3 w-3" />
+                {Math.ceil(timeLeft / 1000)}с
+              </span>
+            )}
+          </div>
           {question.image && (
             <img
               src={question.image}
@@ -249,11 +298,17 @@ export function JeopardyRoomPlayer({
             </div>
           )}
 
+          {j.mode === "buzz" && alreadyTried && j.phase === "question" && (
+            <p className="mt-6 text-center text-sm text-[color:var(--pt-text-muted)]">
+              Вы уже пробовали — ждём других команд.
+            </p>
+          )}
+
           {j.phase === "answering" && (
             <div className="mt-6 text-center">
               {iAmBuzzed ? (
-                <p className="text-xl font-bold text-[color:var(--pt-accent)]">
-                  🎤 Отвечайте вслух! Учитель принимает ответ.
+                <p className="inline-flex items-center gap-2 text-xl font-bold text-[color:var(--pt-accent)]">
+                  <Mic className="h-5 w-5" /> Отвечайте вслух! Учитель принимает ответ.
                 </p>
               ) : (
                 <p className="text-sm text-[color:var(--pt-text-muted)]">
@@ -265,13 +320,13 @@ export function JeopardyRoomPlayer({
 
           {isTurnAnswerer && j.phase === "question" && (
             <div className="mt-6 text-center">
-              <p className="text-xl font-bold text-[color:var(--pt-accent)]">
-                🎤 Ваш ход — отвечайте вслух!
+              <p className="inline-flex items-center gap-2 text-xl font-bold text-[color:var(--pt-accent)]">
+                <Mic className="h-5 w-5" /> Ваш ход — отвечайте вслух!
               </p>
             </div>
           )}
 
-          {j.mode === "buzz" && !canBuzz && j.phase === "question" && !iAmBuzzed && (
+          {j.mode === "buzz" && !canBuzz && !alreadyTried && j.phase === "question" && !iAmBuzzed && (
             <p className="mt-6 text-center text-sm text-[color:var(--pt-text-muted)]">
               Ждём вопрос…
             </p>
@@ -303,8 +358,8 @@ export function JeopardyRoomPlayer({
             disabled={saved != null}
           />
           {saved != null ? (
-            <p className="mt-4 rounded-xl bg-success/20 p-3 text-center text-sm font-bold text-success">
-              🔒 Ставка {saved} заблокирована
+            <p className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-success/20 p-3 text-center text-sm font-bold text-success">
+              <Lock className="h-4 w-4" /> Ставка {saved} заблокирована
             </p>
           ) : (
             <button
@@ -396,7 +451,7 @@ export function JeopardyRoomPlayer({
       <PlayerShell theme={theme}>
         <div className="mx-auto max-w-md px-6 py-16 text-center">
           <div className="flex justify-center">{MuteBtn}</div>
-          <div className="mt-6 text-7xl iq-bounce">{me.avatar}</div>
+          <Avatar name={me.nickname} size={96} className="mx-auto mt-6 iq-bounce" />
           <Trophy className="mx-auto mt-4 h-10 w-10 text-[color:var(--pt-accent)]" />
           <h1 className="mt-2 font-display text-3xl font-black">Финал</h1>
           <p className="mt-1 text-[color:var(--pt-text-muted)]">
@@ -437,7 +492,7 @@ function PlayerTop({
   return (
     <div className="mb-3 flex items-center justify-between text-sm">
       <span className="flex items-center gap-2 font-semibold">
-        <span className="text-lg">{me.avatar}</span> {me.nickname}
+        <Avatar name={me.nickname} size={26} /> {me.nickname}
       </span>
       <div className="flex items-center gap-2">
         {MuteBtn}

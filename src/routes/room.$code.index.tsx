@@ -140,13 +140,17 @@ function TeacherRoom() {
     );
   }
 
+  if (state.gameKind === "jeopardy" && state.jeopardy) {
+    return <JeopardyRoomTeacher state={state} code={code} />;
+  }
+
   if (state.gameKind !== "quiz") {
     return (
       <PlayerShell theme={theme}>
         <div className="mx-auto max-w-md px-6 py-20 text-center">
           <h1 className="font-display text-2xl font-bold">Онлайн-режим</h1>
           <p className="mt-2 text-[color:var(--pt-text-muted)]">
-            Пока поддерживается только квиз. «Своя игра» и «Миллионер» — офлайн.
+            Пока поддерживается только квиз и «Своя игра». «Миллионер» — офлайн.
           </p>
         </div>
       </PlayerShell>

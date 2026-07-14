@@ -624,13 +624,15 @@ export async function buzzJeopardy(code: string, playerId: string) {
     mutJeopardy(code, (j, s) => {
       if (j.mode !== "buzz") return;
       if (j.phase !== "question" || j.buzzedPlayerId) return;
-      if (j.buzzedPlayerIds.includes(playerId)) return; // already tried wrong
-      // Freeze timer
+      if (j.buzzedPlayerIds.includes(playerId)) return;
+      // Freeze question timer
       if (s.questionStartAt) {
         j.questionElapsedMs += Date.now() - s.questionStartAt;
       }
       s.questionStartAt = null;
       j.buzzedPlayerId = playerId;
+      j.buzzedAnswer = null;
+      j.buzzStartAt = Date.now();
       j.phase = "answering";
     }),
   );

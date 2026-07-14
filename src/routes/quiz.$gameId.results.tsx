@@ -433,6 +433,33 @@ function PlayerAnswers({ player }: { player: OnlineQuizPlayerResult }) {
   );
 }
 
+function PlayerCell({
+  name,
+  avatar,
+  userId,
+}: {
+  name: string;
+  avatar?: string;
+  userId?: string;
+}) {
+  return (
+    <span className="inline-flex items-center gap-2">
+      <Avatar name={name} avatar={avatar} size={28} />
+      {userId ? (
+        <Link
+          to="/profile/$userId"
+          params={{ userId }}
+          className="hover:text-primary hover:underline"
+        >
+          {name}
+        </Link>
+      ) : (
+        <span>{name}</span>
+      )}
+    </span>
+  );
+}
+
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="surface-card p-4 text-center">

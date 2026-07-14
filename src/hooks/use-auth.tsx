@@ -54,7 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log("[DEBUG] apiRegister returned:", r);
         if (r.ok) setUser(r.user);
         return r.ok ? { ok: true } : { ok: false, error: r.error };
-      },,
+      },
       async logout() {
         await apiLogout();
         setUser(null);

@@ -9,18 +9,45 @@ export interface User {
   createdAt: number;
 }
 
+type StoredUser = User & {
+  passwordHash?: string;
+  // Backward-compatible fallback for any records that may have been written by
+  // an older local stub while debugging. New writes always use passwordHash.
+  password?: string;
+};
+
 const USERS_KEY = "islandquiz.v1.auth.users";
 export const SESSION_KEY = "islandquiz.v1.auth.session";
 
-function readUsersRaw(): User[] {
+function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
+function hashPassword(email: string, password: string): string {
+  let hash = 2166136261;
+  const source = `${normalizeEmail(email)}\n${password}`;
+  for (let i = 0; i < source.length; i++) {
+    hash ^= source.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return `local-v1.${(hash >>> 0).toString(36)}`;
+}
+
+function publicUser(u: StoredUser): User {
+  const { id, email, name, avatar, createdAt } = u;
+  return { id, email, name, avatar, createdAt };
+}
+
+function readUsersRaw(): StoredUser[] {
   if (typeof window === "undefined") return [];
   try {
-    return JSON.parse(localStorage.getItem(USERS_KEY) || "[]") as User[];
+    const parsed = JSON.parse(localStorage.getItem(USERS_KEY) || "[]") as unknown;
+    return Array.isArray(parsed) ? (parsed as StoredUser[]) : [];
   } catch {
     return [];
   }
 }
-function writeUsers(list: User[]) {
+function writeUsers(list: StoredUser[]) {
   if (typeof window === "undefined") return;
   localStorage.setItem(USERS_KEY, JSON.stringify(list));
 }
@@ -37,25 +64,49 @@ export function setSessionUserId(id: string | null) {
 }
 
 export function findUserById(id: string): User | null {
-  return readUsersRaw().find((u) => u.id === id) ?? null;
+  const user = readUsersRaw().find((u) => u.id === id);
+  return user ? publicUser(user) : null;
 }
 
 export function findUserByEmail(email: string): User | null {
-  const e = email.trim().toLowerCase();
-  return readUsersRaw().find((u) => u.email.toLowerCase() === e) ?? null;
+  const e = normalizeEmail(email);
+  const user = readUsersRaw().find((u) => normalizeEmail(u.email) === e);
+  return user ? publicUser(user) : null;
 }
 
-export function createUser(input: { email: string; name: string }): User {
+export function verifyUserCredentials(email: string, password: string): User | null {
+  const e = normalizeEmail(email);
   const list = readUsersRaw();
-  const u: User = {
+  const idx = list.findIndex((u) => normalizeEmail(u.email) === e);
+  if (idx < 0) return null;
+
+  const user = list[idx];
+  const expected = hashPassword(e, password);
+  const ok = user.passwordHash === expected || user.password === password;
+  if (!ok) return null;
+
+  if (user.password || user.passwordHash !== expected) {
+    list[idx] = { ...user, email: e, passwordHash: expected };
+    delete list[idx].password;
+    writeUsers(list);
+  }
+
+  return publicUser(list[idx]);
+}
+
+export function createUser(input: { email: string; name: string; password?: string }): User {
+  const list = readUsersRaw();
+  const email = normalizeEmail(input.email);
+  const u: StoredUser = {
     id: Math.random().toString(36).slice(2, 10),
-    email: input.email.trim(),
-    name: input.name.trim() || input.email.split("@")[0],
+    email,
+    name: input.name.trim() || email.split("@")[0],
     createdAt: Date.now(),
+    passwordHash: input.password ? hashPassword(email, input.password) : undefined,
   };
   list.push(u);
   writeUsers(list);
-  return u;
+  return publicUser(u);
 }
 
 export function updateUserRecord(id: string, patch: Partial<Omit<User, "id" | "createdAt">>): User | null {
@@ -64,7 +115,7 @@ export function updateUserRecord(id: string, patch: Partial<Omit<User, "id" | "c
   if (idx < 0) return null;
   list[idx] = { ...list[idx], ...patch };
   writeUsers(list);
-  return list[idx];
+  return publicUser(list[idx]);
 }
 
 export function getCurrentUser(): User | null {

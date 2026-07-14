@@ -481,8 +481,6 @@ export function JeopardyRoomTeacher({ state, code }: { state: RoomState; code: s
         {/* PODIUM */}
         {j.phase === "podium" && <JPodium players={state.players} gameId={state.gameId} />}
       </div>
-
-      <TimerBar pct={0} />
     </PlayerShell>
   );
 }

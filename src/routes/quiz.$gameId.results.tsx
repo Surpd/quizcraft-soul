@@ -335,7 +335,8 @@ function OnlineRoomPlayers({
   onTogglePlayer: (id: string) => void;
 }) {
   const sorted = [...room.players].sort((a, b) => b.score - a.score);
-  const medal = (i: number) => (i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : "  ");
+  const medalColor = (i: number) =>
+    i === 0 ? "text-amber-500" : i === 1 ? "text-slate-400" : i === 2 ? "text-amber-700" : "";
   return (
     <div className="space-y-2">
       <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -353,8 +354,15 @@ function OnlineRoomPlayers({
               className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-surface-muted/50"
             >
               <span className="flex min-w-0 items-center gap-3">
-                <span className="w-6 text-lg">{medal(i)}</span>
-                <span className="text-xl">{p.avatar}</span>
+                <span className="grid w-6 place-items-center">
+                  {i < 3 ? (
+                    <Trophy className={`h-4 w-4 ${medalColor(i)}`} />
+                  ) : (
+                    <span className="font-mono text-xs text-muted-foreground">{i + 1}</span>
+                  )}
+                </span>
+                <Avatar name={p.nickname} size={28} />
+
                 <span className="truncate font-semibold">{p.nickname}</span>
               </span>
               <span className="flex items-center gap-3 text-sm">

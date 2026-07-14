@@ -27,13 +27,7 @@ import {
   printJeopardy,
   printMillionaire,
 } from "@/lib/exports";
-import type {
-  GameKind,
-  QuizData,
-  JeopardyData,
-  MillionaireData,
-  StoredGame,
-} from "@/lib/types";
+import type { GameKind, QuizData, JeopardyData, MillionaireData, StoredGame } from "@/lib/types";
 
 export const Route = createFileRoute("/game/$id")({
   head: () => ({ meta: [{ title: "Дашборд игры — IslandQuiz" }] }),
@@ -85,11 +79,17 @@ function GameDashboard() {
               setJResults(rs);
               setJResultsState("idle");
             })
-            .catch(() => { if (!cancel) setJResultsState("error"); });
+            .catch(() => {
+              if (!cancel) setJResultsState("error");
+            });
         }
       })
-      .catch((e) => { if (!cancel) setError(e?.message ?? "Не удалось загрузить"); });
-    return () => { cancel = true; };
+      .catch((e) => {
+        if (!cancel) setError(e?.message ?? "Не удалось загрузить");
+      });
+    return () => {
+      cancel = true;
+    };
   }, [id]);
 
   const jStats = useMemo(() => {
@@ -153,7 +153,8 @@ function GameDashboard() {
     if (!game) return;
     try {
       if (game.kind === "quiz") printQuiz(game.data as QuizData, { withAnswers: true });
-      else if (game.kind === "jeopardy") printJeopardy(game.data as JeopardyData, { withAnswers: true });
+      else if (game.kind === "jeopardy")
+        printJeopardy(game.data as JeopardyData, { withAnswers: true });
       else printMillionaire(game.data as MillionaireData, { withAnswers: true });
     } catch {
       showToast("Ошибка печати");
@@ -200,7 +201,9 @@ function GameDashboard() {
         <div className="mx-auto max-w-md px-6 py-16 text-center">
           <h1 className="font-display text-2xl font-bold">Игра не найдена</h1>
           <p className="mt-2 text-muted-foreground">{error ?? "Возможно, она была удалена."}</p>
-          <Link to="/library" className="btn-accent mt-4 inline-flex">В библиотеку</Link>
+          <Link to="/library" className="btn-accent mt-4 inline-flex">
+            В библиотеку
+          </Link>
         </div>
       </div>
     );
@@ -210,7 +213,10 @@ function GameDashboard() {
     <div className="min-h-screen bg-surface">
       <SiteHeader />
       <main className="mx-auto max-w-5xl px-6 py-10">
-        <Link to="/library" className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+        <Link
+          to="/library"
+          className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+        >
           <ArrowLeft className="h-3.5 w-3.5" /> В библиотеку
         </Link>
 
@@ -283,7 +289,6 @@ function GameDashboard() {
     </div>
   );
 }
-
 
 function OfflineHostView({ gameId, onClose }: { gameId: string; onClose: () => void }) {
   const playUrl =

@@ -67,8 +67,7 @@ function JeopardyResultsPage() {
           to="/library"
           className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
         >
-          <ArrowLeft className="h-3.5 w-3.5" />
-          В библиотеку
+          <ArrowLeft className="h-3.5 w-3.5" />В библиотеку
         </Link>
 
         <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
@@ -95,7 +94,9 @@ function JeopardyResultsPage() {
           <div className="surface-card p-12 text-center text-muted-foreground">
             <Trophy className="mx-auto mb-4 h-12 w-12 opacity-40" />
             <p className="text-lg font-semibold text-foreground">Ещё не сыграно ни одной игры</p>
-            <p className="mt-2 text-sm">Запустите онлайн-комнату или офлайн-плеер, чтобы результаты появились здесь.</p>
+            <p className="mt-2 text-sm">
+              Запустите онлайн-комнату или офлайн-плеер, чтобы результаты появились здесь.
+            </p>
           </div>
         ) : (
           <>

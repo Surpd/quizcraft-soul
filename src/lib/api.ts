@@ -39,6 +39,7 @@ import {
   updateUserRecord,
   verifyUserCredentials,
 } from "./auth";
+import { formatQuizAnswer, formatGivenAnswer } from "./format-answer";
 
 // Re-export types consumed by other modules so the facade stays the single entry point.
 export type { User } from "./auth";

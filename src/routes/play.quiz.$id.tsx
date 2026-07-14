@@ -157,6 +157,8 @@ function PlayQuiz() {
         correctCount: correct,
         totalQuestions: questions.length,
         timeSec,
+        userId: user?.id,
+        avatar: user?.avatar,
         answers: finalAnswers.map((a) => ({
           qId: a.qId,
           question: a.question,

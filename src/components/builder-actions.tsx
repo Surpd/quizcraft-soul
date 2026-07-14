@@ -67,26 +67,28 @@ export function BuilderToolbar({
             <div className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-xl border border-border bg-surface shadow-lift">
               <button
                 className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-surface-muted"
-                onClick={() => { setOpenExport(false); onExportExcel(); }}
+                onClick={() => {
+                  setOpenExport(false);
+                  onExportExcel();
+                }}
               >
                 <FileSpreadsheet className="h-4 w-4 text-primary" /> Скачать Excel (.xlsx)
               </button>
               <button
                 className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-surface-muted"
-                onClick={() => { setOpenExport(false); onPrint(printAnswers); }}
+                onClick={() => {
+                  setOpenExport(false);
+                  onPrint(printAnswers);
+                }}
               >
-                <Printer className="h-4 w-4 text-primary" /> Печать / PDF ({printAnswers ? "с ответами" : "без ответов"})
+                <Printer className="h-4 w-4 text-primary" /> Печать / PDF ({printAnswers ? "с ответами" : "без ответов"}
+                )
               </button>
             </div>
           )}
         </div>
 
-        <button
-          className="btn-ghost"
-          onClick={onToggleSettings}
-          aria-label="Настройки"
-          title="Настройки"
-        >
+        <button className="btn-ghost" onClick={onToggleSettings} aria-label="Настройки" title="Настройки">
           <Settings2 className="h-4 w-4" /> Настройки
         </button>
       </div>
@@ -94,7 +96,10 @@ export function BuilderToolbar({
       {openImport && (
         <ImportModal
           onClose={() => setOpenImport(false)}
-          onFile={(f) => { onImportFile(f); setOpenImport(false); }}
+          onFile={(f) => {
+            onImportFile(f);
+            setOpenImport(false);
+          }}
           onDownloadTemplate={onDownloadTemplate}
         />
       )}
@@ -123,7 +128,10 @@ function ImportModal({
         </div>
 
         <label
-          onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDrag(true);
+          }}
           onDragLeave={() => setDrag(false)}
           onDrop={(e) => {
             e.preventDefault();
@@ -197,12 +205,11 @@ export function BuilderFabs({ kind, savedId, onSave, onSaveAsCopy, themeAccent }
     }
   };
 
-
   return (
     <>
       <div className="fixed bottom-6 right-6 z-40 flex items-center gap-2">
         {/* Split Save */}
-        <div ref={saveRef} className="relative flex items-stretch overflow-hidden rounded-full shadow-lift">
+        <div ref={saveRef} className="relative flex items-stretch rounded-full shadow-lift">
           <button
             type="button"
             onClick={() => onSave()}
@@ -225,7 +232,10 @@ export function BuilderFabs({ kind, savedId, onSave, onSaveAsCopy, themeAccent }
             <div className="absolute bottom-full right-0 mb-2 w-56 overflow-hidden rounded-xl border border-border bg-surface shadow-lift">
               <button
                 className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-surface-muted"
-                onClick={() => { setOpenSaveMenu(false); onSaveAsCopy(); }}
+                onClick={() => {
+                  setOpenSaveMenu(false);
+                  onSaveAsCopy();
+                }}
               >
                 <Copy className="h-4 w-4 text-primary" /> Сохранить как копию
               </button>
@@ -249,14 +259,14 @@ export function BuilderFabs({ kind, savedId, onSave, onSaveAsCopy, themeAccent }
           gameId={savedId}
           kind={kind}
           onClose={() => setOpenQuizModal(false)}
-          onOfflineHost={(id) => { setOpenQuizModal(false); setHostView({ id }); }}
+          onOfflineHost={(id) => {
+            setOpenQuizModal(false);
+            setHostView({ id });
+          }}
         />
       )}
 
-      {hostView && (
-        <OfflineHostView gameId={hostView.id} kind={kind} onClose={() => setHostView(null)} />
-      )}
-
+      {hostView && <OfflineHostView gameId={hostView.id} kind={kind} onClose={() => setHostView(null)} />}
     </>
   );
 }
@@ -289,7 +299,6 @@ function QuizPlayModal({
       setLoading(false);
     }
   };
-
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-foreground/60 p-4 backdrop-blur-sm">
@@ -324,15 +333,11 @@ function QuizPlayModal({
               <Monitor className="h-5 w-5" />
             </span>
             <span className="font-display text-base font-bold">▶️ Офлайн</span>
-            <span className="text-xs text-muted-foreground">
-              Плеер на проекторе, ссылка + QR для учеников
-            </span>
+            <span className="text-xs text-muted-foreground">Плеер на проекторе, ссылка + QR для учеников</span>
           </button>
         </div>
 
-        {error && (
-          <p className="mt-3 rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger">{error}</p>
-        )}
+        {error && <p className="mt-3 rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger">{error}</p>}
       </div>
     </div>
   );
@@ -340,9 +345,7 @@ function QuizPlayModal({
 
 function OfflineHostView({ gameId, kind, onClose }: { gameId: string; kind: GameKind; onClose: () => void }) {
   const playUrl =
-    typeof window !== "undefined"
-      ? `${window.location.origin}/play/${kind}/${gameId}`
-      : `/play/${kind}/${gameId}`;
+    typeof window !== "undefined" ? `${window.location.origin}/play/${kind}/${gameId}` : `/play/${kind}/${gameId}`;
 
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(playUrl)}`;
   const [copied, setCopied] = useState(false);
@@ -366,9 +369,7 @@ function OfflineHostView({ gameId, kind, onClose }: { gameId: string; kind: Game
 
         <div className="grid gap-4 sm:grid-cols-[1fr_auto]">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Ссылка для учеников
-            </p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Ссылка для учеников</p>
             <div className="mt-2 flex items-center gap-2">
               <input
                 readOnly

@@ -8,9 +8,7 @@ const key = (kind: GameKind, id: string) => `${NS}.${kind}.${id}`;
 
 export function newId(): string {
   // 8-char base36, human-friendly for share URLs
-  return (
-    Math.random().toString(36).slice(2, 6) + Math.random().toString(36).slice(2, 6)
-  );
+  return Math.random().toString(36).slice(2, 6) + Math.random().toString(36).slice(2, 6);
 }
 
 export function saveGame<T>(
@@ -64,7 +62,9 @@ export function listGames(kind?: GameKind): StoredGame[] {
       try {
         const rec = JSON.parse(localStorage.getItem(k)!) as StoredGame;
         out.push(rec);
-      } catch { /* skip */ }
+      } catch {
+        /* skip */
+      }
     }
   }
   return out.sort((a, b) => b.updatedAt - a.updatedAt);
@@ -90,6 +90,7 @@ export function cleanupInvalidGames(): number {
     if (k.startsWith(`${NS}.results.`)) continue;
     if (k.startsWith(`${NS}.jresults.`)) continue;
     if (k.startsWith(`${NS}.online-results.`)) continue;
+    if (k.startsWith(`${NS}.auth.`)) continue;
     try {
       const rec = JSON.parse(localStorage.getItem(k)!);
       if (!isValidGame(rec)) toRemove.push(k);

@@ -61,7 +61,7 @@ export function listGames(kind?: GameKind): StoredGame[] {
     if (k && k.startsWith(prefix)) {
       try {
         const rec = JSON.parse(localStorage.getItem(k)!) as StoredGame;
-        out.push(rec);
+        if (isValidGame(rec)) out.push(rec);
       } catch {
         /* skip */
       }

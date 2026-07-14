@@ -16,8 +16,10 @@ import {
 } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { PlayModal } from "@/components/play-modal";
+import { RatingStars } from "@/components/rating-stars";
 import { useAuth } from "@/hooks/use-auth";
-import { findGame, deleteGame, saveGame } from "@/lib/api";
+import { findGame, deleteGame, saveGame, computeRatingStats, getMyRating, rateGame } from "@/lib/api";
+
 import {
   exportQuizExcel,
   exportJeopardyExcel,
@@ -175,11 +177,8 @@ function GameDashboard() {
     { v: "public", label: "Публичная", Icon: Globe },
   ];
 
-  const ownerLine = isMine
-    ? "Владелец: Вы"
-    : game.ownerName
-      ? `Владелец: ${game.ownerName}`
-      : "Владелец: неизвестен";
+
+
 
   return (
     <div className="min-h-screen bg-surface">
@@ -228,7 +227,24 @@ function GameDashboard() {
             </h1>
           )}
 
-          <p className="mt-1 text-sm text-muted-foreground">{ownerLine}</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {isMine ? (
+              "Владелец: Вы"
+            ) : game.ownerId && game.ownerName ? (
+              <>
+                Владелец:{" "}
+                <Link
+                  to="/profile/$userId"
+                  params={{ userId: game.ownerId }}
+                  className="font-semibold text-primary hover:underline"
+                >
+                  {game.ownerName}
+                </Link>
+              </>
+            ) : (
+              "Владелец: неизвестен"
+            )}
+          </p>
           {game.forkedOwnerName && (
             <p className="text-sm text-muted-foreground">
               На основе игры от {game.forkedOwnerName}
@@ -237,6 +253,47 @@ function GameDashboard() {
           <p className="text-xs text-muted-foreground">
             Обновлено: {new Date(game.updatedAt).toLocaleString("ru-RU")}
           </p>
+          {game.tags && game.tags.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1">
+              {game.tags.map((t) => (
+                <span key={t} className="rounded-full bg-surface-muted px-2.5 py-0.5 text-xs font-semibold text-muted-foreground">
+                  #{t}
+                </span>
+              ))}
+            </div>
+          )}
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            {(() => {
+              const { avg, count } = computeRatingStats(game);
+              const my = getMyRating(game, user?.id);
+              return (
+                <>
+                  <RatingStars value={avg} count={count} size={18} />
+                  {user && !isMine && (
+                    <div className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <span>Ваша оценка:</span>
+                      <RatingStars
+                        value={my ?? 0}
+                        interactive
+                        showCount={false}
+                        onRate={async (n) => {
+                          await rateGame(game.id, n);
+                          reload();
+                        }}
+                        size={18}
+                      />
+                    </div>
+                  )}
+                  {!user && (
+                    <Link to="/login" className="text-xs font-semibold text-primary hover:underline">
+                      Войдите, чтобы оценить
+                    </Link>
+                  )}
+                </>
+              );
+            })()}
+          </div>
+
         </div>
 
         {/* Visibility (only for own games) */}

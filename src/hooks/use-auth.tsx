@@ -8,7 +8,9 @@ import {
   updateProfile as apiUpdateProfile,
   forkGame as apiForkGame,
   setGameVisibility as apiSetGameVisibility,
+  rateGame as apiRateGame,
 } from "@/lib/api";
+
 import type { User } from "@/lib/auth";
 
 interface AuthValue {
@@ -17,11 +19,13 @@ interface AuthValue {
   login: (email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
   register: (name: string, email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
   logout: () => Promise<void>;
-  updateProfile: (patch: { name?: string; avatar?: string }) => Promise<void>;
+  updateProfile: (patch: { name?: string; avatar?: string; bio?: string; subject?: string }) => Promise<void>;
   forkGame: (gameId: string) => Promise<{ id: string } | null>;
   setGameVisibility: (gameId: string, v: "public" | "private" | "link") => Promise<void>;
+  rateGame: (gameId: string, rating: number) => Promise<void>;
   refresh: () => void;
 }
+
 
 const AuthCtx = createContext<AuthValue | null>(null);
 
@@ -73,7 +77,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       async setGameVisibility(gameId, v) {
         await apiSetGameVisibility(gameId, v);
       },
+      async rateGame(gameId, rating) {
+        await apiRateGame(gameId, rating);
+      },
       refresh,
+
     }),
     [user, isLoading, refresh],
   );

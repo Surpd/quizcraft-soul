@@ -129,4 +129,8 @@ export interface StoredGame<T = unknown> {
   visibility?: GameVisibility;
   forkedFrom?: string;
   forkedOwnerName?: string;
+  tags?: string[];
+  ratings?: Record<string, number>;
+  playCount?: number;
 }
+

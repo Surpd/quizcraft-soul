@@ -15,16 +15,23 @@ function ProfilePage() {
   const { user, isLoading, updateProfile, logout } = useAuth();
   const nav = useNavigate();
   const [name, setName] = useState("");
+  const [bio, setBio] = useState("");
+  const [subject, setSubject] = useState("");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [mine, setMine] = useState<StoredGame[]>([]);
+
 
   useEffect(() => {
     if (!isLoading && !user) nav({ to: "/login" });
   }, [isLoading, user, nav]);
 
   useEffect(() => {
-    if (user) setName(user.name);
+    if (user) {
+      setName(user.name);
+      setBio(user.bio ?? "");
+      setSubject(user.subject ?? "");
+    }
   }, [user]);
 
   useEffect(() => {
@@ -42,11 +49,16 @@ function ProfilePage() {
 
   const onSave = async () => {
     setSaving(true);
-    await updateProfile({ name: name.trim() || user.name });
+    await updateProfile({
+      name: name.trim() || user.name,
+      bio: bio.trim(),
+      subject: subject.trim(),
+    });
     setSaving(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 1500);
   };
+
 
   return (
     <div className="min-h-screen bg-surface">
@@ -69,11 +81,40 @@ function ProfilePage() {
               className="input-base mt-1 w-full"
             />
           </label>
+          <label className="text-sm font-semibold">
+            Предмет / направление
+            <input
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              maxLength={60}
+              placeholder="Математика, история…"
+              className="input-base mt-1 w-full"
+            />
+          </label>
+          <label className="text-sm font-semibold">
+            О себе
+            <textarea
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              rows={3}
+              maxLength={280}
+              placeholder="Пара слов о себе — видно на публичном профиле."
+              className="input-base mt-1 w-full resize-none"
+            />
+          </label>
           <div className="flex items-center gap-2">
             <button onClick={onSave} disabled={saving} className="btn-accent">
               {saving ? "Сохраняем…" : "Сохранить"}
             </button>
             {saved && <span className="text-sm text-success">Сохранено</span>}
+            <Link
+              to="/profile/$userId"
+              params={{ userId: user.id }}
+              className="btn-ghost"
+            >
+              Открыть публичный профиль
+            </Link>
+
             <button
               onClick={async () => {
                 await logout();

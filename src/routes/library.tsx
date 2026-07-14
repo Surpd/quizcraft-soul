@@ -27,6 +27,9 @@ import {
 import { cleanupInvalidGames } from "@/lib/storage";
 import { useAuth } from "@/hooks/use-auth";
 import { RatingStars } from "@/components/rating-stars";
+import { Avatar } from "@/components/avatar";
+import { gameSummary } from "@/components/game-content";
+import { findUserById } from "@/lib/auth";
 import type { GameKind, QuizData, StoredGame } from "@/lib/types";
 
 

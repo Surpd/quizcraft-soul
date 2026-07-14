@@ -308,9 +308,13 @@ export function JeopardyRoomPlayer({
           {j.phase === "answering" && (
             <div className="mt-6 text-center">
               {iAmBuzzed ? (
-                <p className="inline-flex items-center gap-2 text-xl font-bold text-[color:var(--pt-accent)]">
-                  <Mic className="h-5 w-5" /> Отвечайте вслух! Учитель принимает ответ.
-                </p>
+                <BuzzAnswerBox
+                  code={code}
+                  me={me}
+                  submittedAnswer={j.buzzedAnswer}
+                  startAt={j.buzzStartAt}
+                  totalMs={j.buzzTimeoutMs}
+                />
               ) : (
                 <p className="text-sm text-[color:var(--pt-text-muted)]">
                   Отвечает {state.players.find((p) => p.id === j.buzzedPlayerId)?.nickname}…

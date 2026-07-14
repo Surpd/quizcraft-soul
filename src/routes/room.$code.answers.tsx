@@ -6,6 +6,7 @@ import { Eye, FileText } from "lucide-react";
 import { loadGame, subscribeRoom, type RoomState } from "@/lib/api";
 import { LaTeX } from "@/lib/latex";
 import type { JeopardyData, QuizData, MillionaireData, GameKind } from "@/lib/types";
+import { formatQuizAnswer } from "@/lib/format-answer";
 
 export const Route = createFileRoute("/room/$code/answers")({
   head: () => ({

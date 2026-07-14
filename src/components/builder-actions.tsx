@@ -263,10 +263,12 @@ export function BuilderFabs({ kind, savedId, onSave, onSaveAsCopy, themeAccent }
 
 function QuizPlayModal({
   gameId,
+  kind,
   onClose,
   onOfflineHost,
 }: {
   gameId: string;
+  kind: GameKind;
   onClose: () => void;
   onOfflineHost: (id: string) => void;
 }) {
@@ -277,7 +279,7 @@ function QuizPlayModal({
     setError(null);
     setLoading(true);
     try {
-      const { code } = await createRoom("quiz", gameId);
+      const { code } = await createRoom(kind, gameId);
       window.open(`/room/${code}`, "_blank", "noopener");
       onClose();
     } catch (err) {
@@ -287,6 +289,7 @@ function QuizPlayModal({
       setLoading(false);
     }
   };
+
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-foreground/60 p-4 backdrop-blur-sm">

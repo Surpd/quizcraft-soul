@@ -17,8 +17,10 @@ import {
 import { SiteHeader } from "@/components/site-header";
 import { PlayModal } from "@/components/play-modal";
 import { RatingStars } from "@/components/rating-stars";
+import { Avatar } from "@/components/avatar";
+import { GameContent, gameSummary } from "@/components/game-content";
 import { useAuth } from "@/hooks/use-auth";
-import { findGame, deleteGame, saveGame, computeRatingStats, getMyRating, rateGame } from "@/lib/api";
+import { findGame, deleteGame, saveGame, computeRatingStats, getMyRating, rateGame, setGameShowAnswers } from "@/lib/api";
 
 import {
   exportQuizExcel,

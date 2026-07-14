@@ -598,16 +598,42 @@ function BuilderJeopardy() {
                         >
                           <Pencil className="h-3.5 w-3.5" />
                         </button>
+                        {cat.questions.length > 1 && (
+                          <button
+                            onClick={() => removeQuestion(ri, ci, qi)}
+                            className="rounded-lg p-2 text-muted-foreground hover:bg-danger-soft hover:text-danger"
+                            aria-label="Удалить вопрос"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        )}
                       </div>
                     ))}
+                    <button
+                      onClick={() => addQuestion(ri, ci)}
+                      disabled={cat.questions.length >= LIMITS.jeopardyQuestionsPerCategory}
+                      className="btn-ghost w-full justify-center text-xs disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <Plus className="h-3.5 w-3.5" /> Вопрос
+                      {cat.questions.length >= LIMITS.jeopardyQuestionsPerCategory
+                        ? ` (макс ${LIMITS.jeopardyQuestionsPerCategory})`
+                        : ""}
+                    </button>
                   </div>
                 </div>
               ))}
             </div>
           )}
 
-          <button onClick={() => addCategory(ri)} className="btn-ghost w-full justify-center">
+          <button
+            onClick={() => addCategory(ri)}
+            disabled={round.length >= LIMITS.jeopardyCategoriesPerRound}
+            className="btn-ghost w-full justify-center disabled:cursor-not-allowed disabled:opacity-40"
+          >
             <Plus className="h-4 w-4" /> Категория
+            {round.length >= LIMITS.jeopardyCategoriesPerRound
+              ? ` (макс ${LIMITS.jeopardyCategoriesPerRound})`
+              : ""}
           </button>
         </section>
       ))}

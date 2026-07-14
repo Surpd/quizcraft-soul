@@ -755,3 +755,158 @@ function MatchingEditor({
     </div>
   );
 }
+
+function CloseEditor({
+  question,
+  qRef,
+  onPatch,
+}: {
+  question: QuizQuestion;
+  qRef: React.RefObject<HTMLTextAreaElement | null>;
+  onPatch: (p: Partial<QuizQuestion>) => void;
+}) {
+  let answers: string[] = [];
+  try {
+    const raw = JSON.parse(question.answer || "[]");
+    if (Array.isArray(raw)) answers = raw.map((x) => String(x ?? ""));
+  } catch {
+    answers = [];
+  }
+  const blanks = (question.q.match(/___/g) ?? []).length;
+  // Синхронизируем длину answers с числом пропусков.
+  const setAnswers = (next: string[]) => onPatch({ answer: JSON.stringify(next) });
+  const normalized = (() => {
+    const a = [...answers];
+    while (a.length < blanks) a.push("");
+    if (a.length > blanks) a.length = blanks;
+    return a;
+  })();
+
+  const insertBlank = () => {
+    const el = qRef.current;
+    const text = question.q;
+    let pos = text.length;
+    if (el) pos = el.selectionStart ?? text.length;
+    const next = text.slice(0, pos) + "___" + text.slice(pos);
+    onPatch({ q: next, answer: JSON.stringify([...normalized, ""]) });
+    setTimeout(() => {
+      if (el) {
+        el.focus();
+        el.setSelectionRange(pos + 3, pos + 3);
+      }
+    }, 0);
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-muted-foreground">
+          Используйте <code className="rounded bg-surface-muted px-1">___</code> — на месте пропуска в тексте.
+        </p>
+        <button type="button" onClick={insertBlank} className="btn-ghost text-xs">
+          <Plus className="h-3.5 w-3.5" /> Пропуск
+        </button>
+      </div>
+      {blanks === 0 && (
+        <p className="rounded-lg border border-dashed border-border p-3 text-xs text-muted-foreground">
+          В тексте пока нет пропусков. Нажмите «+ Пропуск».
+        </p>
+      )}
+      {normalized.map((a, i) => (
+        <div key={i} className="flex items-center gap-2">
+          <span className="grid h-8 w-8 flex-shrink-0 place-items-center rounded-full bg-primary-soft text-xs font-bold text-primary">
+            {i + 1}
+          </span>
+          <input
+            className="input-base"
+            placeholder={`Ответ для пропуска ${i + 1}`}
+            value={a}
+            onChange={(e) => {
+              const next = [...normalized];
+              next[i] = e.target.value;
+              setAnswers(next);
+            }}
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function OrderingEditor({
+  question,
+  onPatch,
+}: {
+  question: QuizQuestion;
+  onPatch: (p: Partial<QuizQuestion>) => void;
+}) {
+  let items: string[] = [];
+  try {
+    const raw = JSON.parse(question.answer || "[]");
+    if (Array.isArray(raw)) items = raw.map((x) => String(x ?? ""));
+  } catch {
+    items = [];
+  }
+  const setItems = (next: string[]) => onPatch({ answer: JSON.stringify(next) });
+  const move = (i: number, dir: -1 | 1) => {
+    const j = i + dir;
+    if (j < 0 || j >= items.length) return;
+    const next = [...items];
+    [next[i], next[j]] = [next[j], next[i]];
+    setItems(next);
+  };
+  return (
+    <div className="space-y-2">
+      <p className="text-xs text-muted-foreground">
+        Список сохраняется в правильном порядке. Игроку он покажется перемешанным.
+      </p>
+      {items.map((v, i) => (
+        <div key={i} className="flex items-center gap-2">
+          <span className="grid h-8 w-8 flex-shrink-0 place-items-center rounded-full bg-primary-soft text-xs font-bold text-primary">
+            {i + 1}
+          </span>
+          <input
+            className="input-base"
+            placeholder={`Пункт ${i + 1}`}
+            value={v}
+            onChange={(e) => {
+              const next = [...items];
+              next[i] = e.target.value;
+              setItems(next);
+            }}
+          />
+          <div className="flex flex-col">
+            <button
+              type="button"
+              onClick={() => move(i, -1)}
+              disabled={i === 0}
+              className="rounded p-1 text-muted-foreground hover:text-primary disabled:opacity-30"
+              aria-label="Вверх"
+            >
+              <ArrowUp className="h-3.5 w-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => move(i, 1)}
+              disabled={i === items.length - 1}
+              className="rounded p-1 text-muted-foreground hover:text-primary disabled:opacity-30"
+              aria-label="Вниз"
+            >
+              <ArrowDown className="h-3.5 w-3.5" />
+            </button>
+          </div>
+          <button
+            onClick={() => setItems(items.filter((_, k) => k !== i))}
+            className="rounded-lg p-2 text-muted-foreground hover:bg-danger-soft hover:text-danger"
+            aria-label="Удалить"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
+      ))}
+      <button onClick={() => setItems([...items, ""])} className="btn-ghost">
+        <Plus className="h-4 w-4" /> Пункт
+      </button>
+    </div>
+  );
+}

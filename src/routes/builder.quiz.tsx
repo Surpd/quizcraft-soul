@@ -559,6 +559,14 @@ function QuestionCard({
               if (question.type === "matching" && v.pairs) {
                 patch.answer = JSON.stringify(v.pairs);
               }
+              if (question.type === "close" && v.correctAnswer) {
+                // AI даёт готовый список ответов через "|" — иначе один пропуск.
+                const arr = v.correctAnswer.split("|").map((s) => s.trim()).filter(Boolean);
+                patch.answer = JSON.stringify(arr.length ? arr : [v.correctAnswer]);
+              }
+              if (question.type === "ordering" && v.options) {
+                patch.answer = JSON.stringify(v.options);
+              }
               onPatch(patch);
             }}
           />

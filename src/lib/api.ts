@@ -524,6 +524,7 @@ export async function startJeopardyGame(code: string) {
       j.selectedCat = null;
       j.selectedQ = null;
       j.buzzedPlayerId = null;
+      j.buzzedPlayerIds = [];
       j.showAnswer = false;
       j.lastDelta = null;
       s.status = "active";
@@ -544,18 +545,29 @@ export async function selectJeopardyQuestion(
 ) {
   return fake(
     mutJeopardy(code, (j, s) => {
-      // In turn mode, only current player can select
+      // In turn mode, only current player (or teacher: playerId=null) can select
       if (j.mode === "turn" && playerId) {
         const cur = s.players[j.currentPlayerIdx]?.id;
         if (cur && cur !== playerId) return;
       }
+      // In buzz mode only the teacher (playerId=null) picks the cell.
+      if (j.mode === "buzz" && playerId) return;
       const key = `${j.round}-${catIdx}-${qIdx}`;
       if (j.usedKeys.includes(key)) return;
+      // Load points to compute timer.
+      const rec = _loadGame<JeopardyData>("jeopardy", s.gameId);
+      const q = rec?.data.rounds[j.round]?.[catIdx]?.questions[qIdx];
+      const timeBase = rec?.data.config.timeBase ?? 30;
+      const timeStep = rec?.data.config.timeStep ?? 0;
+      const tier = q ? Math.max(0, Math.round((q.points || 100) / 100) - 1) : 0;
       j.selectedCat = catIdx;
       j.selectedQ = qIdx;
       j.buzzedPlayerId = null;
+      j.buzzedPlayerIds = [];
       j.showAnswer = false;
       j.phase = "question";
+      j.questionTotalMs = Math.max(5, timeBase + timeStep * tier) * 1000;
+      j.questionElapsedMs = 0;
       s.questionStartAt = Date.now();
     }),
   );
@@ -563,8 +575,15 @@ export async function selectJeopardyQuestion(
 
 export async function buzzJeopardy(code: string, playerId: string) {
   return fake(
-    mutJeopardy(code, (j) => {
+    mutJeopardy(code, (j, s) => {
+      if (j.mode !== "buzz") return;
       if (j.phase !== "question" || j.buzzedPlayerId) return;
+      if (j.buzzedPlayerIds.includes(playerId)) return; // already tried wrong
+      // Freeze timer
+      if (s.questionStartAt) {
+        j.questionElapsedMs += Date.now() - s.questionStartAt;
+      }
+      s.questionStartAt = null;
       j.buzzedPlayerId = playerId;
       j.phase = "answering";
     }),
@@ -575,14 +594,13 @@ export async function acceptJeopardyAnswer(code: string, correct: boolean) {
   return fake(
     mutJeopardy(code, (j, s) => {
       if (j.selectedCat == null || j.selectedQ == null) return;
-      // Load game to get points
       const rec = _loadGame<JeopardyData>("jeopardy", s.gameId);
       const q = rec?.data.rounds[j.round]?.[j.selectedCat]?.questions[j.selectedQ];
       const points = q?.points ?? 0;
       const targetId =
         j.mode === "buzz"
           ? j.buzzedPlayerId
-          : s.players[j.currentPlayerIdx]?.id ?? null;
+          : (s.players[j.currentPlayerIdx]?.id ?? null);
       if (targetId) {
         const p = s.players.find((x) => x.id === targetId);
         if (p) {
@@ -591,23 +609,52 @@ export async function acceptJeopardyAnswer(code: string, correct: boolean) {
           if (correct) p.jCorrect = (p.jCorrect ?? 0) + 1;
           else p.jWrong = (p.jWrong ?? 0) + 1;
           j.lastDelta = { playerId: targetId, delta };
-          // Turn mode: correct answerer keeps turn, wrong -> next player
-          if (j.mode === "turn" && !correct) {
-            j.currentPlayerIdx = (j.currentPlayerIdx + 1) % Math.max(1, s.players.length);
-          }
         }
       }
-      // In buzz mode: if wrong, allow another buzz on same question
+      // Turn mode: ALWAYS advance to the next player (both correct + wrong).
+      if (j.mode === "turn") {
+        j.currentPlayerIdx = (j.currentPlayerIdx + 1) % Math.max(1, s.players.length);
+      }
+      // Buzz + wrong → resume timer, allow other players to buzz.
       if (j.mode === "buzz" && !correct) {
+        if (targetId && !j.buzzedPlayerIds.includes(targetId)) {
+          j.buzzedPlayerIds.push(targetId);
+        }
         j.buzzedPlayerId = null;
         j.phase = "question";
+        s.questionStartAt = Date.now();
+        // If everyone already tried — close.
+        if (j.buzzedPlayerIds.length >= s.players.length) {
+          j.showAnswer = true;
+          j.phase = "reveal";
+          const key = `${j.round}-${j.selectedCat}-${j.selectedQ}`;
+          if (!j.usedKeys.includes(key)) j.usedKeys.push(key);
+        }
         return;
       }
-      // Show answer briefly, then return to board
+      // Close the question.
       j.showAnswer = true;
       j.phase = "reveal";
       const key = `${j.round}-${j.selectedCat}-${j.selectedQ}`;
       if (!j.usedKeys.includes(key)) j.usedKeys.push(key);
+    }),
+  );
+}
+
+// Manually close the current question with no points (timer expired /
+// teacher decided to move on). Marks the cell as used.
+export async function closeJeopardyQuestion(code: string) {
+  return fake(
+    mutJeopardy(code, (j) => {
+      if (j.selectedCat == null || j.selectedQ == null) {
+        j.phase = "board";
+        return;
+      }
+      const key = `${j.round}-${j.selectedCat}-${j.selectedQ}`;
+      if (!j.usedKeys.includes(key)) j.usedKeys.push(key);
+      j.showAnswer = true;
+      j.phase = "reveal";
+      j.buzzedPlayerId = null;
     }),
   );
 }
@@ -618,6 +665,7 @@ export async function backToBoard(code: string) {
       j.selectedCat = null;
       j.selectedQ = null;
       j.buzzedPlayerId = null;
+      j.buzzedPlayerIds = [];
       j.showAnswer = false;
       j.lastDelta = null;
       j.phase = "board";
@@ -637,11 +685,13 @@ export async function skipJeopardyQuestion(code: string) {
       j.selectedCat = null;
       j.selectedQ = null;
       j.buzzedPlayerId = null;
+      j.buzzedPlayerIds = [];
       j.showAnswer = false;
       j.phase = "board";
     }),
   );
 }
+
 
 export async function endJeopardyRound(code: string) {
   return fake(

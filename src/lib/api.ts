@@ -249,7 +249,7 @@ export async function createRoom(gameKind: GameKind, gameId: string) {
     createdAt: Date.now(),
     ...(gameKind === "jeopardy"
       ? {
-          jeopardy: {
+      jeopardy: {
             phase: "lobby" as const,
             mode: "buzz" as const,
             round: 0,
@@ -259,12 +259,20 @@ export async function createRoom(gameKind: GameKind, gameId: string) {
             selectedQ: null,
             buzzedPlayerId: null,
             buzzedPlayerIds: [],
+            buzzedAnswer: null,
+            buzzStartAt: null,
+            buzzTimeoutMs: 30000,
             questionTotalMs: 30000,
             questionElapsedMs: 0,
             showAnswer: false,
+            awaitingBonus: false,
             finalBets: {},
             finalAnswers: {},
             finalGiven: {},
+            finalRevealOrder: [],
+            finalRevealIdx: -1,
+            finalRevealStep: "done" as const,
+            finalRevealAt: null,
             lastDelta: null,
           },
 

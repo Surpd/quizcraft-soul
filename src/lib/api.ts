@@ -659,19 +659,30 @@ export async function acceptJeopardyAnswer(code: string, correct: boolean) {
           j.lastDelta = { playerId: targetId, delta };
         }
       }
-      // Turn mode: ALWAYS advance to the next player (both correct + wrong).
+      // TURN mode
       if (j.mode === "turn") {
-        j.currentPlayerIdx = (j.currentPlayerIdx + 1) % Math.max(1, s.players.length);
+        if (correct) {
+          j.currentPlayerIdx = (j.currentPlayerIdx + 1) % Math.max(1, s.players.length);
+          j.showAnswer = true;
+          j.phase = "reveal";
+          const key = `${j.round}-${j.selectedCat}-${j.selectedQ}`;
+          if (!j.usedKeys.includes(key)) j.usedKeys.push(key);
+        } else {
+          // Wrong → let teacher distribute bonus/penalty to others; advance later
+          j.awaitingBonus = true;
+        }
+        return;
       }
-      // Buzz + wrong → resume timer, allow other players to buzz.
+      // BUZZ + wrong → resume timer, allow other players to buzz.
       if (j.mode === "buzz" && !correct) {
         if (targetId && !j.buzzedPlayerIds.includes(targetId)) {
           j.buzzedPlayerIds.push(targetId);
         }
         j.buzzedPlayerId = null;
+        j.buzzedAnswer = null;
+        j.buzzStartAt = null;
         j.phase = "question";
         s.questionStartAt = Date.now();
-        // If everyone already tried — close.
         if (j.buzzedPlayerIds.length >= s.players.length) {
           j.showAnswer = true;
           j.phase = "reveal";
@@ -680,7 +691,7 @@ export async function acceptJeopardyAnswer(code: string, correct: boolean) {
         }
         return;
       }
-      // Close the question.
+      // BUZZ + correct → close
       j.showAnswer = true;
       j.phase = "reveal";
       const key = `${j.round}-${j.selectedCat}-${j.selectedQ}`;

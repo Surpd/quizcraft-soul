@@ -258,6 +258,26 @@ export async function finishRoom(code: string) {
   const s = readRoom(code); if (!s) return fake(null);
   s.status = "finished"; writeRoom(s); return fake(s);
 }
+export async function kickPlayer(code: string, playerId: string) {
+  const s = readRoom(code); if (!s) return fake(null);
+  s.players = s.players.filter((p) => p.id !== playerId);
+  writeRoom(s); return fake(s);
+}
+export async function adjustPlayerScore(code: string, playerId: string, delta: number) {
+  const s = readRoom(code); if (!s) return fake(null);
+  const p = s.players.find((pl) => pl.id === playerId);
+  if (p) { p.score = Math.max(0, p.score + delta); }
+  writeRoom(s); return fake(s);
+}
+export async function restartRoom(code: string) {
+  const s = readRoom(code); if (!s) return fake(null);
+  s.status = "waiting";
+  s.questionIdx = 0;
+  s.questionStartAt = null;
+  s.fastestPlayerId = undefined;
+  s.players.forEach((p) => { p.score = 0; p.streak = 0; p.lastAnswer = undefined; });
+  writeRoom(s); return fake(s);
+}
 
 // Kahoot-style scoring (TZ §0)
 export function computeKahootScore(opts: {

@@ -338,3 +338,32 @@
   0%, 100% { opacity: 0.2; }
   50% { opacity: 1; }
 }
+
+/* Online player: podium/avatar bounce + points float-up */
+@keyframes iq-bounce {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-10px) rotate(2deg); }
+}
+.iq-bounce { animation: iq-bounce 1.6s ease-in-out infinite; }
+
+@keyframes iq-wiggle {
+  0%, 100% { transform: rotate(-6deg); }
+  50% { transform: rotate(6deg); }
+}
+.iq-wiggle { animation: iq-wiggle 0.9s ease-in-out infinite; }
+
+@keyframes iq-points-fly {
+  0% { opacity: 0; transform: translateY(0) scale(0.8); }
+  20% { opacity: 1; transform: translateY(-10px) scale(1.15); }
+  80% { opacity: 1; transform: translateY(-40px) scale(1); }
+  100% { opacity: 0; transform: translateY(-70px) scale(0.9); }
+}
+.iq-points-fly { animation: iq-points-fly 2s ease-out both; }
+
+@keyframes iq-pop {
+  0% { transform: scale(0.6); opacity: 0; }
+  60% { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.iq-pop { animation: iq-pop 0.4s ease-out both; }
+

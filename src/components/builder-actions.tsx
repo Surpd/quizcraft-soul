@@ -9,12 +9,15 @@ import {
   Settings2,
   FileText,
   X,
-  Radio,
-  Monitor,
   Copy,
+  Lock,
+  Link2,
+  Globe,
 } from "lucide-react";
-import { createRoom } from "@/lib/api";
-import type { GameKind } from "@/lib/types";
+import { findGame, setGameVisibility as apiSetGameVisibility } from "@/lib/api";
+import { useAuth } from "@/hooks/use-auth";
+import { PlayModal } from "@/components/play-modal";
+import type { GameKind, GameVisibility } from "@/lib/types";
 
 // ---------- Toolbar (Import / Export / Settings) ----------
 
@@ -81,8 +84,8 @@ export function BuilderToolbar({
                   onPrint(printAnswers);
                 }}
               >
-                <Printer className="h-4 w-4 text-primary" /> Печать / PDF ({printAnswers ? "с ответами" : "без ответов"}
-                )
+                <Printer className="h-4 w-4 text-primary" /> Печать / PDF (
+                {printAnswers ? "с ответами" : "без ответов"})
               </button>
             </div>
           )}
@@ -169,7 +172,7 @@ function ImportModal({
   );
 }
 
-// ---------- FABs: Save (split) + Play ----------
+// ---------- FABs: Save (split) + Visibility + Play ----------
 
 interface FabsProps {
   kind: GameKind;
@@ -180,34 +183,87 @@ interface FabsProps {
 }
 
 export function BuilderFabs({ kind, savedId, onSave, onSaveAsCopy, themeAccent }: FabsProps) {
+  const { user } = useAuth();
   const [openSaveMenu, setOpenSaveMenu] = useState(false);
-  const [openQuizModal, setOpenQuizModal] = useState(false);
-  const [hostView, setHostView] = useState<{ id: string } | null>(null);
+  const [openPlay, setOpenPlay] = useState(false);
+  const [visibility, setVisibility] = useState<GameVisibility>(user ? "private" : "link");
+  const [visOpen, setVisOpen] = useState(false);
   const saveRef = useRef<HTMLDivElement>(null);
+  const visRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const onDoc = (e: MouseEvent) => {
-      if (saveRef.current && !saveRef.current.contains(e.target as Node)) {
-        setOpenSaveMenu(false);
-      }
+      if (saveRef.current && !saveRef.current.contains(e.target as Node)) setOpenSaveMenu(false);
+      if (visRef.current && !visRef.current.contains(e.target as Node)) setVisOpen(false);
     };
     document.addEventListener("mousedown", onDoc);
     return () => document.removeEventListener("mousedown", onDoc);
   }, []);
 
+  // Load current visibility from saved game
+  useEffect(() => {
+    if (!savedId) return;
+    findGame(savedId).then((g) => {
+      if (g?.visibility) setVisibility(g.visibility);
+    });
+  }, [savedId]);
+
+  const changeVisibility = async (v: GameVisibility) => {
+    setVisibility(v);
+    setVisOpen(false);
+    if (savedId) await apiSetGameVisibility(savedId, v);
+  };
+
   const handlePlay = () => {
     const id = onSave();
     if (!id) return;
-    if (kind === "quiz" || kind === "jeopardy") {
-      setOpenQuizModal(true);
-    } else {
-      window.open(`/play/${kind}/${id}`, "_blank", "noopener");
-    }
+    setOpenPlay(true);
   };
+
+  const visOptions: Array<{ v: GameVisibility; label: string; Icon: typeof Lock; disabled?: boolean }> = [
+    { v: "private", label: "Только я", Icon: Lock, disabled: !user },
+    { v: "link", label: "По ссылке", Icon: Link2 },
+    { v: "public", label: "Публичная", Icon: Globe, disabled: !user },
+  ];
+  const current = visOptions.find((o) => o.v === visibility) ?? visOptions[0];
+  const CurrentIcon = current.Icon;
 
   return (
     <>
       <div className="fixed bottom-6 right-6 z-40 flex items-center gap-2">
+        {/* Visibility */}
+        <div ref={visRef} className="relative">
+          <button
+            type="button"
+            onClick={() => setVisOpen((v) => !v)}
+            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-2 text-xs font-semibold shadow-lift hover:bg-surface-muted"
+            title="Видимость игры"
+          >
+            <CurrentIcon className="h-3.5 w-3.5 text-primary" />
+            {current.label}
+            <ChevronDown className="h-3 w-3 opacity-60" />
+          </button>
+          {visOpen && (
+            <div className="absolute bottom-full right-0 mb-2 w-48 overflow-hidden rounded-xl border border-border bg-surface shadow-lift">
+              {visOptions.map(({ v, label, Icon, disabled }) => (
+                <button
+                  key={v}
+                  disabled={disabled}
+                  onClick={() => changeVisibility(v)}
+                  className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm ${
+                    disabled
+                      ? "cursor-not-allowed opacity-50"
+                      : "hover:bg-surface-muted"
+                  } ${visibility === v ? "bg-primary-soft/40" : ""}`}
+                >
+                  <Icon className="h-4 w-4 text-primary" /> {label}
+                  {disabled && <span className="ml-auto text-[10px] opacity-60">войдите</span>}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* Split Save */}
         <div ref={saveRef} className="relative flex items-stretch rounded-full shadow-lift">
           <button
@@ -217,7 +273,7 @@ export function BuilderFabs({ kind, savedId, onSave, onSaveAsCopy, themeAccent }
             style={{ background: "var(--foreground)" }}
           >
             <Save className="h-4 w-4" />
-            {savedId ? "Сохранить" : "Сохранить"}
+            Сохранить
           </button>
           <button
             type="button"
@@ -254,146 +310,9 @@ export function BuilderFabs({ kind, savedId, onSave, onSaveAsCopy, themeAccent }
         </button>
       </div>
 
-      {openQuizModal && savedId && (
-        <QuizPlayModal
-          gameId={savedId}
-          kind={kind}
-          onClose={() => setOpenQuizModal(false)}
-          onOfflineHost={(id) => {
-            setOpenQuizModal(false);
-            setHostView({ id });
-          }}
-        />
+      {openPlay && savedId && (
+        <PlayModal gameId={savedId} kind={kind} onClose={() => setOpenPlay(false)} />
       )}
-
-      {hostView && <OfflineHostView gameId={hostView.id} kind={kind} onClose={() => setHostView(null)} />}
     </>
-  );
-}
-
-function QuizPlayModal({
-  gameId,
-  kind,
-  onClose,
-  onOfflineHost,
-}: {
-  gameId: string;
-  kind: GameKind;
-  onClose: () => void;
-  onOfflineHost: (id: string) => void;
-}) {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const startOnline = async () => {
-    setError(null);
-    setLoading(true);
-    try {
-      const { code } = await createRoom(kind, gameId);
-      window.open(`/room/${code}`, "_blank", "noopener");
-      onClose();
-    } catch (err) {
-      console.error(err);
-      setError("Не удалось создать комнату");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-foreground/60 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-lg animate-fade-up rounded-3xl bg-surface p-6 shadow-lift">
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="font-display text-xl font-bold">Как играем?</h3>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        <div className="grid gap-3 sm:grid-cols-2">
-          <button
-            onClick={startOnline}
-            disabled={loading}
-            className="group flex flex-col items-start gap-2 rounded-2xl border-2 border-border p-5 text-left transition-all hover:border-primary hover:bg-primary-soft disabled:opacity-60"
-          >
-            <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary-soft text-primary">
-              <Radio className="h-5 w-5" />
-            </span>
-            <span className="font-display text-base font-bold">Онлайн-комната</span>
-            <span className="text-xs text-muted-foreground">
-              {loading ? "Создаём..." : "Ученики заходят по коду со своих устройств"}
-            </span>
-          </button>
-
-          <button
-            onClick={() => onOfflineHost(gameId)}
-            className="group flex flex-col items-start gap-2 rounded-2xl border-2 border-border p-5 text-left transition-all hover:border-amber hover:bg-amber-soft"
-          >
-            <span className="grid h-10 w-10 place-items-center rounded-xl bg-amber-soft text-amber">
-              <Monitor className="h-5 w-5" />
-            </span>
-            <span className="font-display text-base font-bold">▶️ Офлайн</span>
-            <span className="text-xs text-muted-foreground">Плеер на проекторе, ссылка + QR для учеников</span>
-          </button>
-        </div>
-
-        {error && <p className="mt-3 rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger">{error}</p>}
-      </div>
-    </div>
-  );
-}
-
-function OfflineHostView({ gameId, kind, onClose }: { gameId: string; kind: GameKind; onClose: () => void }) {
-  const playUrl =
-    typeof window !== "undefined" ? `${window.location.origin}/play/${kind}/${gameId}` : `/play/${kind}/${gameId}`;
-
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(playUrl)}`;
-  const [copied, setCopied] = useState(false);
-
-  const copy = () => {
-    navigator.clipboard.writeText(playUrl).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1200);
-    });
-  };
-
-  return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-foreground/60 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-lg animate-fade-up rounded-3xl bg-surface p-6 shadow-lift">
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="font-display text-xl font-bold">Офлайн-режим</h3>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-[1fr_auto]">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Ссылка для учеников</p>
-            <div className="mt-2 flex items-center gap-2">
-              <input
-                readOnly
-                className="input-base flex-1 font-mono text-xs"
-                value={playUrl}
-                onFocus={(e) => e.currentTarget.select()}
-              />
-              <button className="btn-ghost" onClick={copy}>
-                <Copy className="h-4 w-4" /> {copied ? "Ок" : "Копировать"}
-              </button>
-            </div>
-            <button
-              onClick={() => window.open(playUrl, "_blank", "noopener")}
-              className="btn-accent mt-4 w-full justify-center py-3"
-            >
-              <Monitor className="h-4 w-4" /> Открыть плеер на проекторе
-            </button>
-          </div>
-          <div className="grid place-items-center rounded-2xl border border-border bg-surface-muted p-3">
-            <img src={qrUrl} alt="QR" className="h-40 w-40 rounded-lg" />
-            <p className="mt-2 text-[11px] text-muted-foreground">QR к плееру</p>
-          </div>
-        </div>
-      </div>
-    </div>
   );
 }

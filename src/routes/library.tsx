@@ -1,10 +1,33 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { Library as LibraryIcon, Plus, Sparkles, FileText, Grid3x3, Coins } from "lucide-react";
+import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
+import {
+  Library as LibraryIcon,
+  Plus,
+  Sparkles,
+  FileText,
+  Grid3x3,
+  Coins,
+  Globe,
+  Lock,
+  Link2,
+  UserPlus,
+  Play,
+  GitFork,
+  Trophy,
+} from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
-import { listGames } from "@/lib/api";
+import { PlayModal } from "@/components/play-modal";
+import {
+  listGames,
+  bindOrphanGames,
+  countOrphanGames,
+  listPlayedGameIdsForUser,
+} from "@/lib/api";
 import { cleanupInvalidGames } from "@/lib/storage";
+import { useAuth } from "@/hooks/use-auth";
 import type { GameKind, QuizData, StoredGame } from "@/lib/types";
+
+type TabKey = "my" | "public" | "added" | "played";
 
 export const Route = createFileRoute("/library")({
   head: () => ({
@@ -13,6 +36,10 @@ export const Route = createFileRoute("/library")({
       { name: "description", content: "Ваши квизы, «Своя игра» и «Миллионер»." },
     ],
   }),
+  validateSearch: (s: Record<string, unknown>): { tab?: TabKey } => {
+    const t = s.tab;
+    return t === "my" || t === "public" || t === "added" || t === "played" ? { tab: t } : {};
+  },
   component: LibraryPage,
 });
 
@@ -34,37 +61,78 @@ const KIND_ICON: Record<GameKind, typeof FileText> = {
   millionaire: Coins,
 };
 
+function titleOf(g: StoredGame): string {
+  const d = g.data as Partial<QuizData> & { config?: { title?: string } };
+  return d?.config?.title || `${KIND_LABEL[g.kind]} · ${g.id}`;
+}
+
 function LibraryPage() {
+  const { user } = useAuth();
+  const nav = useNavigate();
+  const { tab } = useSearch({ from: "/library" });
+  const activeTab: TabKey = tab ?? (user ? "my" : "public");
   const [games, setGames] = useState<StoredGame[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<GameKind | "all">("all");
+  const [orphanCount, setOrphanCount] = useState(0);
+  const [playedIds, setPlayedIds] = useState<Set<string>>(new Set());
+  const [playModal, setPlayModal] = useState<{ id: string; kind: GameKind } | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancel = false;
+  const showToast = (m: string) => {
+    setToast(m);
+    setTimeout(() => setToast(null), 2500);
+  };
+
+  const reload = () => {
     try { cleanupInvalidGames(); } catch { /* ignore */ }
     listGames()
       .then((g) => {
-        if (cancel) return;
         const clean = g.filter((x) => {
           const d = x?.data as { config?: unknown } | undefined;
           return !!x && !!x.kind && !!d && !!d.config;
         });
         setGames(clean);
       })
-      .catch((e) => { if (!cancel) setError(e?.message ?? "Не удалось загрузить"); });
-    return () => { cancel = true; };
-  }, []);
-
-  const titleOf = (g: StoredGame): string => {
-    const d = g.data as Partial<QuizData> & { config?: { title?: string } };
-    return d?.config?.title || `${KIND_LABEL[g.kind]} · ${g.id}`;
+      .catch((e) => setError(e?.message ?? "Не удалось загрузить"));
+    if (user) {
+      setOrphanCount(countOrphanGames());
+      listPlayedGameIdsForUser(user.id).then(setPlayedIds);
+    } else {
+      setOrphanCount(0);
+      setPlayedIds(new Set());
+    }
   };
 
-  const filtered = !games
-    ? []
-    : filter === "all"
-      ? games
-      : games.filter((g) => g.kind === filter);
+  useEffect(reload, [user]);
+
+  const filtered = useMemo(() => {
+    if (!games) return [];
+    switch (activeTab) {
+      case "my":
+        return user ? games.filter((g) => g.ownerId === user.id) : [];
+      case "public":
+        return games.filter((g) => g.visibility === "public" && g.ownerId !== user?.id);
+      case "added":
+        return user
+          ? games.filter((g) => g.ownerId === user.id && g.forkedFrom)
+          : [];
+      case "played":
+        return games.filter((g) => playedIds.has(g.id));
+    }
+  }, [games, activeTab, user, playedIds]);
+
+  const onBind = async () => {
+    const n = await bindOrphanGames();
+    showToast(`Привязано игр: ${n}`);
+    reload();
+  };
+
+  const tabs: Array<{ key: TabKey; label: string }> = [
+    { key: "my", label: "Мои" },
+    { key: "public", label: "Публичные" },
+    { key: "added", label: "Добавленные" },
+    { key: "played", label: "Пройденные" },
+  ];
 
   return (
     <div className="min-h-screen bg-surface">
@@ -75,24 +143,54 @@ function LibraryPage() {
             <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-primary-soft px-3 py-1 text-xs font-semibold text-primary">
               <LibraryIcon className="h-3.5 w-3.5" /> Библиотека
             </div>
-            <h1 className="font-display text-4xl font-bold tracking-tight">Мои квизы</h1>
-            <p className="mt-1 text-muted-foreground">Кликните на карточку, чтобы открыть игру.</p>
+            <h1 className="font-display text-4xl font-bold tracking-tight">Игры</h1>
+            <p className="mt-1 text-muted-foreground">
+              {user ? "Кликните на карточку, чтобы открыть игру." : "Войдите, чтобы видеть свои игры."}
+            </p>
           </div>
-          <Link to="/builder/quiz" className="btn-accent"><Plus className="h-4 w-4" /> Новый квиз</Link>
+          <Link to="/builder/quiz" className="btn-accent">
+            <Plus className="h-4 w-4" /> Новый квиз
+          </Link>
         </div>
 
-        <div className="mb-6 flex flex-wrap gap-2">
-          {(["all", "quiz", "jeopardy", "millionaire"] as const).map((k) => (
-            <button
-              key={k}
-              onClick={() => setFilter(k)}
-              className={`rounded-full px-4 py-1.5 text-sm font-semibold transition-colors ${
-                filter === k ? "bg-foreground text-white" : "bg-surface-muted text-muted-foreground hover:bg-border"
-              }`}
-            >
-              {k === "all" ? "Все" : KIND_LABEL[k as GameKind]}
+        {!user && (
+          <div className="mb-6 rounded-2xl border border-primary/30 bg-primary-soft px-4 py-3 text-sm">
+            Войдите, чтобы создавать свои игры и видеть пройденные.{" "}
+            <Link to="/login" className="font-semibold text-primary hover:underline">
+              Войти
+            </Link>
+          </div>
+        )}
+
+        {user && orphanCount > 0 && (
+          <div className="mb-6 flex flex-wrap items-center gap-3 rounded-2xl border border-amber/30 bg-amber-soft px-4 py-3 text-sm">
+            <span>
+              У вас есть <b>{orphanCount}</b> анонимных игр. Привязать к аккаунту?
+            </span>
+            <button onClick={onBind} className="btn-accent ml-auto">
+              Привязать
             </button>
-          ))}
+          </div>
+        )}
+
+        <div className="mb-6 flex flex-wrap gap-2">
+          {tabs.map((t) => {
+            const disabled = !user && (t.key === "my" || t.key === "added" || t.key === "played");
+            return (
+              <button
+                key={t.key}
+                disabled={disabled}
+                onClick={() => nav({ to: "/library", search: { tab: t.key } })}
+                className={`rounded-full px-4 py-1.5 text-sm font-semibold transition-colors ${
+                  activeTab === t.key
+                    ? "bg-foreground text-white"
+                    : "bg-surface-muted text-muted-foreground hover:bg-border"
+                } ${disabled ? "cursor-not-allowed opacity-40" : ""}`}
+              >
+                {t.label}
+              </button>
+            );
+          })}
         </div>
 
         {error && (
@@ -108,46 +206,141 @@ function LibraryPage() {
         ) : filtered.length === 0 ? (
           <div className="surface-card grid place-items-center py-20 text-center">
             <Sparkles className="mb-3 h-8 w-8 text-primary" />
-            <h3 className="font-display text-xl font-bold">Пока пусто</h3>
-            <p className="mt-1 text-sm text-muted-foreground">Создайте первую игру в конструкторе.</p>
-            <div className="mt-4 flex gap-2">
-              <Link to="/builder/quiz" className="btn-accent">Квиз</Link>
-              <Link to="/builder/jeopardy" className="btn-ghost">Своя игра</Link>
-              <Link to="/builder/millionaire" className="btn-ghost">Миллионер</Link>
-            </div>
+            <h3 className="font-display text-xl font-bold">Пусто</h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {activeTab === "public"
+                ? "Публичных игр пока нет."
+                : activeTab === "added"
+                  ? "Добавьте себе понравившуюся публичную игру."
+                  : activeTab === "played"
+                    ? "Сыграйте в любую игру — она появится здесь."
+                    : "Создайте первую игру в конструкторе."}
+            </p>
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {filtered.map((g) => {
-              try {
-                const Icon = KIND_ICON[g.kind] ?? FileText;
-                return (
-                  <Link
-                    key={`${g.kind}-${g.id}`}
-                    to="/game/$id"
-                    params={{ id: g.id }}
-                    className="surface-card group relative flex flex-col gap-3 overflow-hidden p-5 transition-all hover:-translate-y-0.5 hover:shadow-lift"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider ${KIND_ACCENT[g.kind]}`}>
-                        <Icon className="h-3 w-3" />
-                        {KIND_LABEL[g.kind]}
-                      </div>
-                    </div>
-                    <h3 className="line-clamp-2 font-display text-lg font-bold">{titleOf(g)}</h3>
-                    <p className="mt-auto text-xs text-muted-foreground">
-                      Создано: {new Date(g.updatedAt).toLocaleDateString("ru-RU")}
-                    </p>
-                  </Link>
-                );
-              } catch (err) {
-                console.error("Ошибка рендера карточки", g, err);
-                return null;
-              }
-            })}
+            {filtered.map((g) => (
+              <GameCard
+                key={`${g.kind}-${g.id}`}
+                g={g}
+                tab={activeTab}
+                onPlay={() => setPlayModal({ id: g.id, kind: g.kind })}
+                onForked={() => {
+                  showToast("Игра добавлена в «Мои»");
+                  reload();
+                }}
+              />
+            ))}
           </div>
         )}
       </main>
+
+      {playModal && (
+        <PlayModal
+          gameId={playModal.id}
+          kind={playModal.kind}
+          onClose={() => setPlayModal(null)}
+        />
+      )}
+
+      {toast && (
+        <div className="fixed bottom-8 left-1/2 z-50 -translate-x-1/2 rounded-full bg-foreground px-5 py-3 text-sm font-semibold text-white shadow-lift">
+          {toast}
+        </div>
+      )}
     </div>
+  );
+}
+
+function GameCard({
+  g,
+  tab,
+  onPlay,
+  onForked,
+}: {
+  g: StoredGame;
+  tab: TabKey;
+  onPlay: () => void;
+  onForked: () => void;
+}) {
+  const { user, forkGame } = useAuth();
+  const Icon = KIND_ICON[g.kind] ?? FileText;
+  const VisIcon = g.visibility === "public" ? Globe : g.visibility === "link" ? Link2 : Lock;
+  const isMine = user && g.ownerId === user.id;
+
+  const doFork = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    await forkGame(g.id);
+    onForked();
+  };
+
+  const openPlay = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onPlay();
+  };
+
+  return (
+    <Link
+      to="/game/$id"
+      params={{ id: g.id }}
+      className="surface-card group relative flex flex-col gap-3 overflow-hidden p-5 transition-all hover:-translate-y-0.5 hover:shadow-lift"
+    >
+      <div className="flex items-center justify-between">
+        <div
+          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider ${KIND_ACCENT[g.kind]}`}
+        >
+          <Icon className="h-3 w-3" />
+          {KIND_LABEL[g.kind]}
+        </div>
+        {isMine && (
+          <span
+            className="inline-flex items-center gap-1 rounded-full bg-surface-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground"
+            title={g.visibility}
+          >
+            <VisIcon className="h-3 w-3" />
+          </span>
+        )}
+      </div>
+      <h3 className="line-clamp-2 font-display text-lg font-bold">{titleOf(g)}</h3>
+      {g.forkedOwnerName && (
+        <p className="text-xs text-muted-foreground">на основе игры от {g.forkedOwnerName}</p>
+      )}
+      {!isMine && g.ownerName && (
+        <p className="text-xs text-muted-foreground">Автор: {g.ownerName}</p>
+      )}
+      <div className="mt-auto flex flex-wrap items-center gap-2">
+        <p className="text-xs text-muted-foreground">
+          {new Date(g.updatedAt).toLocaleDateString("ru-RU")}
+        </p>
+        {tab === "public" && user && (
+          <button
+            onClick={doFork}
+            className="ml-auto inline-flex items-center gap-1 rounded-full bg-primary-soft px-2.5 py-1 text-xs font-semibold text-primary hover:bg-primary/20"
+          >
+            <UserPlus className="h-3 w-3" /> Добавить
+          </button>
+        )}
+        {(tab === "public" || tab === "played") && (
+          <button
+            onClick={openPlay}
+            className="inline-flex items-center gap-1 rounded-full bg-foreground px-2.5 py-1 text-xs font-semibold text-white hover:opacity-90"
+          >
+            <Play className="h-3 w-3" /> Играть
+          </button>
+        )}
+        {tab === "played" && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-success-soft px-2 py-0.5 text-[10px] font-semibold text-success">
+            <Trophy className="h-3 w-3" /> сыграно
+          </span>
+        )}
+        {tab === "added" && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-amber-soft px-2 py-0.5 text-[10px] font-semibold text-amber">
+            <GitFork className="h-3 w-3" /> копия
+          </span>
+        )}
+      </div>
+    </Link>
   );
 }

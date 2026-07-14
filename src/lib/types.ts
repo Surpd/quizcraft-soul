@@ -117,9 +117,16 @@ export interface MillionaireData {
 // ---------- Storage envelope ----------
 export type GameKind = "quiz" | "jeopardy" | "millionaire";
 
+export type GameVisibility = "public" | "private" | "link";
+
 export interface StoredGame<T = unknown> {
   id: string;
   kind: GameKind;
   updatedAt: number;
   data: T;
+  ownerId?: string;
+  ownerName?: string;
+  visibility?: GameVisibility;
+  forkedFrom?: string;
+  forkedOwnerName?: string;
 }

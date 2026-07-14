@@ -1,0 +1,104 @@
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { SiteHeader } from "@/components/site-header";
+import { Avatar } from "@/components/avatar";
+import { useAuth } from "@/hooks/use-auth";
+import { listGames } from "@/lib/api";
+import type { StoredGame } from "@/lib/types";
+
+export const Route = createFileRoute("/profile")({
+  head: () => ({ meta: [{ title: "Профиль — IslandQuiz" }] }),
+  component: ProfilePage,
+});
+
+function ProfilePage() {
+  const { user, isLoading, updateProfile, logout } = useAuth();
+  const nav = useNavigate();
+  const [name, setName] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [mine, setMine] = useState<StoredGame[]>([]);
+
+  useEffect(() => {
+    if (!isLoading && !user) nav({ to: "/login" });
+  }, [isLoading, user, nav]);
+
+  useEffect(() => {
+    if (user) setName(user.name);
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    listGames().then((all) => setMine(all.filter((g) => g.ownerId === user.id)));
+  }, [user]);
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-surface">
+        <SiteHeader />
+      </div>
+    );
+  }
+
+  const onSave = async () => {
+    setSaving(true);
+    await updateProfile({ name: name.trim() || user.name });
+    setSaving(false);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 1500);
+  };
+
+  return (
+    <div className="min-h-screen bg-surface">
+      <SiteHeader />
+      <main className="mx-auto max-w-2xl px-6 py-10">
+        <div className="mb-6 flex items-center gap-4">
+          <Avatar name={user.name} size={64} />
+          <div>
+            <h1 className="font-display text-3xl font-black">{user.name}</h1>
+            <p className="text-sm text-muted-foreground">{user.email}</p>
+          </div>
+        </div>
+
+        <div className="surface-card mb-6 flex flex-col gap-3 p-6">
+          <label className="text-sm font-semibold">
+            Имя
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="input-base mt-1 w-full"
+            />
+          </label>
+          <div className="flex items-center gap-2">
+            <button onClick={onSave} disabled={saving} className="btn-accent">
+              {saving ? "Сохраняем…" : "Сохранить"}
+            </button>
+            {saved && <span className="text-sm text-success">Сохранено</span>}
+            <button
+              onClick={async () => {
+                await logout();
+                nav({ to: "/" });
+              }}
+              className="btn-ghost ml-auto text-danger hover:bg-danger-soft"
+            >
+              Выйти
+            </button>
+          </div>
+        </div>
+
+        <div className="surface-card p-6">
+          <h2 className="font-display text-lg font-bold">Статистика</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Ваших игр: <b className="text-foreground">{mine.length}</b>
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Публичных: <b className="text-foreground">{mine.filter((g) => g.visibility === "public").length}</b>
+          </p>
+          <Link to="/library" className="btn-ghost mt-4 inline-flex">
+            Открыть библиотеку
+          </Link>
+        </div>
+      </main>
+    </div>
+  );
+}

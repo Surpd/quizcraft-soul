@@ -323,6 +323,19 @@ function GameDashboard() {
                 <Icon className="h-3.5 w-3.5" /> {label}
               </button>
             ))}
+            {game.visibility === "public" && (
+              <label className="ml-auto inline-flex cursor-pointer items-center gap-2 text-xs font-semibold text-muted-foreground">
+                <input
+                  type="checkbox"
+                  checked={!!game.showAnswers}
+                  onChange={async (e) => {
+                    await setGameShowAnswers(game.id, e.target.checked);
+                    reload();
+                  }}
+                />
+                Показывать ответы в «Содержании»
+              </label>
+            )}
           </div>
         )}
 

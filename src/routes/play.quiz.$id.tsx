@@ -12,6 +12,7 @@ import { LaTeX } from "@/lib/latex";
 import { loadGame } from "@/lib/storage";
 import { saveQuizResult } from "@/lib/results";
 import { formatQuizAnswer } from "@/lib/format-answer";
+import { fitOptionSize, fitQuestionSize } from "@/lib/fit-text";
 import type { QuizData, QuizQuestion } from "@/lib/types";
 
 export const Route = createFileRoute("/play/quiz/$id")({

@@ -198,11 +198,12 @@ function PlayMillionaire() {
           <span className="text-sm font-semibold">{user.name}</span>
         </div>
       )}
-      <div className="mx-auto flex min-h-screen max-w-5xl items-center justify-center gap-6 px-4 py-16 lg:pr-56">
+      <div className="mx-auto flex min-h-screen max-w-5xl items-center justify-center gap-6 px-3 py-16 sm:px-4 lg:pr-56">
         <div className="min-w-0 flex-1">
           {phase === "start" && (
-            <div className="mx-auto max-w-lg animate-fade-up rounded-3xl border border-[color:var(--pt-border)] bg-[color:var(--pt-surface)] p-10 text-center backdrop-blur-md">
-              <h1 className="font-display text-3xl font-black">{config.title || "Кто хочет стать миллионером"}</h1>
+            <div className="mx-auto max-w-lg animate-fade-up rounded-3xl border border-[color:var(--pt-border)] bg-[color:var(--pt-surface)] p-6 text-center backdrop-blur-md sm:p-10">
+              <h1 className="font-display text-2xl font-black sm:text-3xl">{config.title || "Кто хочет стать миллионером"}</h1>
+
               <p className="mt-2 text-[color:var(--pt-text-muted)]">Вопросов: {questions.length}</p>
               {user && (
                 <div className="mt-6 flex justify-center">

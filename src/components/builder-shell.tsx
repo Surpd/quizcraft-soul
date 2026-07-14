@@ -85,7 +85,7 @@ export function BuilderShell({
                 <div className="surface-card p-3">{sidebar}</div>
               </aside>
             )}
-            <main className="min-w-0 flex-1 space-y-4 pb-24">{children}</main>
+            <main className="min-w-0 flex-1 space-y-4 pb-36 sm:pb-24">{children}</main>
           </div>
         </div>
       </div>

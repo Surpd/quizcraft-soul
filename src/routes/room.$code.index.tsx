@@ -626,7 +626,8 @@ function PlayerAdmin({
   return (
     <div className="flex items-center justify-between rounded-xl bg-[color:var(--pt-surface-strong)] px-3 py-2 text-sm">
       <div className="flex items-center gap-2 truncate">
-        <span>{p.avatar}</span>
+        <Avatar name={p.nickname} size={22} />
+
         <span className="truncate font-semibold">{p.nickname}</span>
         <span className="ml-2 font-mono text-xs text-[color:var(--pt-text-muted)]">
           {p.score.toLocaleString("ru-RU")}

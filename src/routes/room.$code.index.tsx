@@ -22,9 +22,15 @@ import {
   Volume2,
   VolumeX,
   RefreshCw,
+  Flame,
+  Target,
+  Check,
+  BarChart3,
 } from "lucide-react";
 import { PlayerShell, TimerBar } from "@/components/player-shell";
+import { Avatar } from "@/components/avatar";
 import { QuizQuestionCard } from "@/components/quiz-question-card";
+
 import { JeopardyRoomTeacher } from "@/components/jeopardy-room-teacher";
 import {
   subscribeRoom,

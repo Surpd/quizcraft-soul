@@ -381,9 +381,13 @@ function StudentPlay() {
         {isReveal && myAnswer && (
           <div className="relative mt-4 text-center">
             {myAnswer.correct ? (
-              <p className="text-2xl font-bold text-success">✓ Верно!</p>
+              <p className="inline-flex items-center justify-center gap-2 text-2xl font-bold text-success">
+                <Check className="h-6 w-6" /> Верно!
+              </p>
             ) : (
-              <p className="text-2xl font-bold text-danger">✕ Неверно</p>
+              <p className="inline-flex items-center justify-center gap-2 text-2xl font-bold text-danger">
+                <X className="h-6 w-6" /> Неверно
+              </p>
             )}
             {lastEarned > 0 && (
               <span className="iq-points-fly pointer-events-none absolute left-1/2 top-4 -translate-x-1/2 rounded-full bg-success/20 px-3 py-1 font-bold text-success">
@@ -401,11 +405,12 @@ function StudentPlay() {
 
         {showStreak && (
           <div
-            className={`fixed left-1/2 bottom-8 z-50 -translate-x-1/2 rounded-full bg-[color:var(--pt-accent)] px-4 py-2 font-bold text-black shadow-lg transition-opacity duration-300 ${streakFading ? "opacity-0" : "opacity-100"} animate-slide-up`}
+            className={`fixed left-1/2 bottom-8 z-50 inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-[color:var(--pt-accent)] px-4 py-2 font-bold text-black shadow-lg transition-opacity duration-300 ${streakFading ? "opacity-0" : "opacity-100"} animate-slide-up`}
           >
-            🔥 Стрик {myPlayer?.streak}!
+            <Flame className="h-4 w-4" /> Стрик {myPlayer?.streak}!
           </div>
         )}
+
       </div>
     </PlayerShell>
   );

@@ -12,7 +12,7 @@ import { Avatar } from "@/components/avatar";
 import { LaTeX } from "@/lib/latex";
 import { loadGame } from "@/lib/storage";
 import { saveQuizResult } from "@/lib/results";
-import { formatQuizAnswer } from "@/lib/format-answer";
+import { formatQuizAnswer, checkQuizAnswerCore } from "@/lib/format-answer";
 import { fitOptionSize, fitQuestionSize } from "@/lib/fit-text";
 import { useAuth } from "@/hooks/use-auth";
 import type { QuizData, QuizQuestion } from "@/lib/types";

@@ -298,7 +298,7 @@ function PlayMillionaire() {
             </>
           )}
 
-          {phase !== "playing" && (
+          {(phase === "won" || phase === "lost") && (
             <div className="mx-auto max-w-lg animate-fade-up rounded-3xl border border-[color:var(--pt-border)] bg-[color:var(--pt-surface)] p-10 text-center backdrop-blur-md">
               <h1 className="font-display text-4xl font-black">
                 {phase === "won" ? "🎉 Поздравляем!" : "😞 Игра окончена"}

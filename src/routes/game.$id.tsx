@@ -177,11 +177,8 @@ function GameDashboard() {
     { v: "public", label: "Публичная", Icon: Globe },
   ];
 
-  const ownerLine = isMine
-    ? "Владелец: Вы"
-    : game.ownerName
-      ? `Владелец: ${game.ownerName}`
-      : "Владелец: неизвестен";
+
+
 
   return (
     <div className="min-h-screen bg-surface">

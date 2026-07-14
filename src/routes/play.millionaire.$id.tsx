@@ -29,6 +29,7 @@ function guaranteedMoney(idx: number, questions: MillionaireQuestion[], mileston
 
 function PlayMillionaire() {
   const { id } = Route.useParams();
+  const { user } = useAuth();
   const [data, setData] = useState<MillionaireData | null>(null);
   const [idx, setIdx] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);

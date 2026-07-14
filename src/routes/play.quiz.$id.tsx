@@ -356,7 +356,12 @@ function PlayQuiz() {
           <div className="w-full max-w-lg animate-fade-up rounded-3xl border border-[color:var(--pt-border)] bg-[color:var(--pt-surface)] p-8 text-center backdrop-blur-md">
             <Trophy className="mx-auto mb-4 h-14 w-14 text-[color:var(--pt-accent)]" />
             <h1 className="font-display text-3xl font-black">Готово!</h1>
-            {name && <p className="mt-1 text-[color:var(--pt-text-muted)]">{name}</p>}
+            {(name || user) && (
+              <div className="mt-3 inline-flex items-center gap-2">
+                <Avatar name={name || user?.name || "?"} avatar={user?.avatar} size={28} />
+                <span className="font-semibold">{name || user?.name}</span>
+              </div>
+            )}
             <div className="my-6 font-display text-6xl font-black text-[color:var(--pt-accent)]">
               {correctCount}/{questions.length}
             </div>

@@ -476,6 +476,7 @@ export function JeopardyRoomTeacher({ state, code }: { state: RoomState; code: s
             <div className="mt-4 space-y-2">
               {state.players.map((p) => {
                 const bet = j.finalBets[p.id];
+                const ready = bet != null;
                 return (
                   <div
                     key={p.id}
@@ -488,12 +489,12 @@ export function JeopardyRoomTeacher({ state, code }: { state: RoomState; code: s
                       </span>
                     </span>
                     <span className="font-mono">
-                      {bet == null ? (
-                        <span className="text-[color:var(--pt-text-muted)]">не поставил</span>
-                      ) : (
+                      {ready ? (
                         <span className="inline-flex items-center gap-1 font-bold text-[color:var(--pt-accent)]">
-                          <Lock className="h-3.5 w-3.5" /> {bet}
+                          <Lock className="h-3.5 w-3.5" /> Готов
                         </span>
+                      ) : (
+                        <span className="text-[color:var(--pt-text-muted)]">Ожидаем…</span>
                       )}
                     </span>
                   </div>
@@ -508,6 +509,7 @@ export function JeopardyRoomTeacher({ state, code }: { state: RoomState; code: s
             </button>
           </div>
         )}
+
 
         {/* FINAL QUESTION */}
         {j.phase === "final-question" && (
@@ -530,49 +532,85 @@ export function JeopardyRoomTeacher({ state, code }: { state: RoomState; code: s
             <p className="mt-4 text-center text-2xl font-bold text-[color:var(--pt-accent)]">
               Ответ: {game.final.a}
             </p>
-            <div className="mt-6 space-y-2">
-              <p className="text-sm text-[color:var(--pt-text-muted)]">Кто ответил верно?</p>
-              {state.players.map((p) => {
-                const given = j.finalGiven[p.id] ?? "";
-                const ok = j.finalAnswers[p.id] ?? false;
-                return (
-                  <div
-                    key={p.id}
-                    className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-[color:var(--pt-surface-strong)] px-4 py-3"
-                  >
-                    <span className="flex items-center gap-2">
-                      <Avatar name={p.nickname} size={26} />
-                      <b>{p.nickname}</b>
-                      <span className="text-xs text-[color:var(--pt-text-muted)]">
-                        · ставка {j.finalBets[p.id] ?? 0}
-                      </span>
-                    </span>
-                    <span className="max-w-xs truncate text-sm italic text-[color:var(--pt-text-muted)]">
-                      {given || "—"}
-                    </span>
-                    <label className="inline-flex items-center gap-2 text-sm font-semibold">
-                      <input
-                        type="checkbox"
-                        className="h-5 w-5 accent-[color:var(--pt-accent)]"
-                        checked={ok}
-                        onChange={(e) => markJeopardyFinal(code, p.id, e.target.checked)}
-                      />
-                      Верно
-                    </label>
+            {(() => {
+              const answeredCount = state.players.filter(
+                (p) => (j.finalGiven[p.id] ?? "").trim() !== "",
+              ).length;
+              const allAnswered =
+                state.players.length > 0 && answeredCount >= state.players.length;
+              return (
+                <>
+                  <div className="mt-6 space-y-2">
+                    <p className="text-sm text-[color:var(--pt-text-muted)]">
+                      {allAnswered
+                        ? "Все ответили. Оцените ответы."
+                        : `Ждём ответы (${answeredCount}/${state.players.length})…`}
+                    </p>
+                    {state.players.map((p) => {
+                      const given = j.finalGiven[p.id] ?? "";
+                      const ok = j.finalAnswers[p.id] ?? false;
+                      const bet = j.finalBets[p.id] ?? 0;
+                      return (
+                        <div
+                          key={p.id}
+                          className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-[color:var(--pt-surface-strong)] px-4 py-3"
+                        >
+                          <span className="flex items-center gap-2">
+                            <Avatar name={p.nickname} size={26} />
+                            <b>{p.nickname}</b>
+                            <span className="text-xs text-[color:var(--pt-text-muted)]">
+                              · ставка{" "}
+                              <span
+                                className={
+                                  allAnswered
+                                    ? ""
+                                    : "select-none blur-sm text-[color:var(--pt-text-muted)]"
+                                }
+                              >
+                                {allAnswered ? bet : "•••"}
+                              </span>
+                            </span>
+                          </span>
+                          <span
+                            className={`max-w-xs truncate text-sm italic text-[color:var(--pt-text-muted)] transition ${
+                              allAnswered ? "" : "select-none blur-sm"
+                            }`}
+                          >
+                            {allAnswered ? given || "—" : "Ответ скрыт"}
+                          </span>
+                          <label
+                            className={`inline-flex items-center gap-2 text-sm font-semibold ${
+                              allAnswered ? "" : "pointer-events-none opacity-40"
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              className="h-5 w-5 accent-[color:var(--pt-accent)]"
+                              checked={ok}
+                              disabled={!allAnswered}
+                              onChange={(e) => markJeopardyFinal(code, p.id, e.target.checked)}
+                            />
+                            Верно
+                          </label>
+                        </div>
+                      );
+                    })}
                   </div>
-                );
-              })}
-            </div>
-            <div className="mt-6 flex justify-center">
-              <button
-                onClick={() => revealJeopardyFinal(code)}
-                className="inline-flex items-center gap-2 rounded-xl bg-[color:var(--pt-accent)] px-6 py-3 font-bold text-black"
-              >
-                Применить итоги
-              </button>
-            </div>
+                  <div className="mt-6 flex justify-center">
+                    <button
+                      onClick={() => revealJeopardyFinal(code)}
+                      disabled={!allAnswered}
+                      className="inline-flex items-center gap-2 rounded-xl bg-[color:var(--pt-accent)] px-6 py-3 font-bold text-black disabled:opacity-40"
+                    >
+                      Применить итоги
+                    </button>
+                  </div>
+                </>
+              );
+            })()}
           </div>
         )}
+
 
         {/* FINAL REVEAL — auto-anim */}
         {j.phase === "final-reveal" && (
@@ -919,11 +957,12 @@ function JPodium({ players, gameId }: { players: RoomPlayer[]; gameId: string })
           <Trophy className="h-4 w-4" /> Результаты
         </Link>
         <Link
-          to="/"
+          to="/library"
           className="inline-flex items-center gap-2 rounded-xl border border-[color:var(--pt-border)] bg-[color:var(--pt-surface-strong)] px-5 py-3 font-bold"
         >
-          <X className="h-4 w-4" /> Закрыть
+          <FileText className="h-4 w-4" /> Библиотека
         </Link>
+
       </div>
     </div>
   );

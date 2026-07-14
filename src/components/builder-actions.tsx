@@ -190,12 +190,13 @@ export function BuilderFabs({ kind, savedId, onSave, onSaveAsCopy, themeAccent }
   const handlePlay = () => {
     const id = onSave();
     if (!id) return;
-    if (kind === "quiz") {
+    if (kind === "quiz" || kind === "jeopardy") {
       setOpenQuizModal(true);
     } else {
       window.open(`/play/${kind}/${id}`, "_blank", "noopener");
     }
   };
+
 
   return (
     <>
@@ -246,24 +247,28 @@ export function BuilderFabs({ kind, savedId, onSave, onSaveAsCopy, themeAccent }
       {openQuizModal && savedId && (
         <QuizPlayModal
           gameId={savedId}
+          kind={kind}
           onClose={() => setOpenQuizModal(false)}
           onOfflineHost={(id) => { setOpenQuizModal(false); setHostView({ id }); }}
         />
       )}
 
       {hostView && (
-        <OfflineHostView gameId={hostView.id} onClose={() => setHostView(null)} />
+        <OfflineHostView gameId={hostView.id} kind={kind} onClose={() => setHostView(null)} />
       )}
+
     </>
   );
 }
 
 function QuizPlayModal({
   gameId,
+  kind,
   onClose,
   onOfflineHost,
 }: {
   gameId: string;
+  kind: GameKind;
   onClose: () => void;
   onOfflineHost: (id: string) => void;
 }) {
@@ -274,7 +279,7 @@ function QuizPlayModal({
     setError(null);
     setLoading(true);
     try {
-      const { code } = await createRoom("quiz", gameId);
+      const { code } = await createRoom(kind, gameId);
       window.open(`/room/${code}`, "_blank", "noopener");
       onClose();
     } catch (err) {
@@ -284,6 +289,7 @@ function QuizPlayModal({
       setLoading(false);
     }
   };
+
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-foreground/60 p-4 backdrop-blur-sm">
@@ -332,11 +338,12 @@ function QuizPlayModal({
   );
 }
 
-function OfflineHostView({ gameId, onClose }: { gameId: string; onClose: () => void }) {
+function OfflineHostView({ gameId, kind, onClose }: { gameId: string; kind: GameKind; onClose: () => void }) {
   const playUrl =
     typeof window !== "undefined"
-      ? `${window.location.origin}/play/quiz/${gameId}`
-      : `/play/quiz/${gameId}`;
+      ? `${window.location.origin}/play/${kind}/${gameId}`
+      : `/play/${kind}/${gameId}`;
+
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(playUrl)}`;
   const [copied, setCopied] = useState(false);
 

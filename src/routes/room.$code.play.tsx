@@ -272,6 +272,13 @@ function StudentPlay() {
             {myPlayer?.score.toLocaleString("ru-RU") ?? 0}
           </p>
           <p className="mt-6 text-sm text-[color:var(--pt-text-muted)]">Спасибо за игру!</p>
+          <Link
+            to="/join"
+            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[color:var(--pt-accent)] px-6 py-3 font-bold text-black transition-transform hover:scale-[1.02]"
+          >
+            Присоединиться к другой игре
+          </Link>
+
         </div>
       </PlayerShell>
     );

@@ -846,8 +846,6 @@ function JPodium({ players, gameId }: { players: RoomPlayer[]; gameId: string })
           <X className="h-4 w-4" /> Закрыть
         </Link>
       </div>
-      {/* Flame kept as icon in case future spec uses streaks */}
-      <Flame className="hidden" />
     </div>
   );
 }

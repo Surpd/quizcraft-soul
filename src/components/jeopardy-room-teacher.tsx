@@ -928,3 +928,117 @@ function JPodium({ players, gameId }: { players: RoomPlayer[]; gameId: string })
     </div>
   );
 }
+
+function FinalRevealAnim({
+  state,
+  code,
+  game,
+}: {
+  state: RoomState;
+  code: string;
+  game: JeopardyData;
+}) {
+  const j = state.jeopardy!;
+  // auto-advance every 5s while phase is final-reveal
+  useEffect(() => {
+    const t = window.setInterval(() => {
+      if (j.finalRevealStep === "done" && j.finalRevealIdx >= 0) return;
+      void advanceJeopardyFinalReveal(code);
+    }, 5000);
+    // kick off immediately if not started
+    if (j.finalRevealIdx < 0) {
+      void advanceJeopardyFinalReveal(code);
+    }
+    return () => window.clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [code, j.finalRevealStep, j.finalRevealIdx]);
+
+  const done =
+    j.finalRevealStep === "done" && j.finalRevealIdx >= 0;
+  const currentId = j.finalRevealOrder[Math.max(0, j.finalRevealIdx)];
+  const cur = state.players.find((p) => p.id === currentId);
+  const curBet = cur ? (j.finalBets[cur.id] ?? 0) : 0;
+  const curOk = cur ? (j.finalAnswers[cur.id] ?? false) : false;
+  const curGiven = cur ? (j.finalGiven[cur.id] ?? "") : "";
+
+  return (
+    <div className="mt-6 animate-fade-up rounded-3xl border border-[color:var(--pt-border)] bg-[color:var(--pt-surface)] p-8 text-center">
+      <Trophy className="mx-auto mb-2 h-10 w-10 text-[color:var(--pt-accent)]" />
+      <h2 className="font-display text-3xl font-black">Финал · Раскрытие</h2>
+      <p className="mt-1 text-sm text-[color:var(--pt-text-muted)]">
+        Категория: <b>{game.final.category}</b> · Ответ:{" "}
+        <b className="text-[color:var(--pt-accent)]">{game.final.a}</b>
+      </p>
+
+      {!done && cur && (
+        <div className="mt-6 rounded-2xl bg-[color:var(--pt-surface-strong)] p-6">
+          <div className="flex items-center justify-center gap-3 font-display text-2xl font-black">
+            <Avatar name={cur.nickname} size={40} /> {cur.nickname}
+          </div>
+          <div className="mt-4 min-h-[80px] text-lg">
+            {j.finalRevealStep === "bet" && (
+              <p className="animate-fade-in">Ставит…</p>
+            )}
+            {j.finalRevealStep !== "bet" && (
+              <p className="animate-fade-in">
+                Ставка: <b className="text-[color:var(--pt-accent)]">{curBet}</b>
+              </p>
+            )}
+            {j.finalRevealStep === "answer" && (
+              <p className="mt-2 animate-fade-in italic">
+                Ответ: «{curGiven || "—"}»
+              </p>
+            )}
+            {j.finalRevealStep === "answer" || j.finalRevealStep === "score" ? (
+              <p className="mt-2 animate-fade-in">
+                {curOk ? (
+                  <span className="inline-flex items-center gap-1 font-bold text-success">
+                    <Check className="h-5 w-5" /> Верно
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 font-bold text-danger">
+                    <X className="h-5 w-5" /> Неверно
+                  </span>
+                )}
+              </p>
+            ) : null}
+            {j.finalRevealStep === "score" && (
+              <p className="mt-2 animate-fade-in font-mono text-2xl font-black">
+                {curOk ? "+" : "−"}
+                {curBet}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className="mt-6 space-y-2">
+        {[...state.players]
+          .sort((a, b) => b.score - a.score)
+          .map((p, i) => (
+            <div
+              key={p.id}
+              className="flex items-center justify-between rounded-xl bg-[color:var(--pt-surface-strong)] px-4 py-3 transition-all"
+            >
+              <span className="flex items-center gap-2">
+                <span className="font-mono">{i + 1}</span>
+                <Avatar name={p.nickname} size={26} />
+                <b>{p.nickname}</b>
+              </span>
+              <span className="font-mono font-bold">{p.score.toLocaleString("ru-RU")}</span>
+            </div>
+          ))}
+      </div>
+
+      {done && (
+        <button
+          onClick={() => finishJeopardyGame(code)}
+          className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[color:var(--pt-accent)] px-6 py-3 font-bold text-black"
+        >
+          <Trophy className="h-4 w-4" /> Показать подиум
+        </button>
+      )}
+    </div>
+  );
+}
+

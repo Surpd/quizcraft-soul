@@ -112,7 +112,51 @@ function BuilderJeopardy() {
 
   const addCategory = (roundIdx: number) => {
     setRounds((prev) =>
-      prev.map((r, ri) => (ri === roundIdx ? [...r, makeCategory(roundIdx + 1)] : r)),
+      prev.map((r, ri) => {
+        if (ri !== roundIdx) return r;
+        if (r.length >= LIMITS.jeopardyCategoriesPerRound) {
+          showToast(`Максимум ${LIMITS.jeopardyCategoriesPerRound} категорий в раунде`);
+          return r;
+        }
+        return [...r, makeCategory(roundIdx + 1)];
+      }),
+    );
+  };
+
+  const addQuestion = (roundIdx: number, catIdx: number) => {
+    setRounds((prev) =>
+      prev.map((r, ri) => {
+        if (ri !== roundIdx) return r;
+        return r.map((c, ci) => {
+          if (ci !== catIdx) return c;
+          if (c.questions.length >= LIMITS.jeopardyQuestionsPerCategory) {
+            showToast(`Максимум ${LIMITS.jeopardyQuestionsPerCategory} вопросов в категории`);
+            return c;
+          }
+          const step = roundIdx === 0 ? 100 : roundIdx === 1 ? 200 : 300;
+          const usedPoints = new Set(c.questions.map((q) => q.points));
+          const nextPts =
+            DEFAULT_POINTS.map((p) => p * (step / 100)).find((p) => !usedPoints.has(p)) ??
+            (c.questions.reduce((m, q) => Math.max(m, q.points), 0) + step);
+          return {
+            ...c,
+            questions: [...c.questions, { points: nextPts, q: "", a: "", image: "" }],
+          };
+        });
+      }),
+    );
+  };
+
+  const removeQuestion = (roundIdx: number, catIdx: number, qIdx: number) => {
+    setRounds((prev) =>
+      prev.map((r, ri) => {
+        if (ri !== roundIdx) return r;
+        return r.map((c, ci) => {
+          if (ci !== catIdx) return c;
+          if (c.questions.length <= 1) return c;
+          return { ...c, questions: c.questions.filter((_, qi) => qi !== qIdx) };
+        });
+      }),
     );
   };
 

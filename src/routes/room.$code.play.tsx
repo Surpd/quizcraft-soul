@@ -224,7 +224,7 @@ function StudentPlay() {
       <PlayerShell theme={theme}>
         <div className="mx-auto max-w-lg px-6 py-16 text-center">
           <div className="flex justify-center pt-6">{MuteBtn}</div>
-          <div className="mt-6 text-6xl iq-pop">{me.avatar}</div>
+          <Avatar name={me.nickname} size={80} className="mx-auto mt-6 iq-pop" />
           <h1 className="mt-3 font-display text-3xl font-black">Вы в комнате!</h1>
           <p className="mt-1 text-[color:var(--pt-text-muted)]">{me.nickname}</p>
           <p className="mt-6 text-sm text-[color:var(--pt-text-muted)]">Ждём начала игры...</p>

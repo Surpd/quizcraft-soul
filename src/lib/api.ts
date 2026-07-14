@@ -21,16 +21,75 @@ import {
 import { saveJeopardyResult, loadJeopardyResults, type JeopardyResult } from "./jeopardy-results";
 import type {
   GameKind,
+  GameVisibility,
   JeopardyData,
   MillionaireData,
   QuizData,
   QuizQuestion,
   StoredGame,
 } from "./types";
+import {
+  type User,
+  createUser,
+  findUserByEmail,
+  findUserById,
+  getCurrentUser,
+  getSessionUserId,
+  setSessionUserId,
+  updateUserRecord,
+} from "./auth";
 
 // ---------- Fake latency helper ----------
 const fake = <T>(value: T, ms = 120): Promise<T> =>
   new Promise((resolve) => setTimeout(() => resolve(value), ms));
+
+// ---------- Auth (stub) ----------
+// TODO(server): POST /api/auth/register
+export async function register(input: { email: string; password: string; name: string }) {
+  const email = input.email.trim().toLowerCase();
+  if (!email || !input.password || !input.name.trim()) {
+    return fake({ ok: false as const, error: "Заполните все поля" });
+  }
+  if (findUserByEmail(email)) {
+    return fake({ ok: false as const, error: "Пользователь с таким email уже существует" });
+  }
+  const user = createUser({ email, name: input.name });
+  setSessionUserId(user.id);
+  return fake({ ok: true as const, user });
+}
+
+// TODO(server): POST /api/auth/login
+export async function login(input: { email: string; password: string }) {
+  const email = input.email.trim().toLowerCase();
+  if (!email || !input.password) {
+    return fake({ ok: false as const, error: "Заполните все поля" });
+  }
+  let user = findUserByEmail(email);
+  if (!user) {
+    // Stub: unknown email → auto-provision (as documented in the spec).
+    user = createUser({ email, name: email.split("@")[0] });
+  }
+  setSessionUserId(user.id);
+  return fake({ ok: true as const, user });
+}
+
+// TODO(server): POST /api/auth/logout
+export async function logout() {
+  setSessionUserId(null);
+  return fake({ ok: true });
+}
+
+// TODO(server): GET /api/users/me
+export async function getMe(): Promise<User | null> {
+  return fake(getCurrentUser());
+}
+
+// TODO(server): PATCH /api/users/me
+export async function updateProfile(patch: { name?: string; avatar?: string }): Promise<User | null> {
+  const id = getSessionUserId();
+  if (!id) return fake(null);
+  return fake(updateUserRecord(id, patch));
+}
 
 // ---------- Games ----------
 export type AnyGameData = QuizData | JeopardyData | MillionaireData;
@@ -44,9 +103,81 @@ export interface SaveGameInput<T = AnyGameData> {
 
 export async function saveGame<T = AnyGameData>(input: SaveGameInput<T>) {
   const id = input.id ?? newId();
-  _saveGame<T>(input.kind, id, input.data);
+  const existing = _loadGame<T>(input.kind, id);
+  const me = getCurrentUser();
+  const meta: Partial<StoredGame> = {};
+  if (!existing) {
+    if (me) {
+      meta.ownerId = me.id;
+      meta.ownerName = me.name;
+      meta.visibility = "private";
+    } else {
+      meta.visibility = "link";
+    }
+  }
+  _saveGame<T>(input.kind, id, input.data, meta);
   return fake({ id, play_url: `/play/${input.kind}/${id}` });
 }
+
+// TODO(server): POST /api/games/:id/fork
+export async function forkGame(gameId: string): Promise<{ id: string } | null> {
+  const me = getCurrentUser();
+  if (!me) return fake(null);
+  const all = _listGames();
+  const src = all.find((g) => g.id === gameId);
+  if (!src) return fake(null);
+  const originalOwner = src.ownerName ?? (src.ownerId ? findUserById(src.ownerId)?.name : undefined);
+  const newIdVal = newId();
+  _saveGame(src.kind, newIdVal, src.data, {
+    ownerId: me.id,
+    ownerName: me.name,
+    visibility: "private",
+    forkedFrom: src.id,
+    forkedOwnerName: originalOwner ?? "неизвестный автор",
+  });
+  return fake({ id: newIdVal });
+}
+
+// TODO(server): PATCH /api/games/:id/visibility
+export async function setGameVisibility(gameId: string, visibility: GameVisibility) {
+  const all = _listGames();
+  const g = all.find((x) => x.id === gameId);
+  if (!g) return fake({ ok: false as const });
+  _saveGame(g.kind, g.id, g.data, {
+    ownerId: g.ownerId,
+    ownerName: g.ownerName,
+    visibility,
+    forkedFrom: g.forkedFrom,
+    forkedOwnerName: g.forkedOwnerName,
+  });
+  return fake({ ok: true as const });
+}
+
+// Bind games with no ownerId to current user (first-login flow).
+export async function bindOrphanGames(): Promise<number> {
+  const me = getCurrentUser();
+  if (!me) return fake(0);
+  const all = _listGames();
+  let bound = 0;
+  for (const g of all) {
+    if (!g.ownerId) {
+      _saveGame(g.kind, g.id, g.data, {
+        ownerId: me.id,
+        ownerName: me.name,
+        visibility: g.visibility ?? "private",
+        forkedFrom: g.forkedFrom,
+        forkedOwnerName: g.forkedOwnerName,
+      });
+      bound++;
+    }
+  }
+  return fake(bound);
+}
+
+export function countOrphanGames(): number {
+  return _listGames().filter((g) => !g.ownerId).length;
+}
+
 
 export async function loadGame<T = AnyGameData>(kind: GameKind, id: string) {
   const rec = _loadGame<T>(kind, id);
@@ -1154,3 +1285,30 @@ export async function generateJeopardyQuestions(input: {
 
 // ---------- Public export for debugging / migration audits ----------
 export const __apiVersion = "1.1.0-facade-ai";
+
+// ---------- Library "played" tab helper ----------
+export async function listPlayedGameIdsForUser(userId: string): Promise<Set<string>> {
+  const out = new Set<string>();
+  if (typeof window === "undefined") return fake(out);
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (!k) continue;
+    let gameId = "";
+    if (k.startsWith("islandquiz.v1.results.")) gameId = k.slice("islandquiz.v1.results.".length);
+    else if (k.startsWith("islandquiz.v1.jresults.")) gameId = k.slice("islandquiz.v1.jresults.".length);
+    else if (k.startsWith("islandquiz.v1.online-results.")) gameId = k.slice("islandquiz.v1.online-results.".length);
+    else continue;
+    try {
+      const arr = JSON.parse(localStorage.getItem(k) || "[]") as Array<Record<string, unknown>>;
+      const hit = arr.some((r) => {
+        if (r.userId === userId) return true;
+        const players = (r.players ?? []) as Array<Record<string, unknown>>;
+        return Array.isArray(players) && players.some((p) => p.userId === userId);
+      });
+      if (hit) out.add(gameId);
+    } catch {
+      /* skip */
+    }
+  }
+  return fake(out);
+}

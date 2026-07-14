@@ -18,14 +18,21 @@ export interface JeopardyResult {
   teams: JeopardyTeamResult[];
   winnerId: string | null;
   hasFinal: boolean;
+  userId?: string;
 }
 
 const NS = "islandquiz.v1.jresults";
 const key = (gameId: string) => `${NS}.${gameId}`;
 
+function currentSessionUserId(): string | undefined {
+  if (typeof window === "undefined") return undefined;
+  return localStorage.getItem("islandquiz.v1.auth.session") ?? undefined;
+}
+
 export function saveJeopardyResult(r: Omit<JeopardyResult, "id" | "playedAt">): JeopardyResult {
   const rec: JeopardyResult = {
     ...r,
+    userId: r.userId ?? currentSessionUserId(),
     id: Math.random().toString(36).slice(2, 10),
     playedAt: Date.now(),
   };

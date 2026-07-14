@@ -13,8 +13,21 @@ export function newId(): string {
   );
 }
 
-export function saveGame<T>(kind: GameKind, id: string, data: T): StoredGame<T> {
-  const record: StoredGame<T> = { id, kind, data, updatedAt: Date.now() };
+export function saveGame<T>(
+  kind: GameKind,
+  id: string,
+  data: T,
+  meta?: Partial<Omit<StoredGame, "id" | "kind" | "data" | "updatedAt">>,
+): StoredGame<T> {
+  const existing = loadGame<T>(kind, id);
+  const record: StoredGame<T> = {
+    ...(existing ?? {}),
+    id,
+    kind,
+    data,
+    updatedAt: Date.now(),
+    ...(meta ?? {}),
+  };
   if (typeof window === "undefined") return record;
   try {
     localStorage.setItem(key(kind, id), JSON.stringify(record));

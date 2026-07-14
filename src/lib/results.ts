@@ -21,15 +21,22 @@ export interface QuizResult {
   totalQuestions: number;
   timeSec: number;
   finishedAt: number;
+  userId?: string;
   answers?: QuizAnswerDetail[];
 }
 
 const NS = "islandquiz.v1.results";
 const key = (gameId: string) => `${NS}.${gameId}`;
 
+function currentSessionUserId(): string | undefined {
+  if (typeof window === "undefined") return undefined;
+  return localStorage.getItem("islandquiz.v1.auth.session") ?? undefined;
+}
+
 export function saveQuizResult(r: Omit<QuizResult, "id" | "finishedAt">): QuizResult {
   const record: QuizResult = {
     ...r,
+    userId: r.userId ?? currentSessionUserId(),
     id: Math.random().toString(36).slice(2, 10),
     finishedAt: Date.now(),
   };

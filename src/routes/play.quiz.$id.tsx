@@ -264,11 +264,21 @@ function PlayQuiz() {
             <p className="mt-4 text-sm text-[color:var(--pt-text-muted)]">
               Вопросов: {questions.length} · {config.orderMode === "free" ? `Общее время ${config.totalTime} мин` : "Таймер на каждый вопрос"}
             </p>
+            {user && (
+              <div className="mt-6 flex items-center justify-center gap-3 rounded-xl bg-[color:var(--pt-surface-strong)] px-4 py-2 text-sm">
+                <Avatar name={user.name} avatar={user.avatar} size={32} />
+                <span className="text-[color:var(--pt-text-muted)]">Играете как</span>
+                <span className="font-semibold">{user.name}</span>
+              </div>
+            )}
             <input
-              className="mt-6 w-full rounded-xl border border-[color:var(--pt-border)] bg-[color:var(--pt-surface-strong)] px-4 py-3 text-center text-lg text-[color:var(--pt-text)] outline-none placeholder:text-[color:var(--pt-text-muted)]"
-              placeholder="Ваше имя (необязательно)"
+              className="mt-4 w-full rounded-xl border border-[color:var(--pt-border)] bg-[color:var(--pt-surface-strong)] px-4 py-3 text-center text-lg text-[color:var(--pt-text)] outline-none placeholder:text-[color:var(--pt-text-muted)]"
+              placeholder={user ? "Изменить имя для этой игры" : "Ваше имя (необязательно)"}
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => {
+                setName(e.target.value);
+                setNameTouched(true);
+              }}
             />
             <button
               onClick={start}

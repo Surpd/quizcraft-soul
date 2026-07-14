@@ -385,27 +385,22 @@ function GameDashboard() {
         {!isPrivateOther && (
           isMine ? (
             <div className="surface-card p-6">
-              {game.kind === "millionaire" ? (
-                <p className="text-sm text-muted-foreground">
-                  Статистика прохождений доступна для форматов «Квиз» и «Своя игра».
-                </p>
-              ) : (
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <h2 className="font-display text-base font-bold">Результаты прохождений</h2>
-                    <p className="text-sm text-muted-foreground">
-                      Вся статистика, ответы и таблицы лидеров.
-                    </p>
-                  </div>
-                  <Link
-                    to={`/${game.kind}/${game.id}/results`}
-                    className="btn-accent inline-flex items-center gap-2"
-                  >
-                    <Trophy className="h-4 w-4" /> Открыть результаты
-                  </Link>
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="font-display text-base font-bold">Результаты прохождений</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Вся статистика, ответы и таблицы лидеров.
+                  </p>
                 </div>
-              )}
+                <Link
+                  to={`/${game.kind}/${game.id}/results`}
+                  className="btn-accent inline-flex items-center gap-2"
+                >
+                  <Trophy className="h-4 w-4" /> Открыть результаты
+                </Link>
+              </div>
             </div>
+
           ) : (
             <div className="surface-card p-6">
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">

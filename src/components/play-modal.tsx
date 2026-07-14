@@ -15,7 +15,8 @@ export function PlayModal({
 }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [hostView, setHostView] = useState(false);
+  const [hostView, setHostView] = useState(kind === "millionaire");
+
 
   const startOnline = async () => {
     setError(null);

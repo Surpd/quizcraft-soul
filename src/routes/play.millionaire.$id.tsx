@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Sparkles, RefreshCw } from "lucide-react";
 import { PlayerShell, TimerBar } from "@/components/player-shell";
 import { Avatar } from "@/components/avatar";
@@ -7,11 +7,13 @@ import { LaTeX } from "@/lib/latex";
 import { loadGame } from "@/lib/storage";
 import { fitOptionSize, fitQuestionSize } from "@/lib/fit-text";
 import { useAuth } from "@/hooks/use-auth";
+import { saveMillionaireResult, type MillionaireAnswerDetail } from "@/lib/results";
 import type { MilestoneMode, MillionaireData, MillionaireQuestion } from "@/lib/types";
 
 export const Route = createFileRoute("/play/millionaire/$id")({
   component: PlayMillionaire,
 });
+
 
 function milestoneIndices(mode: MilestoneMode, total: number): Set<number> {
   if (mode === "none") return new Set();
@@ -38,11 +40,15 @@ function PlayMillionaire() {
   const [fiftyUsed, setFiftyUsed] = useState(false);
   const [hidden, setHidden] = useState<Set<number>>(new Set());
   const [timeLeft, setTimeLeft] = useState(0);
+  const startedAtRef = useRef<number>(Date.now());
+  const answersRef = useRef<MillionaireAnswerDetail[]>([]);
+  const savedRef = useRef(false);
 
   useEffect(() => {
     const g = loadGame<MillionaireData>("millionaire", id);
     if (g) setData(g.data);
   }, [id]);
+
 
   const config = data?.config;
   const questions = data?.questions ?? [];
@@ -59,6 +65,19 @@ function PlayMillionaire() {
         if (prev <= 1) {
           clearInterval(t);
           setRevealed(true);
+          // время вышло — записываем как «нет ответа»
+          const q = questions[idx];
+          if (q) {
+            const ci = q.options.findIndex((o) => o.correct);
+            answersRef.current.push({
+              qIdx: idx,
+              money: q.money,
+              question: q.q,
+              given: "—",
+              correctAnswer: `${String.fromCharCode(65 + ci)}. ${q.options[ci]?.text ?? ""}`,
+              isCorrect: false,
+            });
+          }
           setPhase("lost");
           return 0;
         }
@@ -66,7 +85,8 @@ function PlayMillionaire() {
       });
     }, 1000);
     return () => clearInterval(t);
-  }, [idx, phase, config, questions.length]);
+  }, [idx, phase, config, questions, questions.length]);
+
 
   if (!data || !config) {
     return (
@@ -97,6 +117,14 @@ function PlayMillionaire() {
     setTimeout(() => {
       setRevealed(true);
       const isCorrect = oi === correctIdx;
+      answersRef.current.push({
+        qIdx: idx,
+        money: current.money,
+        question: current.q,
+        given: `${String.fromCharCode(65 + oi)}. ${current.options[oi]?.text ?? ""}`,
+        correctAnswer: `${String.fromCharCode(65 + correctIdx)}. ${current.options[correctIdx]?.text ?? ""}`,
+        isCorrect,
+      });
       setTimeout(() => {
         if (isCorrect) {
           if (idx + 1 >= questions.length) setPhase("won");
@@ -130,7 +158,11 @@ function PlayMillionaire() {
     setPhase("playing");
     setFiftyUsed(false);
     setHidden(new Set());
+    answersRef.current = [];
+    savedRef.current = false;
+    startedAtRef.current = Date.now();
   };
+
 
   const wonAmount =
     phase === "won"
@@ -138,6 +170,27 @@ function PlayMillionaire() {
       : phase === "lost"
         ? guaranteedMoney(idx, questions, milestones)
         : 0;
+
+  // Сохраняем результат один раз при завершении
+  useEffect(() => {
+    if (phase === "playing" || savedRef.current || !questions.length) return;
+    savedRef.current = true;
+    const reached = answersRef.current.filter((a) => a.isCorrect).length;
+    saveMillionaireResult({
+      gameId: id,
+      playerName: user?.name || "Аноним",
+      avatar: user?.avatar,
+      outcome: phase,
+      wonAmount,
+      guaranteedAmount: guaranteedMoney(idx, questions, milestones),
+      reachedCount: reached,
+      totalQuestions: questions.length,
+      timeSec: Math.max(1, Math.round((Date.now() - startedAtRef.current) / 1000)),
+      answers: [...answersRef.current],
+    });
+  }, [phase, wonAmount, id, idx, questions, milestones, user]);
+
+
 
   return (
     <PlayerShell theme={config.theme}>

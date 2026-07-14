@@ -134,3 +134,66 @@ export function loadOnlineQuizResults(gameId: string): OnlineQuizResult[] {
     return [];
   }
 }
+
+// ============= Millionaire results =============
+
+export interface MillionaireAnswerDetail {
+  qIdx: number;
+  money: number;
+  question: string;
+  given: string; // letter + text, e.g. "B. Париж" or "—" (нет ответа)
+  correctAnswer: string; // letter + text
+  isCorrect: boolean;
+}
+
+export interface MillionaireResult {
+  id: string;
+  gameId: string;
+  playerName: string;
+  userId?: string;
+  avatar?: string;
+  outcome: "won" | "lost";
+  wonAmount: number;
+  guaranteedAmount: number;
+  reachedCount: number; // сколько вопросов пройдено верно
+  totalQuestions: number;
+  timeSec: number;
+  finishedAt: number;
+  answers: MillionaireAnswerDetail[];
+}
+
+const MILLIONAIRE_KEY = (gameId: string) =>
+  `islandquiz.v1.millionaire-results.${gameId}`;
+
+export function saveMillionaireResult(
+  r: Omit<MillionaireResult, "id" | "finishedAt">,
+): MillionaireResult {
+  const record: MillionaireResult = {
+    ...r,
+    userId: r.userId ?? currentSessionUserId(),
+    id: Math.random().toString(36).slice(2, 10),
+    finishedAt: Date.now(),
+  };
+  if (typeof window === "undefined") return record;
+  try {
+    const list = loadMillionaireResults(r.gameId);
+    list.push(record);
+    localStorage.setItem(MILLIONAIRE_KEY(r.gameId), JSON.stringify(list));
+  } catch (err) {
+    console.error("Failed to save millionaire result", err);
+  }
+  return record;
+}
+
+export function loadMillionaireResults(gameId: string): MillionaireResult[] {
+  if (typeof window === "undefined") return [];
+  const raw = localStorage.getItem(MILLIONAIRE_KEY(gameId));
+  if (!raw) return [];
+  try {
+    const arr = JSON.parse(raw) as MillionaireResult[];
+    return arr.sort((a, b) => b.finishedAt - a.finishedAt);
+  } catch {
+    return [];
+  }
+}
+

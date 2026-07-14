@@ -60,3 +60,69 @@ export function clearQuizResults(gameId: string) {
   if (typeof window === "undefined") return;
   localStorage.removeItem(key(gameId));
 }
+
+// ============= Online quiz results (multiplayer rooms) =============
+
+export interface OnlineQuizPlayerAnswer {
+  questionIdx: number;
+  question: string;
+  given: string;
+  correctAnswer: string;
+  correct: boolean;
+  earned: number;
+  points: number;
+  timeMs: number;
+}
+
+export interface OnlineQuizPlayerResult {
+  id: string;
+  nickname: string;
+  avatar: string;
+  score: number;
+  maxScore: number;
+  correctCount: number;
+  totalQuestions: number;
+  answers: OnlineQuizPlayerAnswer[];
+}
+
+export interface OnlineQuizResult {
+  id: string;
+  roomCode: string;
+  gameId: string;
+  playedAt: number;
+  durationSec: number;
+  players: OnlineQuizPlayerResult[];
+}
+
+const ONLINE_KEY = (gameId: string) => `islandquiz.v1.online-results.${gameId}`;
+
+export function saveOnlineQuizResult(
+  input: Omit<OnlineQuizResult, "id" | "playedAt">,
+): OnlineQuizResult {
+  const rec: OnlineQuizResult = {
+    ...input,
+    id: Math.random().toString(36).slice(2, 10),
+    playedAt: Date.now(),
+  };
+  if (typeof window === "undefined") return rec;
+  try {
+    const list = loadOnlineQuizResults(input.gameId);
+    list.push(rec);
+    localStorage.setItem(ONLINE_KEY(input.gameId), JSON.stringify(list));
+  } catch (err) {
+    console.error("Failed to save online result", err);
+  }
+  return rec;
+}
+
+export function loadOnlineQuizResults(gameId: string): OnlineQuizResult[] {
+  if (typeof window === "undefined") return [];
+  const raw = localStorage.getItem(ONLINE_KEY(gameId));
+  if (!raw) return [];
+  try {
+    const arr = JSON.parse(raw) as OnlineQuizResult[];
+    return arr.sort((a, b) => b.playedAt - a.playedAt);
+  } catch {
+    return [];
+  }
+}

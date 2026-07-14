@@ -250,12 +250,16 @@ export async function createRoom(gameKind: GameKind, gameId: string) {
             selectedCat: null,
             selectedQ: null,
             buzzedPlayerId: null,
+            buzzedPlayerIds: [],
+            questionTotalMs: 30000,
+            questionElapsedMs: 0,
             showAnswer: false,
             finalBets: {},
             finalAnswers: {},
             finalGiven: {},
             lastDelta: null,
           },
+
         }
       : {}),
   };

@@ -23,6 +23,7 @@ import { Route as QuizGameIdResultsRouteImport } from './routes/quiz.$gameId.res
 import { Route as PlayQuizIdRouteImport } from './routes/play.quiz.$id'
 import { Route as PlayMillionaireIdRouteImport } from './routes/play.millionaire.$id'
 import { Route as PlayJeopardyIdRouteImport } from './routes/play.jeopardy.$id'
+import { Route as JeopardyGameIdResultsRouteImport } from './routes/jeopardy.$gameId.results'
 
 const LibraryRoute = LibraryRouteImport.update({
   id: '/library',
@@ -94,6 +95,11 @@ const PlayJeopardyIdRoute = PlayJeopardyIdRouteImport.update({
   path: '/play/jeopardy/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const JeopardyGameIdResultsRoute = JeopardyGameIdResultsRouteImport.update({
+  id: '/jeopardy/$gameId/results',
+  path: '/jeopardy/$gameId/results',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -104,6 +110,7 @@ export interface FileRoutesByFullPath {
   '/builder/quiz': typeof BuilderQuizRoute
   '/game/$id': typeof GameIdRoute
   '/room/$code': typeof RoomCodeRouteWithChildren
+  '/jeopardy/$gameId/results': typeof JeopardyGameIdResultsRoute
   '/play/jeopardy/$id': typeof PlayJeopardyIdRoute
   '/play/millionaire/$id': typeof PlayMillionaireIdRoute
   '/play/quiz/$id': typeof PlayQuizIdRoute
@@ -119,6 +126,7 @@ export interface FileRoutesByTo {
   '/builder/millionaire': typeof BuilderMillionaireRoute
   '/builder/quiz': typeof BuilderQuizRoute
   '/game/$id': typeof GameIdRoute
+  '/jeopardy/$gameId/results': typeof JeopardyGameIdResultsRoute
   '/play/jeopardy/$id': typeof PlayJeopardyIdRoute
   '/play/millionaire/$id': typeof PlayMillionaireIdRoute
   '/play/quiz/$id': typeof PlayQuizIdRoute
@@ -136,6 +144,7 @@ export interface FileRoutesById {
   '/builder/quiz': typeof BuilderQuizRoute
   '/game/$id': typeof GameIdRoute
   '/room/$code': typeof RoomCodeRouteWithChildren
+  '/jeopardy/$gameId/results': typeof JeopardyGameIdResultsRoute
   '/play/jeopardy/$id': typeof PlayJeopardyIdRoute
   '/play/millionaire/$id': typeof PlayMillionaireIdRoute
   '/play/quiz/$id': typeof PlayQuizIdRoute
@@ -154,6 +163,7 @@ export interface FileRouteTypes {
     | '/builder/quiz'
     | '/game/$id'
     | '/room/$code'
+    | '/jeopardy/$gameId/results'
     | '/play/jeopardy/$id'
     | '/play/millionaire/$id'
     | '/play/quiz/$id'
@@ -169,6 +179,7 @@ export interface FileRouteTypes {
     | '/builder/millionaire'
     | '/builder/quiz'
     | '/game/$id'
+    | '/jeopardy/$gameId/results'
     | '/play/jeopardy/$id'
     | '/play/millionaire/$id'
     | '/play/quiz/$id'
@@ -185,6 +196,7 @@ export interface FileRouteTypes {
     | '/builder/quiz'
     | '/game/$id'
     | '/room/$code'
+    | '/jeopardy/$gameId/results'
     | '/play/jeopardy/$id'
     | '/play/millionaire/$id'
     | '/play/quiz/$id'
@@ -202,6 +214,7 @@ export interface RootRouteChildren {
   BuilderQuizRoute: typeof BuilderQuizRoute
   GameIdRoute: typeof GameIdRoute
   RoomCodeRoute: typeof RoomCodeRouteWithChildren
+  JeopardyGameIdResultsRoute: typeof JeopardyGameIdResultsRoute
   PlayJeopardyIdRoute: typeof PlayJeopardyIdRoute
   PlayMillionaireIdRoute: typeof PlayMillionaireIdRoute
   PlayQuizIdRoute: typeof PlayQuizIdRoute
@@ -308,6 +321,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlayJeopardyIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/jeopardy/$gameId/results': {
+      id: '/jeopardy/$gameId/results'
+      path: '/jeopardy/$gameId/results'
+      fullPath: '/jeopardy/$gameId/results'
+      preLoaderRoute: typeof JeopardyGameIdResultsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -334,6 +354,7 @@ const rootRouteChildren: RootRouteChildren = {
   BuilderQuizRoute: BuilderQuizRoute,
   GameIdRoute: GameIdRoute,
   RoomCodeRoute: RoomCodeRouteWithChildren,
+  JeopardyGameIdResultsRoute: JeopardyGameIdResultsRoute,
   PlayJeopardyIdRoute: PlayJeopardyIdRoute,
   PlayMillionaireIdRoute: PlayMillionaireIdRoute,
   PlayQuizIdRoute: PlayQuizIdRoute,
@@ -342,3 +363,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

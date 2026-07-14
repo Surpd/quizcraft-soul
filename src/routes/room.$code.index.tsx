@@ -423,7 +423,7 @@ function Lobby({
                 key={p.id}
                 className="iq-pop group flex items-center gap-2 rounded-full bg-[color:var(--pt-surface-strong)] px-3 py-1.5 text-sm font-semibold"
               >
-                <span className="text-lg">{p.avatar}</span>
+                <Avatar name={p.nickname} size={22} />
                 {p.nickname}
                 <button
                   onClick={() => onKick(p.id)}
@@ -436,6 +436,7 @@ function Lobby({
             ))}
           </div>
         )}
+
       </div>
     </div>
   );

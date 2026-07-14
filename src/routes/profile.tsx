@@ -1,10 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { SiteHeader } from "@/components/site-header";
-import { Avatar } from "@/components/avatar";
+import { Avatar, AVATAR_COLORS } from "@/components/avatar";
 import { useAuth } from "@/hooks/use-auth";
 import { listGames } from "@/lib/api";
 import type { StoredGame } from "@/lib/types";
+import { Upload, Trash2 } from "lucide-react";
 
 export const Route = createFileRoute("/profile")({
   head: () => ({ meta: [{ title: "Профиль — IslandQuiz" }] }),

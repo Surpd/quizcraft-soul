@@ -159,7 +159,7 @@ function StudentPlay() {
   const doSubmit = async (timeout = false) => {
     if (!state || !question || !me || submitted) return;
     setSubmitted(true);
-    // Matching-specific empty-check: if no pairs placed, count as wrong
+    // Пустое значение для сложных типов — считаем неответом.
     let effectiveValue = value;
     if (question.type === "matching") {
       try {
@@ -168,6 +168,9 @@ function StudentPlay() {
       } catch {
         effectiveValue = "";
       }
+    }
+    if (timeout && (question.type === "close" || question.type === "ordering")) {
+      effectiveValue = "[]";
     }
     const correct = timeout || !effectiveValue ? false : checkQuizAnswer(question, effectiveValue);
     const total = (question.time || 30) * 1000;

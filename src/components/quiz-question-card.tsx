@@ -3,7 +3,7 @@
 // experiences stay visually identical, but this version is decoupled so we
 // don't touch the offline route.
 
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import {
   DndContext,
   useDraggable,
@@ -12,6 +12,7 @@ import {
 } from "@dnd-kit/core";
 import { LaTeX } from "@/lib/latex";
 import { fitOptionSize, fitQuestionSize } from "@/lib/fit-text";
+import { checkQuizAnswerCore } from "@/lib/format-answer";
 import type { QuizQuestion } from "@/lib/types";
 
 function shuffle<T>(arr: T[]): T[] {

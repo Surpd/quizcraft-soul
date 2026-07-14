@@ -19,7 +19,7 @@ import {
   Plus,
   Minus,
 } from "lucide-react";
-import { PlayerShell, TimerBar } from "@/components/player-shell";
+import { PlayerShell } from "@/components/player-shell";
 import { LaTeX } from "@/lib/latex";
 import { loadGame } from "@/lib/api";
 import {

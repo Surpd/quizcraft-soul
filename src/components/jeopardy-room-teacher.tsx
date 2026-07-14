@@ -148,13 +148,23 @@ export function JeopardyRoomTeacher({ state, code }: { state: RoomState; code: s
           <span className="text-[color:var(--pt-text-muted)]">· {code}</span>
         </h1>
       </div>
-      <button
-        onClick={onToggleMute}
-        className="inline-flex items-center gap-2 rounded-full border border-[color:var(--pt-border)] bg-[color:var(--pt-surface-strong)] px-3 py-2 text-xs font-semibold"
-      >
-        {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-        {muted ? "Звук выкл" : "Звук вкл"}
-      </button>
+      <div className="flex items-center gap-2">
+        <a
+          href={`/room/${code}/answers`}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center gap-2 rounded-full border border-[color:var(--pt-border)] bg-[color:var(--pt-surface-strong)] px-3 py-2 text-xs font-semibold hover:bg-[color:var(--pt-surface)]"
+        >
+          <FileText className="h-4 w-4" /> Ответы
+        </a>
+        <button
+          onClick={onToggleMute}
+          className="inline-flex items-center gap-2 rounded-full border border-[color:var(--pt-border)] bg-[color:var(--pt-surface-strong)] px-3 py-2 text-xs font-semibold"
+        >
+          {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+          {muted ? "Звук выкл" : "Звук вкл"}
+        </button>
+      </div>
     </div>
   );
 

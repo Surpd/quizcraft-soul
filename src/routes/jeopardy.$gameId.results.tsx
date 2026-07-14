@@ -182,10 +182,11 @@ function JeopardyResultsPage() {
                                           {r.hasFinal && (
                                             <td className="px-2 py-2">
                                               {t.finalCorrect ? (
-                                                <span className="text-success">✓</span>
+                                                <Check className="h-4 w-4 text-success" />
                                               ) : (
-                                                <span className="text-danger">✕</span>
+                                                <X className="h-4 w-4 text-danger" />
                                               )}
+
                                             </td>
                                           )}
                                         </tr>

@@ -53,7 +53,7 @@ export function SiteHeader({ compact = false }: { compact?: boolean }) {
               onClick={() => setOpen((v) => !v)}
               className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-2 py-1.5 text-sm font-semibold hover:bg-surface-muted"
             >
-              <Avatar name={user.name} size={26} />
+              <Avatar name={user.name} avatar={user.avatar} size={26} />
               <span className="max-w-[10ch] truncate">{user.name}</span>
               <ChevronDown className="h-3.5 w-3.5 opacity-60" />
             </button>

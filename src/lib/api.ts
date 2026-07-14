@@ -153,6 +153,29 @@ export async function setGameVisibility(gameId: string, visibility: GameVisibili
     visibility,
     forkedFrom: g.forkedFrom,
     forkedOwnerName: g.forkedOwnerName,
+    tags: g.tags,
+    ratings: g.ratings,
+    playCount: g.playCount,
+    showAnswers: g.showAnswers,
+  });
+  return fake({ ok: true as const });
+}
+
+// TODO(server): PATCH /api/games/:id/show-answers
+export async function setGameShowAnswers(gameId: string, showAnswers: boolean) {
+  const all = _listGames();
+  const g = all.find((x) => x.id === gameId);
+  if (!g) return fake({ ok: false as const });
+  _saveGame(g.kind, g.id, g.data, {
+    ownerId: g.ownerId,
+    ownerName: g.ownerName,
+    visibility: g.visibility,
+    forkedFrom: g.forkedFrom,
+    forkedOwnerName: g.forkedOwnerName,
+    tags: g.tags,
+    ratings: g.ratings,
+    playCount: g.playCount,
+    showAnswers,
   });
   return fake({ ok: true as const });
 }

@@ -27,6 +27,9 @@ import {
 import { cleanupInvalidGames } from "@/lib/storage";
 import { useAuth } from "@/hooks/use-auth";
 import { RatingStars } from "@/components/rating-stars";
+import { Avatar } from "@/components/avatar";
+import { gameSummary } from "@/components/game-content";
+import { findUserById } from "@/lib/auth";
 import type { GameKind, QuizData, StoredGame } from "@/lib/types";
 
 
@@ -387,18 +390,27 @@ function GameCard({
         )}
       </div>
       <h3 className="line-clamp-2 font-display text-lg font-bold">{titleOf(g)}</h3>
+      <p className="text-xs text-muted-foreground">{gameSummary(g)}</p>
       {g.forkedOwnerName && (
         <p className="text-xs text-muted-foreground">на основе игры от {g.forkedOwnerName}</p>
       )}
       {!isMine && g.ownerName && g.ownerId && (
-        <Link
-          to="/profile/$userId"
-          params={{ userId: g.ownerId }}
-          onClick={(e) => e.stopPropagation()}
-          className="text-xs text-muted-foreground hover:text-primary hover:underline"
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            window.location.href = `/profile/${g.ownerId}`;
+          }}
+          className="inline-flex items-center gap-1.5 self-start text-xs text-muted-foreground hover:text-primary hover:underline"
         >
+          <Avatar
+            name={g.ownerName}
+            avatar={findUserById(g.ownerId)?.avatar}
+            size={18}
+          />
           от {g.ownerName}
-        </Link>
+        </button>
       )}
       {g.tags && g.tags.length > 0 && (
         <div className="flex flex-wrap gap-1">

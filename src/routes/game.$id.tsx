@@ -17,8 +17,10 @@ import {
 import { SiteHeader } from "@/components/site-header";
 import { PlayModal } from "@/components/play-modal";
 import { RatingStars } from "@/components/rating-stars";
+import { Avatar } from "@/components/avatar";
+import { GameContent, gameSummary } from "@/components/game-content";
 import { useAuth } from "@/hooks/use-auth";
-import { findGame, deleteGame, saveGame, computeRatingStats, getMyRating, rateGame } from "@/lib/api";
+import { findGame, deleteGame, saveGame, computeRatingStats, getMyRating, rateGame, setGameShowAnswers } from "@/lib/api";
 
 import {
   exportQuizExcel,
@@ -36,6 +38,7 @@ import type {
   MillionaireData,
   StoredGame,
 } from "@/lib/types";
+import { findUserById } from "@/lib/auth";
 
 export const Route = createFileRoute("/game/$id")({
   head: () => ({ meta: [{ title: "Дашборд игры — IslandQuiz" }] }),
@@ -227,24 +230,29 @@ function GameDashboard() {
             </h1>
           )}
 
-          <p className="mt-1 text-sm text-muted-foreground">
+          <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
+            <span>Владелец:</span>
             {isMine ? (
-              "Владелец: Вы"
+              <span className="inline-flex items-center gap-1.5 font-semibold text-foreground">
+                <Avatar name={user!.name} avatar={user!.avatar} size={22} /> Вы
+              </span>
             ) : game.ownerId && game.ownerName ? (
-              <>
-                Владелец:{" "}
-                <Link
-                  to="/profile/$userId"
-                  params={{ userId: game.ownerId }}
-                  className="font-semibold text-primary hover:underline"
-                >
-                  {game.ownerName}
-                </Link>
-              </>
+              <Link
+                to="/profile/$userId"
+                params={{ userId: game.ownerId }}
+                className="inline-flex items-center gap-1.5 font-semibold text-primary hover:underline"
+              >
+                <Avatar
+                  name={game.ownerName}
+                  avatar={findUserById(game.ownerId)?.avatar}
+                  size={22}
+                />
+                {game.ownerName}
+              </Link>
             ) : (
-              "Владелец: неизвестен"
+              <span>неизвестен</span>
             )}
-          </p>
+          </div>
           {game.forkedOwnerName && (
             <p className="text-sm text-muted-foreground">
               На основе игры от {game.forkedOwnerName}
@@ -315,6 +323,19 @@ function GameDashboard() {
                 <Icon className="h-3.5 w-3.5" /> {label}
               </button>
             ))}
+            {game.visibility === "public" && (
+              <label className="ml-auto inline-flex cursor-pointer items-center gap-2 text-xs font-semibold text-muted-foreground">
+                <input
+                  type="checkbox"
+                  checked={!!game.showAnswers}
+                  onChange={async (e) => {
+                    await setGameShowAnswers(game.id, e.target.checked);
+                    reload();
+                  }}
+                />
+                Показывать ответы в «Содержании»
+              </label>
+            )}
           </div>
         )}
 
@@ -360,30 +381,45 @@ function GameDashboard() {
           </div>
         )}
 
-        {/* Results link */}
+        {/* Results (owner) vs Content (foreign) */}
         {!isPrivateOther && (
-          <div className="surface-card p-6">
-            {game.kind === "millionaire" ? (
-              <p className="text-sm text-muted-foreground">
-                Статистика прохождений доступна для форматов «Квиз» и «Своя игра».
-              </p>
-            ) : (
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          isMine ? (
+            <div className="surface-card p-6">
+              {game.kind === "millionaire" ? (
+                <p className="text-sm text-muted-foreground">
+                  Статистика прохождений доступна для форматов «Квиз» и «Своя игра».
+                </p>
+              ) : (
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h2 className="font-display text-base font-bold">Результаты прохождений</h2>
+                    <p className="text-sm text-muted-foreground">
+                      Вся статистика, ответы и таблицы лидеров.
+                    </p>
+                  </div>
+                  <Link
+                    to={`/${game.kind}/${game.id}/results`}
+                    className="btn-accent inline-flex items-center gap-2"
+                  >
+                    <Trophy className="h-4 w-4" /> Открыть результаты
+                  </Link>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="surface-card p-6">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <h2 className="font-display text-base font-bold">Результаты прохождений</h2>
+                  <h2 className="font-display text-base font-bold">Содержание</h2>
                   <p className="text-sm text-muted-foreground">
-                    Вся статистика, ответы и таблицы лидеров.
+                    {gameSummary(game)}
+                    {!game.showAnswers && " · ответы скрыты автором"}
                   </p>
                 </div>
-                <Link
-                  to={`/${game.kind}/${game.id}/results`}
-                  className="btn-accent inline-flex items-center gap-2"
-                >
-                  <Trophy className="h-4 w-4" /> Открыть результаты
-                </Link>
               </div>
-            )}
-          </div>
+              <GameContent game={game} withAnswers={!!game.showAnswers} />
+            </div>
+          )
         )}
       </main>
 

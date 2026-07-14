@@ -112,7 +112,51 @@ function BuilderJeopardy() {
 
   const addCategory = (roundIdx: number) => {
     setRounds((prev) =>
-      prev.map((r, ri) => (ri === roundIdx ? [...r, makeCategory(roundIdx + 1)] : r)),
+      prev.map((r, ri) => {
+        if (ri !== roundIdx) return r;
+        if (r.length >= LIMITS.jeopardyCategoriesPerRound) {
+          showToast(`Максимум ${LIMITS.jeopardyCategoriesPerRound} категорий в раунде`);
+          return r;
+        }
+        return [...r, makeCategory(roundIdx + 1)];
+      }),
+    );
+  };
+
+  const addQuestion = (roundIdx: number, catIdx: number) => {
+    setRounds((prev) =>
+      prev.map((r, ri) => {
+        if (ri !== roundIdx) return r;
+        return r.map((c, ci) => {
+          if (ci !== catIdx) return c;
+          if (c.questions.length >= LIMITS.jeopardyQuestionsPerCategory) {
+            showToast(`Максимум ${LIMITS.jeopardyQuestionsPerCategory} вопросов в категории`);
+            return c;
+          }
+          const step = roundIdx === 0 ? 100 : roundIdx === 1 ? 200 : 300;
+          const usedPoints = new Set(c.questions.map((q) => q.points));
+          const nextPts =
+            DEFAULT_POINTS.map((p) => p * (step / 100)).find((p) => !usedPoints.has(p)) ??
+            (c.questions.reduce((m, q) => Math.max(m, q.points), 0) + step);
+          return {
+            ...c,
+            questions: [...c.questions, { points: nextPts, q: "", a: "", image: "" }],
+          };
+        });
+      }),
+    );
+  };
+
+  const removeQuestion = (roundIdx: number, catIdx: number, qIdx: number) => {
+    setRounds((prev) =>
+      prev.map((r, ri) => {
+        if (ri !== roundIdx) return r;
+        return r.map((c, ci) => {
+          if (ci !== catIdx) return c;
+          if (c.questions.length <= 1) return c;
+          return { ...c, questions: c.questions.filter((_, qi) => qi !== qIdx) };
+        });
+      }),
     );
   };
 
@@ -201,9 +245,14 @@ function BuilderJeopardy() {
               </button>
               <button
                 onClick={() => addCategory(ri)}
+                disabled={round.length >= LIMITS.jeopardyCategoriesPerRound}
                 aria-label="Добавить категорию"
-                title="Добавить категорию"
-                className="grid h-8 w-8 flex-shrink-0 place-items-center rounded-md border border-border-strong bg-surface text-primary hover:bg-primary-soft"
+                title={
+                  round.length >= LIMITS.jeopardyCategoriesPerRound
+                    ? `Максимум ${LIMITS.jeopardyCategoriesPerRound} категорий`
+                    : "Добавить категорию"
+                }
+                className="grid h-8 w-8 flex-shrink-0 place-items-center rounded-md border border-border-strong bg-surface text-primary hover:bg-primary-soft disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <Plus className="h-3.5 w-3.5" />
               </button>
@@ -423,21 +472,52 @@ function BuilderJeopardy() {
                   <div className="mb-2 flex justify-end">
                     <CharCounter value={cat.category} max={LIMITS.category} />
                   </div>
-                  <div className="grid grid-rows-5 gap-1">
-                    {cat.questions.map((q, qi) => (
-                      <button
-                        key={qi}
-                        onClick={() => setModal({ roundIdx: ri, catIdx: ci, qIdx: qi })}
-                        className={`rounded-lg border-2 py-2 text-sm font-bold transition-all ${
-                          q.q
-                            ? "border-success bg-success-soft text-success"
-                            : "border-border-strong bg-white text-primary hover:border-primary"
-                        }`}
-                      >
-                        {q.points}
-                      </button>
-                    ))}
+                  <div
+                    className="grid gap-1"
+                    style={{ gridTemplateRows: `repeat(${LIMITS.jeopardyQuestionsPerCategory}, minmax(0, 1fr))` }}
+                  >
+                    {Array.from({ length: LIMITS.jeopardyQuestionsPerCategory }).map((_, qi) => {
+                      const q = cat.questions[qi];
+                      if (!q) {
+                        return (
+                          <div
+                            key={`empty-${qi}`}
+                            className="rounded-lg border-2 border-dashed border-border/40 py-2 opacity-30"
+                          />
+                        );
+                      }
+                      return (
+                        <div key={qi} className="group relative">
+                          <button
+                            onClick={() => setModal({ roundIdx: ri, catIdx: ci, qIdx: qi })}
+                            className={`w-full rounded-lg border-2 py-2 text-sm font-bold transition-all ${
+                              q.q
+                                ? "border-success bg-success-soft text-success"
+                                : "border-border-strong bg-white text-primary hover:border-primary"
+                            }`}
+                          >
+                            {q.points}
+                          </button>
+                          {cat.questions.length > 1 && (
+                            <button
+                              onClick={() => removeQuestion(ri, ci, qi)}
+                              className="absolute right-1 top-1 hidden rounded p-0.5 text-muted-foreground hover:bg-danger-soft hover:text-danger group-hover:block"
+                              aria-label="Удалить вопрос"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
+                  <button
+                    onClick={() => addQuestion(ri, ci)}
+                    disabled={cat.questions.length >= LIMITS.jeopardyQuestionsPerCategory}
+                    className="mt-1 w-full rounded p-1 text-[11px] text-primary hover:bg-primary-soft disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    + вопрос
+                  </button>
                   <button
                     onClick={() => removeCategory(ri, ci)}
                     className="mt-2 w-full rounded p-1 text-[11px] text-muted-foreground hover:text-danger"
@@ -447,6 +527,7 @@ function BuilderJeopardy() {
                 </div>
               ))}
             </div>
+
           ) : (
             <div className="space-y-4">
               {round.map((cat, ci) => (
@@ -517,16 +598,42 @@ function BuilderJeopardy() {
                         >
                           <Pencil className="h-3.5 w-3.5" />
                         </button>
+                        {cat.questions.length > 1 && (
+                          <button
+                            onClick={() => removeQuestion(ri, ci, qi)}
+                            className="rounded-lg p-2 text-muted-foreground hover:bg-danger-soft hover:text-danger"
+                            aria-label="Удалить вопрос"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        )}
                       </div>
                     ))}
+                    <button
+                      onClick={() => addQuestion(ri, ci)}
+                      disabled={cat.questions.length >= LIMITS.jeopardyQuestionsPerCategory}
+                      className="btn-ghost w-full justify-center text-xs disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <Plus className="h-3.5 w-3.5" /> Вопрос
+                      {cat.questions.length >= LIMITS.jeopardyQuestionsPerCategory
+                        ? ` (макс ${LIMITS.jeopardyQuestionsPerCategory})`
+                        : ""}
+                    </button>
                   </div>
                 </div>
               ))}
             </div>
           )}
 
-          <button onClick={() => addCategory(ri)} className="btn-ghost w-full justify-center">
+          <button
+            onClick={() => addCategory(ri)}
+            disabled={round.length >= LIMITS.jeopardyCategoriesPerRound}
+            className="btn-ghost w-full justify-center disabled:cursor-not-allowed disabled:opacity-40"
+          >
             <Plus className="h-4 w-4" /> Категория
+            {round.length >= LIMITS.jeopardyCategoriesPerRound
+              ? ` (макс ${LIMITS.jeopardyCategoriesPerRound})`
+              : ""}
           </button>
         </section>
       ))}

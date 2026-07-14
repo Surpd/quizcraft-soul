@@ -129,9 +129,38 @@ export interface RoomPlayer {
   connected: boolean;
   lastAnswer?: RoomAnswerRecord;
   answerHistory?: RoomAnswerRecord[];
+  jCorrect?: number;
+  jWrong?: number;
 }
 
 export type RoomStatus = "waiting" | "active" | "reveal" | "leaderboard" | "finished";
+
+export type JeopardyPhase =
+  | "lobby"
+  | "board"
+  | "question"
+  | "answering"
+  | "reveal"
+  | "final-bets"
+  | "final-question"
+  | "final-reveal"
+  | "podium";
+
+export interface JeopardyRoomState {
+  phase: JeopardyPhase;
+  mode: "buzz" | "turn";
+  round: number;
+  currentPlayerIdx: number;
+  usedKeys: string[];
+  selectedCat: number | null;
+  selectedQ: number | null;
+  buzzedPlayerId: string | null;
+  showAnswer: boolean;
+  finalBets: Record<string, number>;
+  finalAnswers: Record<string, boolean>;
+  finalGiven: Record<string, string>;
+  lastDelta?: { playerId: string; delta: number } | null;
+}
 
 export interface RoomState {
   code: string;
@@ -144,6 +173,7 @@ export interface RoomState {
   players: RoomPlayer[];
   fastestPlayerId?: string;
   createdAt: number;
+  jeopardy?: JeopardyRoomState;
 }
 
 const ROOM_PREFIX = "islandquiz.room.v1.";
@@ -205,6 +235,25 @@ export async function createRoom(gameKind: GameKind, gameId: string) {
     questionStartAt: null,
     players: [],
     createdAt: Date.now(),
+    ...(gameKind === "jeopardy"
+      ? {
+          jeopardy: {
+            phase: "lobby" as const,
+            mode: "buzz" as const,
+            round: 0,
+            currentPlayerIdx: 0,
+            usedKeys: [],
+            selectedCat: null,
+            selectedQ: null,
+            buzzedPlayerId: null,
+            showAnswer: false,
+            finalBets: {},
+            finalAnswers: {},
+            finalGiven: {},
+            lastDelta: null,
+          },
+        }
+      : {}),
   };
   writeRoom(state);
   return fake({ code, room_url: `/room/${code}` });
@@ -440,6 +489,271 @@ export async function listRooms() {
   }
   return fake(out.sort((a, b) => b.createdAt - a.createdAt));
 }
+
+// =========================================================================
+//                        ONLINE JEOPARDY (rooms)
+// =========================================================================
+
+function mutJeopardy(code: string, fn: (j: JeopardyRoomState, s: RoomState) => void) {
+  const s = readRoom(code);
+  if (!s || !s.jeopardy) return null;
+  fn(s.jeopardy, s);
+  writeRoom(s);
+  return s;
+}
+
+export async function setJeopardyMode(code: string, mode: "buzz" | "turn") {
+  return fake(mutJeopardy(code, (j) => { j.mode = mode; }));
+}
+
+export async function startJeopardyGame(code: string) {
+  return fake(
+    mutJeopardy(code, (j, s) => {
+      j.phase = "board";
+      j.round = 0;
+      j.usedKeys = [];
+      j.currentPlayerIdx = 0;
+      j.selectedCat = null;
+      j.selectedQ = null;
+      j.buzzedPlayerId = null;
+      j.showAnswer = false;
+      j.lastDelta = null;
+      s.status = "active";
+      s.players.forEach((p) => {
+        p.score = 0;
+        p.jCorrect = 0;
+        p.jWrong = 0;
+      });
+    }),
+  );
+}
+
+export async function selectJeopardyQuestion(
+  code: string,
+  playerId: string | null,
+  catIdx: number,
+  qIdx: number,
+) {
+  return fake(
+    mutJeopardy(code, (j, s) => {
+      // In turn mode, only current player can select
+      if (j.mode === "turn" && playerId) {
+        const cur = s.players[j.currentPlayerIdx]?.id;
+        if (cur && cur !== playerId) return;
+      }
+      const key = `${j.round}-${catIdx}-${qIdx}`;
+      if (j.usedKeys.includes(key)) return;
+      j.selectedCat = catIdx;
+      j.selectedQ = qIdx;
+      j.buzzedPlayerId = null;
+      j.showAnswer = false;
+      j.phase = "question";
+      s.questionStartAt = Date.now();
+    }),
+  );
+}
+
+export async function buzzJeopardy(code: string, playerId: string) {
+  return fake(
+    mutJeopardy(code, (j) => {
+      if (j.phase !== "question" || j.buzzedPlayerId) return;
+      j.buzzedPlayerId = playerId;
+      j.phase = "answering";
+    }),
+  );
+}
+
+export async function acceptJeopardyAnswer(code: string, correct: boolean) {
+  return fake(
+    mutJeopardy(code, (j, s) => {
+      if (j.selectedCat == null || j.selectedQ == null) return;
+      // Load game to get points
+      const rec = _loadGame<JeopardyData>("jeopardy", s.gameId);
+      const q = rec?.data.rounds[j.round]?.[j.selectedCat]?.questions[j.selectedQ];
+      const points = q?.points ?? 0;
+      const targetId =
+        j.mode === "buzz"
+          ? j.buzzedPlayerId
+          : s.players[j.currentPlayerIdx]?.id ?? null;
+      if (targetId) {
+        const p = s.players.find((x) => x.id === targetId);
+        if (p) {
+          const delta = correct ? points : -points;
+          p.score = p.score + delta;
+          if (correct) p.jCorrect = (p.jCorrect ?? 0) + 1;
+          else p.jWrong = (p.jWrong ?? 0) + 1;
+          j.lastDelta = { playerId: targetId, delta };
+          // Turn mode: correct answerer keeps turn, wrong -> next player
+          if (j.mode === "turn" && !correct) {
+            j.currentPlayerIdx = (j.currentPlayerIdx + 1) % Math.max(1, s.players.length);
+          }
+        }
+      }
+      // In buzz mode: if wrong, allow another buzz on same question
+      if (j.mode === "buzz" && !correct) {
+        j.buzzedPlayerId = null;
+        j.phase = "question";
+        return;
+      }
+      // Show answer briefly, then return to board
+      j.showAnswer = true;
+      j.phase = "reveal";
+      const key = `${j.round}-${j.selectedCat}-${j.selectedQ}`;
+      if (!j.usedKeys.includes(key)) j.usedKeys.push(key);
+    }),
+  );
+}
+
+export async function backToBoard(code: string) {
+  return fake(
+    mutJeopardy(code, (j) => {
+      j.selectedCat = null;
+      j.selectedQ = null;
+      j.buzzedPlayerId = null;
+      j.showAnswer = false;
+      j.lastDelta = null;
+      j.phase = "board";
+    }),
+  );
+}
+
+export async function skipJeopardyQuestion(code: string) {
+  return fake(
+    mutJeopardy(code, (j) => {
+      if (j.selectedCat == null || j.selectedQ == null) {
+        j.phase = "board";
+        return;
+      }
+      const key = `${j.round}-${j.selectedCat}-${j.selectedQ}`;
+      if (!j.usedKeys.includes(key)) j.usedKeys.push(key);
+      j.selectedCat = null;
+      j.selectedQ = null;
+      j.buzzedPlayerId = null;
+      j.showAnswer = false;
+      j.phase = "board";
+    }),
+  );
+}
+
+export async function endJeopardyRound(code: string) {
+  return fake(
+    mutJeopardy(code, (j, s) => {
+      const rec = _loadGame<JeopardyData>("jeopardy", s.gameId);
+      const total = rec?.data.rounds.length ?? 0;
+      if (j.round + 1 < total) {
+        j.round += 1;
+        j.usedKeys = [];
+        j.selectedCat = null;
+        j.selectedQ = null;
+        j.buzzedPlayerId = null;
+        j.showAnswer = false;
+        j.phase = "board";
+      } else {
+        // Move to final
+        j.phase = "final-bets";
+        j.finalBets = {};
+        j.finalAnswers = {};
+        j.finalGiven = {};
+      }
+    }),
+  );
+}
+
+export async function submitJeopardyFinalBet(code: string, playerId: string, bet: number) {
+  return fake(
+    mutJeopardy(code, (j, s) => {
+      const p = s.players.find((x) => x.id === playerId);
+      const cap = Math.max(0, p?.score ?? 0);
+      j.finalBets[playerId] = Math.max(0, Math.min(cap, Math.floor(bet)));
+    }),
+  );
+}
+
+export async function startJeopardyFinalQuestion(code: string) {
+  return fake(
+    mutJeopardy(code, (j, s) => {
+      // Fill missing bets with 0
+      s.players.forEach((p) => {
+        if (j.finalBets[p.id] == null) j.finalBets[p.id] = 0;
+      });
+      j.phase = "final-question";
+      j.showAnswer = false;
+      s.questionStartAt = Date.now();
+    }),
+  );
+}
+
+export async function submitJeopardyFinalAnswer(code: string, playerId: string, given: string) {
+  return fake(
+    mutJeopardy(code, (j) => {
+      j.finalGiven[playerId] = given;
+    }),
+  );
+}
+
+export async function markJeopardyFinal(code: string, playerId: string, correct: boolean) {
+  return fake(
+    mutJeopardy(code, (j) => {
+      j.finalAnswers[playerId] = correct;
+    }),
+  );
+}
+
+export async function revealJeopardyFinal(code: string) {
+  return fake(
+    mutJeopardy(code, (j, s) => {
+      j.showAnswer = true;
+      j.phase = "final-reveal";
+      // Apply bets
+      s.players.forEach((p) => {
+        const bet = j.finalBets[p.id] ?? 0;
+        const ok = j.finalAnswers[p.id] ?? false;
+        p.score = p.score + (ok ? bet : -bet);
+      });
+    }),
+  );
+}
+
+export async function finishJeopardyGame(code: string) {
+  const s = readRoom(code);
+  if (!s || !s.jeopardy) return fake(null);
+  s.jeopardy.phase = "podium";
+  s.status = "finished";
+  writeRoom(s);
+  // Persist result
+  try {
+    const sorted = [...s.players].sort((a, b) => b.score - a.score);
+    const winner = sorted[0] ?? null;
+    const hasFinal = Object.keys(s.jeopardy.finalBets).length > 0;
+    saveJeopardyResult({
+      gameId: s.gameId,
+      hasFinal,
+      winnerId: winner?.id ?? null,
+      teams: s.players.map((p) => ({
+        id: p.id,
+        name: p.nickname,
+        score: p.score,
+        correct: p.jCorrect ?? 0,
+        wrong: p.jWrong ?? 0,
+        finalBet: hasFinal ? (s.jeopardy!.finalBets[p.id] ?? 0) : undefined,
+        finalCorrect: hasFinal ? (s.jeopardy!.finalAnswers[p.id] ?? false) : undefined,
+      })),
+    });
+  } catch (err) {
+    console.error("Failed to save online jeopardy result", err);
+  }
+  return fake(s);
+}
+
+export async function adjustJeopardyScore(code: string, playerId: string, delta: number) {
+  return fake(
+    mutJeopardy(code, (_j, s) => {
+      const p = s.players.find((x) => x.id === playerId);
+      if (p) p.score = p.score + delta;
+    }),
+  );
+}
+
 
 // =========================================================================
 //                        AI HELPERS (TZ AI v2.0)

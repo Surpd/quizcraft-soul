@@ -12,7 +12,7 @@ export const PLAYER_THEMES: { id: PlayerTheme; name: string; hint: string }[] = 
 ];
 
 // ---------- Quiz ----------
-export type QuizQuestionType = "choice" | "bool" | "text" | "matching";
+export type QuizQuestionType = "choice" | "bool" | "text" | "matching" | "close" | "ordering";
 
 export interface QuizPair {
   left: string;

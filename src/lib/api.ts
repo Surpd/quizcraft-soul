@@ -39,6 +39,7 @@ import {
   updateUserRecord,
   verifyUserCredentials,
 } from "./auth";
+import { formatQuizAnswer, formatGivenAnswer } from "./format-answer";
 
 // Re-export types consumed by other modules so the facade stays the single entry point.
 export type { User } from "./auth";
@@ -534,11 +535,11 @@ export async function finishRoom(code: string) {
           const hist = p.answerHistory ?? [];
           const answers: OnlineQuizPlayerAnswer[] = hist.map((a) => {
             const q: QuizQuestion | undefined = questions[a.questionIdx];
-            const correctAnswer = q?.answer ?? "";
+            const correctAnswer = q ? formatQuizAnswer(q) : "";
             return {
               questionIdx: a.questionIdx,
               question: q?.q ?? `Вопрос ${a.questionIdx + 1}`,
-              given: a.given,
+              given: q ? formatGivenAnswer(q, a.given) : a.given,
               correctAnswer,
               correct: a.correct,
               earned: a.delta,
@@ -1131,6 +1132,20 @@ export async function improveQuestion(input: {
         ],
       };
     }
+    if (input.format === "quiz-close") {
+      return {
+        ...base,
+        question: `[MOCK] [${difficulty}] Столица Франции — ___, Германии — ___`,
+        correctAnswer: "Париж|Берлин",
+      };
+    }
+    if (input.format === "quiz-ordering") {
+      return {
+        ...base,
+        question: `[MOCK] [${difficulty}] Расставьте по возрастанию:`,
+        options: ["[MOCK] Один", "[MOCK] Два", "[MOCK] Три", "[MOCK] Четыре"],
+      };
+    }
     // quiz-choice / millionaire / default
     return {
       ...base,
@@ -1183,6 +1198,20 @@ export async function generateQuestion(input: {
           { left: "[MOCK] B", right: "[MOCK] 2" },
           { left: "[MOCK] C", right: "[MOCK] 3" },
         ],
+      };
+    }
+    if (effectiveFormat === "quiz-close") {
+      return {
+        ...base,
+        question: `[MOCK] [${difficulty}] Столица Франции — ___, Германии — ___`,
+        correctAnswer: "Париж|Берлин",
+      };
+    }
+    if (effectiveFormat === "quiz-ordering") {
+      return {
+        ...base,
+        question: `[MOCK] [${difficulty}] Расставьте по возрастанию:`,
+        options: ["[MOCK] Один", "[MOCK] Два", "[MOCK] Три", "[MOCK] Четыре"],
       };
     }
     // choice / millionaire / default

@@ -6,6 +6,7 @@ import { Eye, FileText } from "lucide-react";
 import { loadGame, subscribeRoom, type RoomState } from "@/lib/api";
 import { LaTeX } from "@/lib/latex";
 import type { JeopardyData, QuizData, MillionaireData, GameKind } from "@/lib/types";
+import { formatQuizAnswer } from "@/lib/format-answer";
 
 export const Route = createFileRoute("/room/$code/answers")({
   head: () => ({
@@ -127,17 +128,25 @@ function JeopardyAnswers({ data }: { data: JeopardyData }) {
 }
 
 function QuizAnswers({ data }: { data: QuizData }) {
+  const label: Record<string, string> = {
+    choice: "ABCD",
+    bool: "Да/Нет",
+    text: "Текст",
+    matching: "Пары",
+    close: "Пропуски",
+    ordering: "Порядок",
+  };
   return (
     <div className="space-y-3">
       {data.questions.map((q, i) => (
         <div key={q.id} className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
           <p className="text-xs uppercase tracking-wide text-slate-500">
-            Вопрос {i + 1} · {q.type} · {q.points} оч.
+            Вопрос {i + 1} · {label[q.type] ?? q.type} · {q.points} оч.
           </p>
           <p className="mt-1 text-sm">
             <LaTeX>{q.q}</LaTeX>
           </p>
-          <p className="mt-2 text-sm font-bold text-emerald-400">→ {q.answer}</p>
+          <p className="mt-2 text-sm font-bold text-emerald-400">→ {formatQuizAnswer(q)}</p>
         </div>
       ))}
     </div>

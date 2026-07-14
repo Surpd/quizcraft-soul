@@ -24,7 +24,12 @@ export function exportQuizExcel(data: QuizData) {
     type: q.type,
     question: q.q,
     options: q.options.join(" | "),
-    answer: q.type === "matching" ? formatMatchingForCell(q.answer) : q.answer,
+    answer:
+      q.type === "matching"
+        ? formatMatchingForCell(q.answer)
+        : q.type === "close" || q.type === "ordering"
+          ? formatListForCell(q.answer)
+          : q.answer,
     points: q.points,
     time: q.time,
   }));
@@ -37,6 +42,16 @@ function formatMatchingForCell(raw: string): string {
   try {
     const pairs = JSON.parse(raw || "[]") as { left: string; right: string }[];
     return pairs.map((p) => `${p.left} → ${p.right}`).join("; ");
+  } catch {
+    return raw;
+  }
+}
+
+function formatListForCell(raw: string): string {
+  try {
+    const arr = JSON.parse(raw || "[]") as string[];
+    if (!Array.isArray(arr)) return raw;
+    return arr.join(" | ");
   } catch {
     return raw;
   }
@@ -99,6 +114,8 @@ export function downloadExcelTemplate(kind: "quiz" | "jeopardy" | "millionaire")
       { type: "choice", question: "Столица Франции?", options: "Париж|Лондон|Берлин|Мадрид", answer: "Париж", points: 100, time: 30 },
       { type: "bool", question: "Вода мокрая?", options: "", answer: "true", points: 50, time: 20 },
       { type: "text", question: "Что такое H2O?", options: "", answer: "вода", points: 100, time: 30 },
+      { type: "close", question: "Столица Франции — ___, Германии — ___", options: "", answer: "Париж | Берлин", points: 100, time: 30 },
+      { type: "ordering", question: "Расставьте по возрастанию:", options: "", answer: "Один | Два | Три", points: 100, time: 30 },
     ];
   } else if (kind === "jeopardy") {
     name = "своя-игра-template";
@@ -133,13 +150,29 @@ export async function importQuizXlsx(file: File, defaultTime: number): Promise<Q
   return rows.map((r) => {
     const type = ((r.type ?? "choice") as QuizQuestionType) || "choice";
     const opts = r.options ? String(r.options).split("|").map((s) => s.trim()) : [];
+    let answer = String(r.answer ?? "");
+    if (type === "close" || type === "ordering") {
+      // Answer stored as JSON array; accept "a | b | c" or JSON.
+      let arr: string[] = [];
+      if (answer.trim().startsWith("[")) {
+        try {
+          const parsed = JSON.parse(answer);
+          if (Array.isArray(parsed)) arr = parsed.map((x) => String(x ?? ""));
+        } catch {
+          arr = [];
+        }
+      } else {
+        arr = answer.split("|").map((s) => s.trim()).filter(Boolean);
+      }
+      answer = JSON.stringify(arr);
+    }
     return {
       id: newId(),
       type,
       q: String(r.question ?? ""),
       image: "",
       options: type === "choice" ? (opts.length ? opts : ["", "", "", ""]) : [],
-      answer: String(r.answer ?? ""),
+      answer,
       points: parseInt(String(r.points ?? "100")) || 100,
       time: parseInt(String(r.time ?? defaultTime)) || defaultTime,
     };

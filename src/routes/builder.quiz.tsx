@@ -9,6 +9,10 @@ import {
   Type as TypeIcon,
   Shuffle,
   BarChart3,
+  Blocks,
+  ListOrdered,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import { BuilderShell } from "@/components/builder-shell";
 import { HelpButton } from "@/components/help-modal";
@@ -55,6 +59,8 @@ const TYPE_META: Record<QuizQuestionType, { label: string; icon: typeof Circle; 
   bool: { label: "Да/Нет", icon: CheckCircle2, tone: "text-success" },
   text: { label: "Текст", icon: TypeIcon, tone: "text-amber" },
   matching: { label: "Пары", icon: Shuffle, tone: "text-accent" },
+  close: { label: "Пропуски", icon: Blocks, tone: "text-primary" },
+  ordering: { label: "Порядок", icon: ListOrdered, tone: "text-accent" },
 };
 
 function makeQuestion(type: QuizQuestionType, points = 100, time = 30): QuizQuestion {
@@ -62,6 +68,8 @@ function makeQuestion(type: QuizQuestionType, points = 100, time = 30): QuizQues
   if (type === "choice") return { ...base, options: ["", "", "", ""], answer: "" };
   if (type === "bool") return { ...base, answer: "true" };
   if (type === "matching") return { ...base, answer: JSON.stringify([{ left: "", right: "" }]) };
+  if (type === "close") return { ...base, answer: JSON.stringify([""]) };
+  if (type === "ordering") return { ...base, answer: JSON.stringify(["", "", ""]) };
   return base;
 }
 
@@ -333,7 +341,7 @@ function BuilderQuiz() {
             onSaveAsCopy={handleSaveAsCopy}
           />
           <HelpButton title="Как пользоваться конструктором квиза">
-            <p><b>Типы вопросов:</b> ABCD — 4 варианта, отметьте верный кликом по букве. Да/Нет — простой бинарный вопрос. Текст — принимаются несколько вариантов через запятую. Пары — сопоставление левого и правого списка.</p>
+            <p><b>Типы вопросов:</b> ABCD — 4 варианта. Да/Нет — бинарный вопрос. Текст — принимаются несколько вариантов через запятую. Пары — сопоставление списков. Пропуски — вставьте <code>___</code> в текст и укажите ответ для каждого. Порядок — список пунктов; игрок должен расставить их правильно.</p>
             <p><b>Картинка:</b> перетащите файл в зону или вставьте URL.</p>
             <p><b>Тема плеера:</b> в «Настройки» → выбираете тему; конструктор сразу подсветит её акцентом.</p>
             <p><b>Панель слева:</b> клик по номеру — переход к вопросу. Клик «+ …» — добавить новый.</p>
@@ -499,7 +507,9 @@ function QuestionCard({
   const qRef = useRef<HTMLTextAreaElement>(null);
   const optRefs = useRef<(HTMLInputElement | null)[]>([]);
   const aiType: "choice" | "bool" | "text" | undefined =
-    question.type === "matching" ? undefined : question.type;
+    question.type === "choice" || question.type === "bool" || question.type === "text"
+      ? question.type
+      : undefined;
   const aiFormat = `quiz-${question.type}`;
   return (
     <div id={`q-${question.id}`} className="surface-card space-y-4 p-6 scroll-mt-24">
@@ -548,6 +558,14 @@ function QuestionCard({
               }
               if (question.type === "matching" && v.pairs) {
                 patch.answer = JSON.stringify(v.pairs);
+              }
+              if (question.type === "close" && v.correctAnswer) {
+                // AI даёт готовый список ответов через "|" — иначе один пропуск.
+                const arr = v.correctAnswer.split("|").map((s) => s.trim()).filter(Boolean);
+                patch.answer = JSON.stringify(arr.length ? arr : [v.correctAnswer]);
+              }
+              if (question.type === "ordering" && v.options) {
+                patch.answer = JSON.stringify(v.options);
               }
               onPatch(patch);
             }}
@@ -649,6 +667,12 @@ function QuestionCard({
 
       {question.type === "matching" && <MatchingEditor question={question} onPatch={onPatch} />}
 
+      {question.type === "close" && (
+        <CloseEditor question={question} qRef={qRef} onPatch={onPatch} />
+      )}
+
+      {question.type === "ordering" && <OrderingEditor question={question} onPatch={onPatch} />}
+
       <div className="flex flex-wrap gap-3">
         <label className="text-xs text-muted-foreground">
           Баллы
@@ -727,6 +751,161 @@ function MatchingEditor({
         className="btn-ghost"
       >
         <Plus className="h-4 w-4" /> Пара
+      </button>
+    </div>
+  );
+}
+
+function CloseEditor({
+  question,
+  qRef,
+  onPatch,
+}: {
+  question: QuizQuestion;
+  qRef: React.RefObject<HTMLTextAreaElement | null>;
+  onPatch: (p: Partial<QuizQuestion>) => void;
+}) {
+  let answers: string[] = [];
+  try {
+    const raw = JSON.parse(question.answer || "[]");
+    if (Array.isArray(raw)) answers = raw.map((x) => String(x ?? ""));
+  } catch {
+    answers = [];
+  }
+  const blanks = (question.q.match(/___/g) ?? []).length;
+  // Синхронизируем длину answers с числом пропусков.
+  const setAnswers = (next: string[]) => onPatch({ answer: JSON.stringify(next) });
+  const normalized = (() => {
+    const a = [...answers];
+    while (a.length < blanks) a.push("");
+    if (a.length > blanks) a.length = blanks;
+    return a;
+  })();
+
+  const insertBlank = () => {
+    const el = qRef.current;
+    const text = question.q;
+    let pos = text.length;
+    if (el) pos = el.selectionStart ?? text.length;
+    const next = text.slice(0, pos) + "___" + text.slice(pos);
+    onPatch({ q: next, answer: JSON.stringify([...normalized, ""]) });
+    setTimeout(() => {
+      if (el) {
+        el.focus();
+        el.setSelectionRange(pos + 3, pos + 3);
+      }
+    }, 0);
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-muted-foreground">
+          Используйте <code className="rounded bg-surface-muted px-1">___</code> — на месте пропуска в тексте.
+        </p>
+        <button type="button" onClick={insertBlank} className="btn-ghost text-xs">
+          <Plus className="h-3.5 w-3.5" /> Пропуск
+        </button>
+      </div>
+      {blanks === 0 && (
+        <p className="rounded-lg border border-dashed border-border p-3 text-xs text-muted-foreground">
+          В тексте пока нет пропусков. Нажмите «+ Пропуск».
+        </p>
+      )}
+      {normalized.map((a, i) => (
+        <div key={i} className="flex items-center gap-2">
+          <span className="grid h-8 w-8 flex-shrink-0 place-items-center rounded-full bg-primary-soft text-xs font-bold text-primary">
+            {i + 1}
+          </span>
+          <input
+            className="input-base"
+            placeholder={`Ответ для пропуска ${i + 1}`}
+            value={a}
+            onChange={(e) => {
+              const next = [...normalized];
+              next[i] = e.target.value;
+              setAnswers(next);
+            }}
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function OrderingEditor({
+  question,
+  onPatch,
+}: {
+  question: QuizQuestion;
+  onPatch: (p: Partial<QuizQuestion>) => void;
+}) {
+  let items: string[] = [];
+  try {
+    const raw = JSON.parse(question.answer || "[]");
+    if (Array.isArray(raw)) items = raw.map((x) => String(x ?? ""));
+  } catch {
+    items = [];
+  }
+  const setItems = (next: string[]) => onPatch({ answer: JSON.stringify(next) });
+  const move = (i: number, dir: -1 | 1) => {
+    const j = i + dir;
+    if (j < 0 || j >= items.length) return;
+    const next = [...items];
+    [next[i], next[j]] = [next[j], next[i]];
+    setItems(next);
+  };
+  return (
+    <div className="space-y-2">
+      <p className="text-xs text-muted-foreground">
+        Список сохраняется в правильном порядке. Игроку он покажется перемешанным.
+      </p>
+      {items.map((v, i) => (
+        <div key={i} className="flex items-center gap-2">
+          <span className="grid h-8 w-8 flex-shrink-0 place-items-center rounded-full bg-primary-soft text-xs font-bold text-primary">
+            {i + 1}
+          </span>
+          <input
+            className="input-base"
+            placeholder={`Пункт ${i + 1}`}
+            value={v}
+            onChange={(e) => {
+              const next = [...items];
+              next[i] = e.target.value;
+              setItems(next);
+            }}
+          />
+          <div className="flex flex-col">
+            <button
+              type="button"
+              onClick={() => move(i, -1)}
+              disabled={i === 0}
+              className="rounded p-1 text-muted-foreground hover:text-primary disabled:opacity-30"
+              aria-label="Вверх"
+            >
+              <ArrowUp className="h-3.5 w-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => move(i, 1)}
+              disabled={i === items.length - 1}
+              className="rounded p-1 text-muted-foreground hover:text-primary disabled:opacity-30"
+              aria-label="Вниз"
+            >
+              <ArrowDown className="h-3.5 w-3.5" />
+            </button>
+          </div>
+          <button
+            onClick={() => setItems(items.filter((_, k) => k !== i))}
+            className="rounded-lg p-2 text-muted-foreground hover:bg-danger-soft hover:text-danger"
+            aria-label="Удалить"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
+      ))}
+      <button onClick={() => setItems([...items, ""])} className="btn-ghost">
+        <Plus className="h-4 w-4" /> Пункт
       </button>
     </div>
   );

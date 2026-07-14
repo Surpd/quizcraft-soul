@@ -506,6 +506,14 @@ function QuestionCard({
         <MatchingBoard question={question} value={value} onChange={onChange} />
       )}
 
+      {question.type === "close" && (
+        <CloseBoard question={question} value={value} onChange={onChange} disabled={feedback !== null} />
+      )}
+
+      {question.type === "ordering" && (
+        <OrderingBoard question={question} value={value} onChange={onChange} disabled={feedback !== null} />
+      )}
+
       {feedback && (
         <div className="mt-4 text-center">
           <p

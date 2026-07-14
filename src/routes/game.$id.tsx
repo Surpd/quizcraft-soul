@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ArrowLeft,
   Radio,
@@ -9,16 +9,12 @@ import {
   Pencil,
   Trophy,
   Trash2,
-  ChevronDown,
-  ChevronRight,
   Monitor,
   Copy,
   X,
 } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
-import { findGame, createRoom, deleteGame, getJeopardyResults } from "@/lib/api";
-import { loadQuizResults, type QuizResult } from "@/lib/results";
-import type { JeopardyResult } from "@/lib/jeopardy-results";
+import { findGame, createRoom, deleteGame } from "@/lib/api";
 import {
   exportQuizExcel,
   exportJeopardyExcel,

@@ -302,9 +302,9 @@ export function JeopardyRoomTeacher({ state, code }: { state: RoomState; code: s
               />
             </div>
             <div className="space-y-4">
-              <JLeaderboard state={state} highlightId={highlightId} />
-              <JManagePanel
+              <JLeaderboard
                 state={state}
+                highlightId={highlightId}
                 onAdjust={(id, d) => adjustJeopardyScore(code, id, d)}
               />
             </div>

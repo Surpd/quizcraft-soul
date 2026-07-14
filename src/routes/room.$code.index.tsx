@@ -735,11 +735,12 @@ function Finale({
           <BarChart3 className="h-4 w-4" /> Подробности
         </Link>
         <Link
-          to="/"
+          to="/library"
           className="inline-flex items-center gap-2 rounded-xl border border-[color:var(--pt-border)] bg-[color:var(--pt-surface-strong)] px-5 py-3 font-bold hover:bg-[color:var(--pt-surface)]"
         >
-          <X className="h-4 w-4" /> Закрыть
+          <X className="h-4 w-4" /> Библиотека
         </Link>
+
       </div>
     </div>
   );

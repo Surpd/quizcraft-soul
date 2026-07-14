@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Trophy, ArrowLeft, ChevronDown, ChevronRight } from "lucide-react";
+import { Trophy, ArrowLeft, ChevronDown, ChevronRight, Check, X } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { getJeopardyResults } from "@/lib/api";
 import { loadGame } from "@/lib/storage";

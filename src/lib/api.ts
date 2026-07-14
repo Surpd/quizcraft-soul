@@ -85,6 +85,16 @@ export async function logout() {
   return fake({ ok: true });
 }
 
+// TODO(server): POST /api/auth/forgot-password
+export async function forgotPassword(_email: string) {
+  return fake({ ok: true as const, message: "Инструкция отправлена на email" }, 300);
+}
+
+// TODO(server): POST /api/auth/reset-password
+export async function resetPassword(_token: string, _newPassword: string) {
+  return fake({ ok: true as const, message: "Пароль изменён" }, 300);
+}
+
 // TODO(server): GET /api/users/me
 export async function getMe(): Promise<User | null> {
   return fake(getCurrentUser());

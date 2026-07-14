@@ -114,6 +114,8 @@ export function downloadExcelTemplate(kind: "quiz" | "jeopardy" | "millionaire")
       { type: "choice", question: "Столица Франции?", options: "Париж|Лондон|Берлин|Мадрид", answer: "Париж", points: 100, time: 30 },
       { type: "bool", question: "Вода мокрая?", options: "", answer: "true", points: 50, time: 20 },
       { type: "text", question: "Что такое H2O?", options: "", answer: "вода", points: 100, time: 30 },
+      { type: "close", question: "Столица Франции — ___, Германии — ___", options: "", answer: "Париж | Берлин", points: 100, time: 30 },
+      { type: "ordering", question: "Расставьте по возрастанию:", options: "", answer: "Один | Два | Три", points: 100, time: 30 },
     ];
   } else if (kind === "jeopardy") {
     name = "своя-игра-template";

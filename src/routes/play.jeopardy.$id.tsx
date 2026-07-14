@@ -244,36 +244,60 @@ function PlayJeopardy() {
               </button>
             </div>
 
-            <div
-              className="grid flex-1 gap-2"
-              style={{ gridTemplateColumns: `repeat(${currentRound.length}, minmax(0, 1fr))` }}
-            >
-              {currentRound.map((cat, ci) => (
-                <div key={ci} className="flex flex-col gap-2">
-                  <div className="rounded-xl border border-[color:var(--pt-border)] bg-[color:var(--pt-surface-strong)] p-3 text-center text-sm font-bold uppercase">
-                    {cat.category || `Категория ${ci + 1}`}
-                  </div>
-                  {cat.questions.map((q, qi) => {
-                    const key = `${roundIdx}-${ci}-${qi}`;
-                    const disabled = used.has(key);
-                    return (
-                      <button
-                        key={qi}
-                        disabled={disabled}
-                        onClick={() => openQuestion(ci, qi)}
-                        className={`rounded-xl border border-[color:var(--pt-border)] p-6 font-display text-2xl font-black transition-all ${
-                          disabled
-                            ? "opacity-20"
-                            : "bg-[color:var(--pt-surface)] text-[color:var(--pt-accent)] hover:scale-105 hover:bg-[color:var(--pt-surface-strong)]"
-                        }`}
-                      >
-                        {q.points}
-                      </button>
-                    );
-                  })}
+            {(() => {
+              const maxRows = currentRound.reduce((m, c) => Math.max(m, c.questions.length), 0);
+              return (
+                <div
+                  className="grid flex-1 gap-2"
+                  style={{
+                    gridTemplateColumns: `repeat(${currentRound.length}, minmax(0, 1fr))`,
+                    gridTemplateRows: `auto repeat(${maxRows}, minmax(0, 1fr))`,
+                  }}
+                >
+                  {currentRound.map((cat, ci) => (
+                    <div
+                      key={`h-${ci}`}
+                      className="rounded-xl border border-[color:var(--pt-border)] bg-[color:var(--pt-surface-strong)] p-3 text-center text-sm font-bold uppercase"
+                      style={{ gridColumn: ci + 1, gridRow: 1 }}
+                    >
+                      {cat.category || `Категория ${ci + 1}`}
+                    </div>
+                  ))}
+                  {currentRound.flatMap((cat, ci) =>
+                    Array.from({ length: maxRows }).map((_, ri) => {
+                      const q = cat.questions[ri];
+                      if (!q) {
+                        return (
+                          <div
+                            key={`e-${ci}-${ri}`}
+                            style={{ gridColumn: ci + 1, gridRow: ri + 2 }}
+                            className="rounded-xl border border-dashed border-[color:var(--pt-border)]/40 opacity-30"
+                          />
+                        );
+                      }
+                      const key = `${roundIdx}-${ci}-${ri}`;
+                      const disabled = used.has(key);
+                      return (
+                        <button
+                          key={`q-${ci}-${ri}`}
+                          disabled={disabled}
+                          onClick={() => openQuestion(ci, ri)}
+                          style={{ gridColumn: ci + 1, gridRow: ri + 2 }}
+                          className={`rounded-xl border border-[color:var(--pt-border)] p-6 font-display text-2xl font-black transition-all ${
+                            disabled
+                              ? "opacity-20"
+                              : "bg-[color:var(--pt-surface)] text-[color:var(--pt-accent)] hover:scale-105 hover:bg-[color:var(--pt-surface-strong)]"
+                          }`}
+                        >
+                          {q.points}
+                        </button>
+                      );
+                    }),
+                  )}
                 </div>
-              ))}
-            </div>
+              );
+            })()}
+
           </>
         )}
 

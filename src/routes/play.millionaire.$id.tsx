@@ -34,7 +34,9 @@ function PlayMillionaire() {
   const [idx, setIdx] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const [revealed, setRevealed] = useState(false);
-  const [phase, setPhase] = useState<"playing" | "won" | "lost">("playing");
+  const [phase, setPhase] = useState<"start" | "playing" | "won" | "lost">("start");
+  const [playerName, setPlayerName] = useState(user?.name ?? "");
+
   const [fiftyUsed, setFiftyUsed] = useState(false);
   const [hidden, setHidden] = useState<Set<number>>(new Set());
   const [timeLeft, setTimeLeft] = useState(0);
@@ -94,14 +96,15 @@ function PlayMillionaire() {
 
   // Сохраняем результат один раз при завершении (объявлено до early return, чтобы порядок хуков не менялся)
   useEffect(() => {
-    if (phase === "playing" || savedRef.current || !questions.length) return;
+    if (phase === "playing" || phase === "start" || savedRef.current || !questions.length) return;
     savedRef.current = true;
     const reached = answersRef.current.filter((a) => a.isCorrect).length;
     saveMillionaireResult({
       gameId: id,
-      playerName: user?.name || "Аноним",
+      playerName: playerName.trim() || user?.name || "Аноним",
       avatar: user?.avatar,
       outcome: phase,
+
       wonAmount,
       guaranteedAmount: guaranteedMoney(idx, questions, milestones),
       reachedCount: reached,
@@ -109,7 +112,7 @@ function PlayMillionaire() {
       timeSec: Math.max(1, Math.round((Date.now() - startedAtRef.current) / 1000)),
       answers: [...answersRef.current],
     });
-  }, [phase, wonAmount, id, idx, user, questions, milestones]);
+  }, [phase, wonAmount, id, idx, user, questions, milestones, playerName]);
 
   if (!data || !config) {
     return (
@@ -197,7 +200,36 @@ function PlayMillionaire() {
       )}
       <div className="mx-auto flex min-h-screen max-w-5xl items-center justify-center gap-6 px-4 py-16 lg:pr-56">
         <div className="min-w-0 flex-1">
+          {phase === "start" && (
+            <div className="mx-auto max-w-lg animate-fade-up rounded-3xl border border-[color:var(--pt-border)] bg-[color:var(--pt-surface)] p-10 text-center backdrop-blur-md">
+              <h1 className="font-display text-3xl font-black">{config.title || "Кто хочет стать миллионером"}</h1>
+              <p className="mt-2 text-[color:var(--pt-text-muted)]">Вопросов: {questions.length}</p>
+              {user && (
+                <div className="mt-6 flex justify-center">
+                  <Avatar name={user.name} avatar={user.avatar} size={72} />
+                </div>
+              )}
+              <input
+                value={playerName}
+                onChange={(e) => setPlayerName(e.target.value)}
+                placeholder="Ваше имя"
+                maxLength={40}
+                className="mt-6 w-full rounded-xl border border-[color:var(--pt-border)] bg-[color:var(--pt-surface-strong)] px-4 py-3 text-center text-lg font-semibold outline-none focus:border-[color:var(--pt-accent)]"
+              />
+              <button
+                onClick={() => {
+                  startedAtRef.current = Date.now();
+                  setPhase("playing");
+                }}
+                disabled={!playerName.trim()}
+                className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[color:var(--pt-accent)] px-8 py-3 font-bold text-black transition-transform hover:scale-[1.02] disabled:opacity-40 disabled:hover:scale-100"
+              >
+                Начать
+              </button>
+            </div>
+          )}
           {phase === "playing" && (
+
             <>
               <div className="mb-3 flex items-center justify-between text-xs uppercase tracking-widest text-[color:var(--pt-text-muted)]">
                 <span>

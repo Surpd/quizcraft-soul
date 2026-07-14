@@ -246,142 +246,29 @@ function GameDashboard() {
           </button>
         </div>
 
-        {/* Stats + Results (quiz only for now) */}
-        {game.kind === "quiz" ? (
-          <>
-            <div className="mb-4 grid gap-3 sm:grid-cols-3">
-              <StatCard label="Прохождений" value={String(stats?.count ?? 0)} />
-              <StatCard label="Средний балл" value={String(stats?.avgScore ?? 0)} />
-              <StatCard
-                label="Лучшее время"
-                value={
-                  stats
-                    ? `${Math.floor(stats.bestTime / 60)}:${String(stats.bestTime % 60).padStart(2, "0")}`
-                    : "—"
-                }
-              />
-            </div>
-
-            <div className="surface-card overflow-hidden">
-              <div className="flex items-center gap-2 border-b border-border px-5 py-3">
-                <Trophy className="h-4 w-4 text-amber" />
-                <h2 className="font-display text-base font-bold">Результаты</h2>
+        {/* Results dashboard link */}
+        <div className="surface-card p-6">
+          {game.kind === "millionaire" ? (
+            <p className="text-sm text-muted-foreground">
+              Статистика прохождений доступна для форматов «Квиз» и «Своя игра».
+            </p>
+          ) : (
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="font-display text-base font-bold">Результаты прохождений</h2>
+                <p className="text-sm text-muted-foreground">
+                  Вся статистика, ответы и таблицы лидеров на отдельной странице.
+                </p>
               </div>
-              {results.length === 0 ? (
-                <div className="p-10 text-center text-sm text-muted-foreground">
-                  Ещё никто не проходил.
-                </div>
-              ) : (
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="bg-surface-muted text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                      <th className="w-8 px-3 py-2"></th>
-                      <th className="px-3 py-2">Игрок</th>
-                      <th className="px-3 py-2">Баллы</th>
-                      <th className="px-3 py-2">% верно</th>
-                      <th className="px-3 py-2">Время</th>
-                      <th className="px-3 py-2">Дата</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {results.flatMap((r) => {
-                      const pct = r.totalQuestions
-                        ? Math.round((r.correctCount / r.totalQuestions) * 100)
-                        : 0;
-                      const isOpen = expanded === r.id;
-                      const rows = [
-                        <tr
-                          key={r.id}
-                          onClick={() => setExpanded(isOpen ? null : r.id)}
-                          className="cursor-pointer border-t border-border hover:bg-surface-muted/60"
-                        >
-                          <td className="px-3 py-2 text-muted-foreground">
-                            {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                          </td>
-                          <td className="px-3 py-2 font-semibold">{r.playerName || "Аноним"}</td>
-                          <td className="px-3 py-2 font-mono">
-                            {r.score}
-                            <span className="text-muted-foreground">/{r.maxScore}</span>
-                          </td>
-                          <td className="px-3 py-2">{pct}%</td>
-                          <td className="px-3 py-2 text-muted-foreground">
-                            {Math.floor(r.timeSec / 60)}:{String(r.timeSec % 60).padStart(2, "0")}
-                          </td>
-                          <td className="px-3 py-2 text-muted-foreground">
-                            {new Date(r.finishedAt).toLocaleString("ru-RU")}
-                          </td>
-                        </tr>,
-                      ];
-                      if (isOpen) {
-                        rows.push(
-                          <tr key={r.id + "-d"} className="bg-surface-muted/40">
-                            <td colSpan={6} className="px-5 py-3">
-                              {r.answers && r.answers.length > 0 ? (
-                                <div className="overflow-hidden rounded-lg border border-border bg-white">
-                                  <table className="w-full text-xs">
-                                    <thead>
-                                      <tr className="bg-surface-muted text-left uppercase tracking-wider text-muted-foreground">
-                                        <th className="w-8 px-2 py-1.5"></th>
-                                        <th className="px-2 py-1.5">Вопрос</th>
-                                        <th className="px-2 py-1.5">Ответ игрока</th>
-                                        <th className="px-2 py-1.5">Правильный</th>
-                                        <th className="px-2 py-1.5">Баллы</th>
-                                      </tr>
-                                    </thead>
-                                    <tbody>
-                                      {r.answers.map((a, i) => (
-                                        <tr key={i} className="border-t border-border align-top">
-                                          <td className="px-2 py-1.5">
-                                            {a.isCorrect ? (
-                                              <span className="text-success">✓</span>
-                                            ) : (
-                                              <span className="text-danger">✕</span>
-                                            )}
-                                          </td>
-                                          <td className="px-2 py-1.5">{a.question}</td>
-                                          <td className={`px-2 py-1.5 ${a.isCorrect ? "text-success" : "text-danger"}`}>
-                                            {a.given || <span className="text-muted-foreground">—</span>}
-                                          </td>
-                                          <td className="px-2 py-1.5 text-muted-foreground">{a.correctAnswer}</td>
-                                          <td className="px-2 py-1.5 font-mono">
-                                            {a.earned}
-                                            <span className="text-muted-foreground">/{a.points}</span>
-                                          </td>
-                                        </tr>
-                                      ))}
-                                    </tbody>
-                                  </table>
-                                </div>
-                              ) : (
-                                <p className="text-xs text-muted-foreground">
-                                  Детализация недоступна: результат сохранён до обновления.
-                                </p>
-                              )}
-                            </td>
-                          </tr>,
-                        );
-                      }
-                      return rows;
-                    })}
-
-                  </tbody>
-                </table>
-              )}
+              <Link
+                to={`/${game.kind}/${game.id}/results`}
+                className="btn-accent inline-flex items-center gap-2"
+              >
+                <Trophy className="h-4 w-4" /> Открыть результаты
+              </Link>
             </div>
-          </>
-        ) : game.kind === "jeopardy" ? (
-          <JeopardyDashboard
-            results={jResults}
-            state={jResultsState}
-            stats={jStats}
-            expanded={expanded}
-            onToggle={(rid) => setExpanded(expanded === rid ? null : rid)}
-          />
-        ) : (
-          <div className="surface-card p-6 text-sm text-muted-foreground">
-            Статистика прохождений доступна для форматов «Квиз» и «Своя игра».
-          </div>
-        )}
+          )}
+        </div>
       </main>
 
       {openHost && game.kind === "quiz" && (

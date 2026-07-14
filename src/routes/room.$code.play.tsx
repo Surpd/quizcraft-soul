@@ -297,11 +297,12 @@ function StudentPlay() {
           </p>
           {showStreak && (
             <div
-              className={`fixed left-1/2 bottom-8 z-50 -translate-x-1/2 rounded-full bg-[color:var(--pt-accent)] px-4 py-2 font-bold text-black shadow-lg transition-opacity duration-300 ${streakFading ? "opacity-0" : "opacity-100"} animate-slide-up`}
+              className={`fixed left-1/2 bottom-8 z-50 inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-[color:var(--pt-accent)] px-4 py-2 font-bold text-black shadow-lg transition-opacity duration-300 ${streakFading ? "opacity-0" : "opacity-100"} animate-slide-up`}
             >
-              🔥 Стрик {myPlayer?.streak}!
+              <Flame className="h-4 w-4" /> Стрик {myPlayer?.streak}!
             </div>
           )}
+
           <p className="mt-6 text-sm text-[color:var(--pt-text-muted)]">Ждём следующий вопрос...</p>
         </div>
       </PlayerShell>

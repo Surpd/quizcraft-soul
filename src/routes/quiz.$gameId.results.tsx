@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Fragment, useEffect, useMemo, useState } from "react";
-import { RefreshCw, Trophy, ArrowLeft, Home, Globe, ChevronRight, Check, X } from "lucide-react";
+import { RefreshCw, Trophy, ArrowLeft, User, Globe, ChevronRight, Check, X } from "lucide-react";
+import { Avatar } from "@/components/avatar";
+
 import { SiteHeader } from "@/components/site-header";
 import {
   loadQuizResults,

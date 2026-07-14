@@ -375,6 +375,15 @@ export function JeopardyRoomTeacher({ state, code }: { state: RoomState; code: s
                     <p className="mt-1 flex items-center justify-center gap-2 font-display text-2xl font-black">
                       <Avatar name={buzzed.nickname} size={32} /> {buzzed.nickname}
                     </p>
+                    {j.buzzedAnswer != null ? (
+                      <p className="mt-3 rounded-xl bg-[color:var(--pt-surface)] px-4 py-3 text-lg font-semibold">
+                        «{j.buzzedAnswer || "—"}»
+                      </p>
+                    ) : (
+                      <p className="mt-3 text-sm text-[color:var(--pt-text-muted)]">
+                        Ждём ответ игрока…
+                      </p>
+                    )}
                   </div>
                 )}
 
@@ -388,21 +397,50 @@ export function JeopardyRoomTeacher({ state, code }: { state: RoomState; code: s
                 )}
 
                 {/* Judgement buttons */}
-                {(j.phase === "answering" ||
-                  (j.mode === "turn" && j.phase === "question")) && (
-                  <div className="mt-6 flex justify-center gap-3">
-                    <button
-                      onClick={() => acceptJeopardyAnswer(code, true)}
-                      className="inline-flex items-center gap-2 rounded-xl bg-success px-6 py-3 font-bold text-white hover:scale-[1.02]"
-                    >
-                      <Check className="h-5 w-5" /> Верно (+{question.points})
-                    </button>
-                    <button
-                      onClick={() => acceptJeopardyAnswer(code, false)}
-                      className="inline-flex items-center gap-2 rounded-xl bg-danger px-6 py-3 font-bold text-white hover:scale-[1.02]"
-                    >
-                      <X className="h-5 w-5" /> Неверно (−{question.points})
-                    </button>
+                {!j.awaitingBonus &&
+                  (j.phase === "answering" ||
+                    (j.mode === "turn" && j.phase === "question")) && (
+                    <div className="mt-6 flex justify-center gap-3">
+                      <button
+                        onClick={() => acceptJeopardyAnswer(code, true)}
+                        className="inline-flex items-center gap-2 rounded-xl bg-success px-6 py-3 font-bold text-white hover:scale-[1.02]"
+                      >
+                        <Check className="h-5 w-5" /> Верно (+{question.points})
+                      </button>
+                      <button
+                        onClick={() => acceptJeopardyAnswer(code, false)}
+                        className="inline-flex items-center gap-2 rounded-xl bg-danger px-6 py-3 font-bold text-white hover:scale-[1.02]"
+                      >
+                        <X className="h-5 w-5" /> Неверно (−{question.points})
+                      </button>
+                    </div>
+                  )}
+
+                {/* Turn-wrong bonus panel */}
+                {j.awaitingBonus && j.mode === "turn" && (
+                  <div className="mt-6 rounded-2xl border border-[color:var(--pt-border)] bg-[color:var(--pt-surface)] p-4">
+                    <p className="mb-2 text-sm font-semibold text-[color:var(--pt-text-muted)]">
+                      Ответ неверный. Начислите/снимите очки другим командам, если нужно:
+                    </p>
+                    <div className="space-y-2">
+                      {state.players
+                        .filter((p) => p.id !== (currentPlayer ? state.players[(j.currentPlayerIdx) % Math.max(1, state.players.length)].id : null))
+                        .map((p) => (
+                          <ScoreAdjustRow
+                            key={p.id}
+                            player={p}
+                            onAdjust={(id, d) => adjustJeopardyScore(code, id, d)}
+                          />
+                        ))}
+                    </div>
+                    <div className="mt-4 flex justify-center">
+                      <button
+                        onClick={() => finalizeJeopardyTurnWrong(code)}
+                        className="inline-flex items-center gap-2 rounded-xl bg-[color:var(--pt-accent)] px-6 py-3 font-bold text-black hover:scale-[1.02]"
+                      >
+                        Продолжить <ArrowLeft className="h-4 w-4 rotate-180" />
+                      </button>
+                    </div>
                   </div>
                 )}
 
@@ -418,9 +456,9 @@ export function JeopardyRoomTeacher({ state, code }: { state: RoomState; code: s
                 )}
               </div>
               <div className="space-y-4">
-                <JLeaderboard state={state} highlightId={highlightId} />
-                <JManagePanel
+                <JLeaderboard
                   state={state}
+                  highlightId={highlightId}
                   onAdjust={(id, d) => adjustJeopardyScore(code, id, d)}
                 />
               </div>

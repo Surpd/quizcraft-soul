@@ -476,6 +476,7 @@ export function JeopardyRoomTeacher({ state, code }: { state: RoomState; code: s
             <div className="mt-4 space-y-2">
               {state.players.map((p) => {
                 const bet = j.finalBets[p.id];
+                const ready = bet != null;
                 return (
                   <div
                     key={p.id}
@@ -488,12 +489,12 @@ export function JeopardyRoomTeacher({ state, code }: { state: RoomState; code: s
                       </span>
                     </span>
                     <span className="font-mono">
-                      {bet == null ? (
-                        <span className="text-[color:var(--pt-text-muted)]">не поставил</span>
-                      ) : (
+                      {ready ? (
                         <span className="inline-flex items-center gap-1 font-bold text-[color:var(--pt-accent)]">
-                          <Lock className="h-3.5 w-3.5" /> {bet}
+                          <Lock className="h-3.5 w-3.5" /> Готов
                         </span>
+                      ) : (
+                        <span className="text-[color:var(--pt-text-muted)]">Ожидаем…</span>
                       )}
                     </span>
                   </div>
@@ -508,6 +509,7 @@ export function JeopardyRoomTeacher({ state, code }: { state: RoomState; code: s
             </button>
           </div>
         )}
+
 
         {/* FINAL QUESTION */}
         {j.phase === "final-question" && (

@@ -132,5 +132,6 @@ export interface StoredGame<T = unknown> {
   tags?: string[];
   ratings?: Record<string, number>;
   playCount?: number;
+  showAnswers?: boolean;
 }
 

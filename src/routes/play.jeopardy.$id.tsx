@@ -5,6 +5,7 @@ import { PlayerShell, TimerBar } from "@/components/player-shell";
 import { LaTeX } from "@/lib/latex";
 import { loadGame } from "@/lib/storage";
 import { submitJeopardyResult } from "@/lib/api";
+import { fitQuestionSize } from "@/lib/fit-text";
 import type { JeopardyData } from "@/lib/types";
 
 export const Route = createFileRoute("/play/jeopardy/$id")({

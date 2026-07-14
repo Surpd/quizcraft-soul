@@ -62,19 +62,6 @@ function GameDashboard() {
       .then((g) => {
         if (cancel) return;
         setGame(g);
-        if (g?.kind === "quiz") setResults(loadQuizResults(g.id));
-        if (g?.kind === "jeopardy") {
-          setJResultsState("loading");
-          getJeopardyResults(g.id)
-            .then((rs) => {
-              if (cancel) return;
-              setJResults(rs);
-              setJResultsState("idle");
-            })
-            .catch(() => {
-              if (!cancel) setJResultsState("error");
-            });
-        }
       })
       .catch((e) => {
         if (!cancel) setError(e?.message ?? "Не удалось загрузить");

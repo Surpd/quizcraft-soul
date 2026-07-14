@@ -6,7 +6,6 @@ import type {
   JeopardyData,
   MillionaireData,
   QuizData,
-  QuizQuestion,
   StoredGame,
 } from "@/lib/types";
 import { formatQuizAnswer } from "@/lib/format-answer";

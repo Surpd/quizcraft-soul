@@ -128,6 +128,31 @@ function StudentPlay() {
     }
   }, [state, me]);
 
+  // Animate streak toast when it reaches 2+
+  useEffect(() => {
+    if (myPlayer?.streak && myPlayer.streak >= 2) {
+      setShowStreak(true);
+      setStreakFading(false);
+      const fade = setTimeout(() => setStreakFading(true), 4700);
+      const hide = setTimeout(() => setShowStreak(false), 5000);
+      return () => {
+        clearTimeout(fade);
+        clearTimeout(hide);
+      };
+    }
+    setShowStreak(false);
+    setStreakFading(false);
+  }, [myPlayer?.streak]);
+
+  // Redirect kicked players to /join
+  useEffect(() => {
+    if (!state || !me) return;
+    const stillHere = state.players.some((p) => p.id === me.playerId);
+    if (!stillHere) {
+      navigate({ to: "/join", replace: true });
+    }
+  }, [state, me, navigate]);
+
   const doSubmit = async (timeout = false) => {
     if (!state || !question || !me || submitted) return;
     setSubmitted(true);

@@ -21,6 +21,7 @@ import { LaTeX } from "@/lib/latex";
 import {
   loadGame,
   buzzJeopardy,
+  submitJeopardyBuzzAnswer,
   submitJeopardyFinalBet,
   submitJeopardyFinalAnswer,
   type RoomState,
@@ -307,9 +308,13 @@ export function JeopardyRoomPlayer({
           {j.phase === "answering" && (
             <div className="mt-6 text-center">
               {iAmBuzzed ? (
-                <p className="inline-flex items-center gap-2 text-xl font-bold text-[color:var(--pt-accent)]">
-                  <Mic className="h-5 w-5" /> Отвечайте вслух! Учитель принимает ответ.
-                </p>
+                <BuzzAnswerBox
+                  code={code}
+                  me={me}
+                  submittedAnswer={j.buzzedAnswer}
+                  startAt={j.buzzStartAt}
+                  totalMs={j.buzzTimeoutMs}
+                />
               ) : (
                 <p className="text-sm text-[color:var(--pt-text-muted)]">
                   Отвечает {state.players.find((p) => p.id === j.buzzedPlayerId)?.nickname}…
@@ -501,3 +506,69 @@ function PlayerTop({
     </div>
   );
 }
+
+function BuzzAnswerBox({
+  code,
+  me,
+  submittedAnswer,
+  startAt,
+  totalMs,
+}: {
+  code: string;
+  me: Me;
+  submittedAnswer: string | null;
+  startAt: number | null;
+  totalMs: number;
+}) {
+  const [val, setVal] = useState("");
+  const [left, setLeft] = useState(totalMs);
+  useEffect(() => {
+    if (!startAt) return;
+    const tick = () => setLeft(Math.max(0, totalMs - (Date.now() - startAt)));
+    tick();
+    const id = window.setInterval(tick, 200);
+    return () => window.clearInterval(id);
+  }, [startAt, totalMs]);
+  const sec = Math.ceil(left / 1000);
+  const submitted = submittedAnswer != null;
+  return (
+    <div className="mx-auto max-w-md space-y-3">
+      <div
+        className={`inline-flex items-center gap-2 rounded-full px-3 py-1 font-mono text-sm font-bold ${
+          sec <= 5 ? "bg-danger/20 text-danger" : "bg-[color:var(--pt-surface-strong)]"
+        }`}
+      >
+        <TimerIcon className="h-4 w-4" /> {sec}с
+      </div>
+      {submitted ? (
+        <p className="rounded-xl bg-success/20 p-3 text-center text-sm font-bold text-success">
+          <Mic className="mr-1 inline h-4 w-4" /> Ответ отправлен: «{submittedAnswer || "—"}»
+        </p>
+      ) : (
+        <>
+          <input
+            type="text"
+            value={val}
+            autoFocus
+            onChange={(e) => setVal(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && val.trim()) {
+                submitJeopardyBuzzAnswer(code, me.playerId, val.trim());
+              }
+            }}
+            placeholder="Ваш ответ…"
+            className="w-full rounded-xl border border-[color:var(--pt-border)] bg-[color:var(--pt-surface)] px-4 py-3 text-lg"
+          />
+          <button
+            onClick={() => val.trim() && submitJeopardyBuzzAnswer(code, me.playerId, val.trim())}
+            disabled={!val.trim()}
+            className="w-full rounded-xl bg-[color:var(--pt-accent)] py-3 font-bold text-black disabled:opacity-40"
+          >
+            Отправить
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+

@@ -156,12 +156,20 @@ export interface JeopardyRoomState {
   selectedQ: number | null;
   buzzedPlayerId: string | null;
   buzzedPlayerIds: string[]; // buzz mode: players who already got a wrong attempt
+  buzzedAnswer: string | null; // text the buzzed player submitted
+  buzzStartAt: number | null; // ms — start of personal 30s answer timer
+  buzzTimeoutMs: number; // ms — personal answer window
   questionTotalMs: number; // buzz mode: full timer for the current question
   questionElapsedMs: number; // buzz mode: accumulated elapsed time (frozen while answering)
   showAnswer: boolean;
+  awaitingBonus: boolean; // turn-wrong: teacher can distribute bonus before advancing
   finalBets: Record<string, number>;
   finalAnswers: Record<string, boolean>;
   finalGiven: Record<string, string>;
+  finalRevealOrder: string[];
+  finalRevealIdx: number; // -1 not started
+  finalRevealStep: "bet" | "answer" | "score" | "done";
+  finalRevealAt: number | null;
   lastDelta?: { playerId: string; delta: number } | null;
 }
 
@@ -241,7 +249,7 @@ export async function createRoom(gameKind: GameKind, gameId: string) {
     createdAt: Date.now(),
     ...(gameKind === "jeopardy"
       ? {
-          jeopardy: {
+      jeopardy: {
             phase: "lobby" as const,
             mode: "buzz" as const,
             round: 0,
@@ -251,12 +259,20 @@ export async function createRoom(gameKind: GameKind, gameId: string) {
             selectedQ: null,
             buzzedPlayerId: null,
             buzzedPlayerIds: [],
+            buzzedAnswer: null,
+            buzzStartAt: null,
+            buzzTimeoutMs: 30000,
             questionTotalMs: 30000,
             questionElapsedMs: 0,
             showAnswer: false,
+            awaitingBonus: false,
             finalBets: {},
             finalAnswers: {},
             finalGiven: {},
+            finalRevealOrder: [],
+            finalRevealIdx: -1,
+            finalRevealStep: "done" as const,
+            finalRevealAt: null,
             lastDelta: null,
           },
 
@@ -564,6 +580,9 @@ export async function selectJeopardyQuestion(
       j.selectedQ = qIdx;
       j.buzzedPlayerId = null;
       j.buzzedPlayerIds = [];
+      j.buzzedAnswer = null;
+      j.buzzStartAt = null;
+      j.awaitingBonus = false;
       j.showAnswer = false;
       j.phase = "question";
       j.questionTotalMs = Math.max(5, timeBase + timeStep * tier) * 1000;
@@ -573,18 +592,47 @@ export async function selectJeopardyQuestion(
   );
 }
 
+// Buzz-mode: player submits typed answer during personal 30s window.
+export async function submitJeopardyBuzzAnswer(code: string, playerId: string, given: string) {
+  return fake(
+    mutJeopardy(code, (j) => {
+      if (j.buzzedPlayerId !== playerId) return;
+      j.buzzedAnswer = given;
+    }),
+  );
+}
+
+// Teacher: after turn-wrong bonus distribution, advance turn + close cell.
+export async function finalizeJeopardyTurnWrong(code: string) {
+  return fake(
+    mutJeopardy(code, (j, s) => {
+      if (!j.awaitingBonus) return;
+      j.awaitingBonus = false;
+      j.currentPlayerIdx = (j.currentPlayerIdx + 1) % Math.max(1, s.players.length);
+      j.showAnswer = true;
+      j.phase = "reveal";
+      if (j.selectedCat != null && j.selectedQ != null) {
+        const key = `${j.round}-${j.selectedCat}-${j.selectedQ}`;
+        if (!j.usedKeys.includes(key)) j.usedKeys.push(key);
+      }
+    }),
+  );
+}
+
 export async function buzzJeopardy(code: string, playerId: string) {
   return fake(
     mutJeopardy(code, (j, s) => {
       if (j.mode !== "buzz") return;
       if (j.phase !== "question" || j.buzzedPlayerId) return;
-      if (j.buzzedPlayerIds.includes(playerId)) return; // already tried wrong
-      // Freeze timer
+      if (j.buzzedPlayerIds.includes(playerId)) return;
+      // Freeze question timer
       if (s.questionStartAt) {
         j.questionElapsedMs += Date.now() - s.questionStartAt;
       }
       s.questionStartAt = null;
       j.buzzedPlayerId = playerId;
+      j.buzzedAnswer = null;
+      j.buzzStartAt = Date.now();
       j.phase = "answering";
     }),
   );
@@ -611,19 +659,30 @@ export async function acceptJeopardyAnswer(code: string, correct: boolean) {
           j.lastDelta = { playerId: targetId, delta };
         }
       }
-      // Turn mode: ALWAYS advance to the next player (both correct + wrong).
+      // TURN mode
       if (j.mode === "turn") {
-        j.currentPlayerIdx = (j.currentPlayerIdx + 1) % Math.max(1, s.players.length);
+        if (correct) {
+          j.currentPlayerIdx = (j.currentPlayerIdx + 1) % Math.max(1, s.players.length);
+          j.showAnswer = true;
+          j.phase = "reveal";
+          const key = `${j.round}-${j.selectedCat}-${j.selectedQ}`;
+          if (!j.usedKeys.includes(key)) j.usedKeys.push(key);
+        } else {
+          // Wrong → let teacher distribute bonus/penalty to others; advance later
+          j.awaitingBonus = true;
+        }
+        return;
       }
-      // Buzz + wrong → resume timer, allow other players to buzz.
+      // BUZZ + wrong → resume timer, allow other players to buzz.
       if (j.mode === "buzz" && !correct) {
         if (targetId && !j.buzzedPlayerIds.includes(targetId)) {
           j.buzzedPlayerIds.push(targetId);
         }
         j.buzzedPlayerId = null;
+        j.buzzedAnswer = null;
+        j.buzzStartAt = null;
         j.phase = "question";
         s.questionStartAt = Date.now();
-        // If everyone already tried — close.
         if (j.buzzedPlayerIds.length >= s.players.length) {
           j.showAnswer = true;
           j.phase = "reveal";
@@ -632,7 +691,7 @@ export async function acceptJeopardyAnswer(code: string, correct: boolean) {
         }
         return;
       }
-      // Close the question.
+      // BUZZ + correct → close
       j.showAnswer = true;
       j.phase = "reveal";
       const key = `${j.round}-${j.selectedCat}-${j.selectedQ}`;
@@ -762,12 +821,52 @@ export async function revealJeopardyFinal(code: string) {
     mutJeopardy(code, (j, s) => {
       j.showAnswer = true;
       j.phase = "final-reveal";
-      // Apply bets
-      s.players.forEach((p) => {
-        const bet = j.finalBets[p.id] ?? 0;
-        const ok = j.finalAnswers[p.id] ?? false;
+      // Setup animation order (ascending score → suspense: reveal weakest first)
+      j.finalRevealOrder = [...s.players]
+        .sort((a, b) => a.score - b.score)
+        .map((p) => p.id);
+      j.finalRevealIdx = -1;
+      j.finalRevealStep = "done";
+      j.finalRevealAt = null;
+    }),
+  );
+}
+
+// Advance the auto-anim: 4 steps per player (bet → answer → score → next).
+export async function advanceJeopardyFinalReveal(code: string) {
+  return fake(
+    mutJeopardy(code, (j, s) => {
+      if (j.phase !== "final-reveal") return;
+      if (j.finalRevealIdx < 0) {
+        j.finalRevealIdx = 0;
+        j.finalRevealStep = "bet";
+        j.finalRevealAt = Date.now();
+        return;
+      }
+      const order: ("bet" | "answer" | "score")[] = ["bet", "answer", "score"];
+      const cur = order.indexOf(j.finalRevealStep as "bet" | "answer" | "score");
+      if (cur >= 0 && cur < 2) {
+        j.finalRevealStep = order[cur + 1];
+        j.finalRevealAt = Date.now();
+        return;
+      }
+      // apply score for current player, move to next
+      const pid = j.finalRevealOrder[j.finalRevealIdx];
+      const p = s.players.find((x) => x.id === pid);
+      if (p) {
+        const bet = j.finalBets[pid] ?? 0;
+        const ok = j.finalAnswers[pid] ?? false;
         p.score = p.score + (ok ? bet : -bet);
-      });
+        j.lastDelta = { playerId: pid, delta: ok ? bet : -bet };
+      }
+      if (j.finalRevealIdx + 1 >= j.finalRevealOrder.length) {
+        j.finalRevealStep = "done";
+        j.finalRevealAt = Date.now();
+      } else {
+        j.finalRevealIdx += 1;
+        j.finalRevealStep = "bet";
+        j.finalRevealAt = Date.now();
+      }
     }),
   );
 }

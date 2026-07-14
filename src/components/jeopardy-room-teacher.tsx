@@ -24,7 +24,7 @@ import {
   Lock,
   Timer as TimerIcon,
   StopCircle,
-  Flame,
+  FileText,
 } from "lucide-react";
 import { PlayerShell } from "@/components/player-shell";
 import { Avatar } from "@/components/avatar";
@@ -42,6 +42,8 @@ import {
   startJeopardyFinalQuestion,
   markJeopardyFinal,
   revealJeopardyFinal,
+  advanceJeopardyFinalReveal,
+  finalizeJeopardyTurnWrong,
   finishJeopardyGame,
   adjustJeopardyScore,
   kickPlayer,
@@ -146,13 +148,23 @@ export function JeopardyRoomTeacher({ state, code }: { state: RoomState; code: s
           <span className="text-[color:var(--pt-text-muted)]">· {code}</span>
         </h1>
       </div>
-      <button
-        onClick={onToggleMute}
-        className="inline-flex items-center gap-2 rounded-full border border-[color:var(--pt-border)] bg-[color:var(--pt-surface-strong)] px-3 py-2 text-xs font-semibold"
-      >
-        {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-        {muted ? "Звук выкл" : "Звук вкл"}
-      </button>
+      <div className="flex items-center gap-2">
+        <a
+          href={`/room/${code}/answers`}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center gap-2 rounded-full border border-[color:var(--pt-border)] bg-[color:var(--pt-surface-strong)] px-3 py-2 text-xs font-semibold hover:bg-[color:var(--pt-surface)]"
+        >
+          <FileText className="h-4 w-4" /> Ответы
+        </a>
+        <button
+          onClick={onToggleMute}
+          className="inline-flex items-center gap-2 rounded-full border border-[color:var(--pt-border)] bg-[color:var(--pt-surface-strong)] px-3 py-2 text-xs font-semibold"
+        >
+          {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+          {muted ? "Звук выкл" : "Звук вкл"}
+        </button>
+      </div>
     </div>
   );
 
@@ -290,9 +302,9 @@ export function JeopardyRoomTeacher({ state, code }: { state: RoomState; code: s
               />
             </div>
             <div className="space-y-4">
-              <JLeaderboard state={state} highlightId={highlightId} />
-              <JManagePanel
+              <JLeaderboard
                 state={state}
+                highlightId={highlightId}
                 onAdjust={(id, d) => adjustJeopardyScore(code, id, d)}
               />
             </div>
@@ -363,6 +375,15 @@ export function JeopardyRoomTeacher({ state, code }: { state: RoomState; code: s
                     <p className="mt-1 flex items-center justify-center gap-2 font-display text-2xl font-black">
                       <Avatar name={buzzed.nickname} size={32} /> {buzzed.nickname}
                     </p>
+                    {j.buzzedAnswer != null ? (
+                      <p className="mt-3 rounded-xl bg-[color:var(--pt-surface)] px-4 py-3 text-lg font-semibold">
+                        «{j.buzzedAnswer || "—"}»
+                      </p>
+                    ) : (
+                      <p className="mt-3 text-sm text-[color:var(--pt-text-muted)]">
+                        Ждём ответ игрока…
+                      </p>
+                    )}
                   </div>
                 )}
 
@@ -376,21 +397,50 @@ export function JeopardyRoomTeacher({ state, code }: { state: RoomState; code: s
                 )}
 
                 {/* Judgement buttons */}
-                {(j.phase === "answering" ||
-                  (j.mode === "turn" && j.phase === "question")) && (
-                  <div className="mt-6 flex justify-center gap-3">
-                    <button
-                      onClick={() => acceptJeopardyAnswer(code, true)}
-                      className="inline-flex items-center gap-2 rounded-xl bg-success px-6 py-3 font-bold text-white hover:scale-[1.02]"
-                    >
-                      <Check className="h-5 w-5" /> Верно (+{question.points})
-                    </button>
-                    <button
-                      onClick={() => acceptJeopardyAnswer(code, false)}
-                      className="inline-flex items-center gap-2 rounded-xl bg-danger px-6 py-3 font-bold text-white hover:scale-[1.02]"
-                    >
-                      <X className="h-5 w-5" /> Неверно (−{question.points})
-                    </button>
+                {!j.awaitingBonus &&
+                  (j.phase === "answering" ||
+                    (j.mode === "turn" && j.phase === "question")) && (
+                    <div className="mt-6 flex justify-center gap-3">
+                      <button
+                        onClick={() => acceptJeopardyAnswer(code, true)}
+                        className="inline-flex items-center gap-2 rounded-xl bg-success px-6 py-3 font-bold text-white hover:scale-[1.02]"
+                      >
+                        <Check className="h-5 w-5" /> Верно (+{question.points})
+                      </button>
+                      <button
+                        onClick={() => acceptJeopardyAnswer(code, false)}
+                        className="inline-flex items-center gap-2 rounded-xl bg-danger px-6 py-3 font-bold text-white hover:scale-[1.02]"
+                      >
+                        <X className="h-5 w-5" /> Неверно (−{question.points})
+                      </button>
+                    </div>
+                  )}
+
+                {/* Turn-wrong bonus panel */}
+                {j.awaitingBonus && j.mode === "turn" && (
+                  <div className="mt-6 rounded-2xl border border-[color:var(--pt-border)] bg-[color:var(--pt-surface)] p-4">
+                    <p className="mb-2 text-sm font-semibold text-[color:var(--pt-text-muted)]">
+                      Ответ неверный. Начислите/снимите очки другим командам, если нужно:
+                    </p>
+                    <div className="space-y-2">
+                      {state.players
+                        .filter((p) => p.id !== currentPlayer?.id)
+                        .map((p) => (
+                          <ScoreAdjustRow
+                            key={p.id}
+                            player={p}
+                            onAdjust={(id, d) => adjustJeopardyScore(code, id, d)}
+                          />
+                        ))}
+                    </div>
+                    <div className="mt-4 flex justify-center">
+                      <button
+                        onClick={() => finalizeJeopardyTurnWrong(code)}
+                        className="inline-flex items-center gap-2 rounded-xl bg-[color:var(--pt-accent)] px-6 py-3 font-bold text-black hover:scale-[1.02]"
+                      >
+                        Продолжить <ArrowLeft className="h-4 w-4 rotate-180" />
+                      </button>
+                    </div>
                   </div>
                 )}
 
@@ -406,9 +456,9 @@ export function JeopardyRoomTeacher({ state, code }: { state: RoomState; code: s
                 )}
               </div>
               <div className="space-y-4">
-                <JLeaderboard state={state} highlightId={highlightId} />
-                <JManagePanel
+                <JLeaderboard
                   state={state}
+                  highlightId={highlightId}
                   onAdjust={(id, d) => adjustJeopardyScore(code, id, d)}
                 />
               </div>
@@ -524,35 +574,9 @@ export function JeopardyRoomTeacher({ state, code }: { state: RoomState; code: s
           </div>
         )}
 
-        {/* FINAL REVEAL */}
+        {/* FINAL REVEAL — auto-anim */}
         {j.phase === "final-reveal" && (
-          <div className="mt-6 animate-fade-up rounded-3xl border border-[color:var(--pt-border)] bg-[color:var(--pt-surface)] p-8 text-center">
-            <Trophy className="mx-auto mb-2 h-10 w-10 text-[color:var(--pt-accent)]" />
-            <h2 className="font-display text-3xl font-black">Финал завершён</h2>
-            <div className="mt-4 space-y-2">
-              {[...state.players]
-                .sort((a, b) => b.score - a.score)
-                .map((p, i) => (
-                  <div
-                    key={p.id}
-                    className="flex items-center justify-between rounded-xl bg-[color:var(--pt-surface-strong)] px-4 py-3"
-                  >
-                    <span className="flex items-center gap-2">
-                      <span className="font-mono">{i + 1}</span>
-                      <Avatar name={p.nickname} size={26} />
-                      <b>{p.nickname}</b>
-                    </span>
-                    <span className="font-mono font-bold">{p.score}</span>
-                  </div>
-                ))}
-            </div>
-            <button
-              onClick={() => finishJeopardyGame(code)}
-              className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[color:var(--pt-accent)] px-6 py-3 font-bold text-black"
-            >
-              <Trophy className="h-4 w-4" /> Показать подиум
-            </button>
-          </div>
+          <FinalRevealAnim state={state} code={code} game={game} />
         )}
 
         {/* PODIUM */}
@@ -629,9 +653,11 @@ function JBoard({
 function JLeaderboard({
   state,
   highlightId,
+  onAdjust,
 }: {
   state: RoomState;
   highlightId: string | null;
+  onAdjust?: (id: string, d: number) => void;
 }) {
   const sorted = [...state.players].sort((a, b) => b.score - a.score);
   const lastId = state.jeopardy?.lastDelta?.playerId;
@@ -645,7 +671,7 @@ function JLeaderboard({
         {sorted.map((p, i) => (
           <div
             key={p.id}
-            className={`relative flex items-center justify-between rounded-xl px-3 py-2 transition-all ${
+            className={`relative rounded-xl px-3 py-2 transition-all ${
               p.id === highlightId
                 ? "bg-[color:var(--pt-accent)]/25 ring-2 ring-[color:var(--pt-accent)]"
                 : i === 0
@@ -653,16 +679,19 @@ function JLeaderboard({
                   : "bg-[color:var(--pt-surface-strong)]"
             }`}
           >
-            <div className="flex items-center gap-2 truncate">
-              <span className="w-5 font-mono text-xs text-[color:var(--pt-text-muted)]">
-                {i + 1}
-              </span>
-              <Avatar name={p.nickname} size={22} />
-              <span className="truncate font-semibold">{p.nickname}</span>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex min-w-0 items-center gap-2 truncate">
+                <span className="w-5 font-mono text-xs text-[color:var(--pt-text-muted)]">
+                  {i + 1}
+                </span>
+                <Avatar name={p.nickname} size={22} />
+                <span className="truncate font-semibold">{p.nickname}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <EditableScore player={p} onAdjust={onAdjust} />
+                {onAdjust && <InlineAdjustButtons player={p} onAdjust={onAdjust} />}
+              </div>
             </div>
-            <span className="font-mono text-sm font-bold">
-              {p.score.toLocaleString("ru-RU")}
-            </span>
             {p.id === lastId && lastDelta !== 0 && (
               <span
                 className={`iq-points-fly absolute -top-2 right-2 rounded-full px-2 py-0.5 text-xs font-bold ${
@@ -680,23 +709,75 @@ function JLeaderboard({
   );
 }
 
-function JManagePanel({
-  state,
+function EditableScore({
+  player,
   onAdjust,
 }: {
-  state: RoomState;
+  player: RoomPlayer;
+  onAdjust?: (id: string, d: number) => void;
+}) {
+  const [edit, setEdit] = useState(false);
+  const [val, setVal] = useState(String(player.score));
+  useEffect(() => {
+    if (!edit) setVal(String(player.score));
+  }, [player.score, edit]);
+  const apply = () => {
+    const n = Math.floor(Number(val));
+    if (!Number.isNaN(n) && n !== player.score && onAdjust) {
+      onAdjust(player.id, n - player.score);
+    }
+    setEdit(false);
+  };
+  if (!onAdjust) return <span className="font-mono text-sm font-bold">{player.score.toLocaleString("ru-RU")}</span>;
+  return edit ? (
+    <input
+      type="number"
+      value={val}
+      autoFocus
+      onChange={(e) => setVal(e.target.value)}
+      onBlur={apply}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") apply();
+        if (e.key === "Escape") setEdit(false);
+      }}
+      className="w-20 rounded bg-[color:var(--pt-surface)] px-2 py-0.5 text-right font-mono text-sm font-bold"
+    />
+  ) : (
+    <button
+      onClick={() => setEdit(true)}
+      className="rounded px-1 font-mono text-sm font-bold hover:bg-[color:var(--pt-surface)]"
+      title="Изменить очки"
+    >
+      {player.score.toLocaleString("ru-RU")}
+    </button>
+  );
+}
+
+function InlineAdjustButtons({
+  player,
+  onAdjust,
+}: {
+  player: RoomPlayer;
   onAdjust: (id: string, d: number) => void;
 }) {
   return (
-    <div className="rounded-3xl border border-[color:var(--pt-border)] bg-[color:var(--pt-surface)] p-4 backdrop-blur-md">
-      <p className="mb-2 text-xs font-semibold uppercase text-[color:var(--pt-text-muted)]">
-        Корректировка очков
-      </p>
-      <div className="space-y-2">
-        {state.players.map((p) => (
-          <ScoreAdjustRow key={p.id} player={p} onAdjust={onAdjust} />
-        ))}
-      </div>
+    <div className="flex items-center gap-1">
+      <button
+        onClick={() => onAdjust(player.id, -100)}
+        className="grid h-6 w-6 place-items-center rounded bg-[color:var(--pt-surface)] hover:bg-danger/20 hover:text-danger"
+        aria-label="−100"
+        title="−100"
+      >
+        <Minus className="h-3 w-3" />
+      </button>
+      <button
+        onClick={() => onAdjust(player.id, 100)}
+        className="grid h-6 w-6 place-items-center rounded bg-[color:var(--pt-surface)] hover:bg-success/20 hover:text-success"
+        aria-label="+100"
+        title="+100"
+      >
+        <Plus className="h-3 w-3" />
+      </button>
     </div>
   );
 }
@@ -844,8 +925,120 @@ function JPodium({ players, gameId }: { players: RoomPlayer[]; gameId: string })
           <X className="h-4 w-4" /> Закрыть
         </Link>
       </div>
-      {/* Flame kept as icon in case future spec uses streaks */}
-      <Flame className="hidden" />
     </div>
   );
 }
+
+function FinalRevealAnim({
+  state,
+  code,
+  game,
+}: {
+  state: RoomState;
+  code: string;
+  game: JeopardyData;
+}) {
+  const j = state.jeopardy!;
+  // auto-advance every 5s while phase is final-reveal
+  useEffect(() => {
+    const t = window.setInterval(() => {
+      if (j.finalRevealStep === "done" && j.finalRevealIdx >= 0) return;
+      void advanceJeopardyFinalReveal(code);
+    }, 5000);
+    // kick off immediately if not started
+    if (j.finalRevealIdx < 0) {
+      void advanceJeopardyFinalReveal(code);
+    }
+    return () => window.clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [code, j.finalRevealStep, j.finalRevealIdx]);
+
+  const done =
+    j.finalRevealStep === "done" && j.finalRevealIdx >= 0;
+  const currentId = j.finalRevealOrder[Math.max(0, j.finalRevealIdx)];
+  const cur = state.players.find((p) => p.id === currentId);
+  const curBet = cur ? (j.finalBets[cur.id] ?? 0) : 0;
+  const curOk = cur ? (j.finalAnswers[cur.id] ?? false) : false;
+  const curGiven = cur ? (j.finalGiven[cur.id] ?? "") : "";
+
+  return (
+    <div className="mt-6 animate-fade-up rounded-3xl border border-[color:var(--pt-border)] bg-[color:var(--pt-surface)] p-8 text-center">
+      <Trophy className="mx-auto mb-2 h-10 w-10 text-[color:var(--pt-accent)]" />
+      <h2 className="font-display text-3xl font-black">Финал · Раскрытие</h2>
+      <p className="mt-1 text-sm text-[color:var(--pt-text-muted)]">
+        Категория: <b>{game.final.category}</b> · Ответ:{" "}
+        <b className="text-[color:var(--pt-accent)]">{game.final.a}</b>
+      </p>
+
+      {!done && cur && (
+        <div className="mt-6 rounded-2xl bg-[color:var(--pt-surface-strong)] p-6">
+          <div className="flex items-center justify-center gap-3 font-display text-2xl font-black">
+            <Avatar name={cur.nickname} size={40} /> {cur.nickname}
+          </div>
+          <div className="mt-4 min-h-[80px] text-lg">
+            {j.finalRevealStep === "bet" && (
+              <p className="animate-fade-in">Ставит…</p>
+            )}
+            {j.finalRevealStep !== "bet" && (
+              <p className="animate-fade-in">
+                Ставка: <b className="text-[color:var(--pt-accent)]">{curBet}</b>
+              </p>
+            )}
+            {j.finalRevealStep === "answer" && (
+              <p className="mt-2 animate-fade-in italic">
+                Ответ: «{curGiven || "—"}»
+              </p>
+            )}
+            {j.finalRevealStep === "answer" || j.finalRevealStep === "score" ? (
+              <p className="mt-2 animate-fade-in">
+                {curOk ? (
+                  <span className="inline-flex items-center gap-1 font-bold text-success">
+                    <Check className="h-5 w-5" /> Верно
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 font-bold text-danger">
+                    <X className="h-5 w-5" /> Неверно
+                  </span>
+                )}
+              </p>
+            ) : null}
+            {j.finalRevealStep === "score" && (
+              <p className="mt-2 animate-fade-in font-mono text-2xl font-black">
+                {curOk ? "+" : "−"}
+                {curBet}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className="mt-6 space-y-2">
+        {[...state.players]
+          .sort((a, b) => b.score - a.score)
+          .map((p, i) => (
+            <div
+              key={p.id}
+              className="flex items-center justify-between rounded-xl bg-[color:var(--pt-surface-strong)] px-4 py-3 transition-all"
+            >
+              <span className="flex items-center gap-2">
+                <span className="font-mono">{i + 1}</span>
+                <Avatar name={p.nickname} size={26} />
+                <b>{p.nickname}</b>
+              </span>
+              <span className="font-mono font-bold">{p.score.toLocaleString("ru-RU")}</span>
+            </div>
+          ))}
+      </div>
+
+      {done && (
+        <button
+          onClick={() => finishJeopardyGame(code)}
+          className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[color:var(--pt-accent)] px-6 py-3 font-bold text-black"
+        >
+          <Trophy className="h-4 w-4" /> Показать подиум
+        </button>
+      )}
+    </div>
+  );
+}
+

@@ -247,14 +247,16 @@ export function BuilderFabs({ kind, savedId, onSave, onSaveAsCopy, themeAccent }
       {openQuizModal && savedId && (
         <QuizPlayModal
           gameId={savedId}
+          kind={kind}
           onClose={() => setOpenQuizModal(false)}
           onOfflineHost={(id) => { setOpenQuizModal(false); setHostView({ id }); }}
         />
       )}
 
       {hostView && (
-        <OfflineHostView gameId={hostView.id} onClose={() => setHostView(null)} />
+        <OfflineHostView gameId={hostView.id} kind={kind} onClose={() => setHostView(null)} />
       )}
+
     </>
   );
 }

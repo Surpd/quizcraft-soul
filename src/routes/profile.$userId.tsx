@@ -66,7 +66,7 @@ function PublicProfilePage() {
       <SiteHeader />
       <main className="mx-auto max-w-4xl px-6 py-10">
         <div className="mb-6 flex items-center gap-4">
-          <Avatar name={data.user.name} size={80} />
+          <Avatar name={data.user.name} avatar={data.user.avatar} size={80} />
           <div className="min-w-0">
             <h1 className="font-display text-3xl font-black">{data.user.name}</h1>
             {data.user.subject && (

@@ -424,7 +424,7 @@ export function JeopardyRoomTeacher({ state, code }: { state: RoomState; code: s
                     </p>
                     <div className="space-y-2">
                       {state.players
-                        .filter((p) => p.id !== (currentPlayer ? state.players[(j.currentPlayerIdx) % Math.max(1, state.players.length)].id : null))
+                        .filter((p) => p.id !== currentPlayer?.id)
                         .map((p) => (
                           <ScoreAdjustRow
                             key={p.id}

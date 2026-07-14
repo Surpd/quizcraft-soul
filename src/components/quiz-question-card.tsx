@@ -154,6 +154,14 @@ export function QuizQuestionCard({
           reveal={!!reveal}
         />
       )}
+
+      {question.type === "close" && (
+        <CloseBoard question={question} value={value} onChange={onChange} disabled={disabled} reveal={!!reveal} />
+      )}
+
+      {question.type === "ordering" && (
+        <OrderingBoard question={question} value={value} onChange={onChange} disabled={disabled} reveal={!!reveal} />
+      )}
     </div>
   );
 }

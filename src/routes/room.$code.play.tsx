@@ -389,11 +389,13 @@ function StudentPlay() {
           </p>
         )}
 
-        {myPlayer?.streak && myPlayer.streak >= 2 ? (
-          <p className="mt-3 text-center text-sm font-semibold text-[color:var(--pt-accent)]">
-            🔥 Стрик {myPlayer.streak}!
-          </p>
-        ) : null}
+        {showStreak && (
+          <div
+            className={`fixed left-1/2 bottom-8 z-50 -translate-x-1/2 rounded-full bg-[color:var(--pt-accent)] px-4 py-2 font-bold text-black shadow-lg transition-opacity duration-300 ${streakFading ? "opacity-0" : "opacity-100"} animate-slide-up`}
+          >
+            🔥 Стрик {myPlayer?.streak}!
+          </div>
+        )}
       </div>
     </PlayerShell>
   );

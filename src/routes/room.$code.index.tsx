@@ -66,7 +66,9 @@ function TeacherRoom() {
     try {
       const raw = sessionStorage.getItem(`islandquiz.me.${code}`);
       if (raw) navigate({ to: "/room/$code/play", params: { code }, replace: true });
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }, [code, navigate]);
 
   useEffect(() => subscribeRoom(code, setState), [code]);
@@ -110,7 +112,9 @@ function TeacherRoom() {
       (async () => {
         const { revealAnswer, showLeaderboard } = await import("@/lib/api");
         await revealAnswer(code);
-        setTimeout(() => { void showLeaderboard(code); }, 1600);
+        setTimeout(() => {
+          void showLeaderboard(code);
+        }, 1600);
       })();
     }
   }, [state, code]);
@@ -153,7 +157,9 @@ function TeacherRoom() {
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(joinUrl)}`;
   const question: QuizQuestion | undefined = quiz?.questions[state.questionIdx];
   const total = quiz?.questions.length ?? 0;
-  const answered = state.players.filter((p) => p.lastAnswer?.questionIdx === state.questionIdx).length;
+  const answered = state.players.filter(
+    (p) => p.lastAnswer?.questionIdx === state.questionIdx,
+  ).length;
   const isLast = state.questionIdx + 1 >= total;
 
   const copyCode = () => {
@@ -192,12 +198,7 @@ function TeacherRoom() {
   return (
     <PlayerShell theme={theme}>
       <div className="mx-auto max-w-6xl px-4 py-6 md:px-8">
-        <TopBar
-          code={code}
-          muted={muted}
-          onToggleMute={onToggleMute}
-          title={quiz?.config.title}
-        />
+        <TopBar code={code} muted={muted} onToggleMute={onToggleMute} title={quiz?.config.title} />
 
         {state.status === "waiting" && (
           <Lobby
@@ -306,11 +307,7 @@ function TeacherRoom() {
         )}
 
         {state.status === "finished" && (
-          <Finale
-            players={sortedFinal}
-            onRestart={() => restartRoom(code)}
-            gameId={state.gameId}
-          />
+          <Finale players={sortedFinal} onRestart={() => restartRoom(code)} gameId={state.gameId} />
         )}
       </div>
     </PlayerShell>
@@ -335,7 +332,8 @@ function TopBar({
           Онлайн-комната
         </p>
         <h1 className="truncate font-display text-lg font-bold md:text-2xl">
-          {title ?? "IslandQuiz"} <span className="text-[color:var(--pt-text-muted)]">· {code}</span>
+          {title ?? "IslandQuiz"}{" "}
+          <span className="text-[color:var(--pt-text-muted)]">· {code}</span>
         </h1>
       </div>
       <button
@@ -374,7 +372,9 @@ function Lobby({
         </div>
         <p className="text-sm text-[color:var(--pt-text-muted)]">Код комнаты</p>
         <div className="my-3 flex flex-wrap items-center gap-3">
-          <div className="font-display text-6xl font-black tracking-[0.25em] md:text-7xl">{code}</div>
+          <div className="font-display text-6xl font-black tracking-[0.25em] md:text-7xl">
+            {code}
+          </div>
           <button
             onClick={onCopy}
             className="inline-flex items-center gap-2 rounded-xl border border-[color:var(--pt-border)] bg-[color:var(--pt-surface-strong)] px-4 py-2 text-sm font-semibold"
@@ -383,7 +383,9 @@ function Lobby({
           </button>
         </div>
         <p className="text-sm text-[color:var(--pt-text-muted)]">
-          Ученики заходят на <span className="font-mono font-semibold text-[color:var(--pt-text)]">/join</span> и вводят код.
+          Ученики заходят на{" "}
+          <span className="font-mono font-semibold text-[color:var(--pt-text)]">/join</span> и
+          вводят код.
         </p>
         <button
           onClick={onStart}
@@ -443,9 +445,7 @@ function LiveLeaderboard({ state }: { state: RoomState }) {
             <div
               key={p.id}
               className={`flex items-center justify-between rounded-xl px-3 py-2 transition-all ${
-                i === 0
-                  ? "bg-[color:var(--pt-accent)]/15"
-                  : "bg-[color:var(--pt-surface-strong)]"
+                i === 0 ? "bg-[color:var(--pt-accent)]/15" : "bg-[color:var(--pt-surface-strong)]"
               }`}
             >
               <div className="flex items-center gap-2 truncate">
@@ -470,9 +470,7 @@ function LiveLeaderboard({ state }: { state: RoomState }) {
                   </span>
                 )}
               </div>
-              <span className="font-mono text-sm font-bold">
-                {p.score.toLocaleString("ru-RU")}
-              </span>
+              <span className="font-mono text-sm font-bold">{p.score.toLocaleString("ru-RU")}</span>
             </div>
           );
         })}
@@ -493,9 +491,7 @@ function AnimatedLeaderboard({ state }: { state: RoomState }) {
   // Compute "old" ordering (before this question's delta) and old scores
   const oldSorted = useMemo(() => {
     const shadow = state.players.map((p) => {
-      const gained = p.lastAnswer?.questionIdx === state.questionIdx
-        ? p.lastAnswer.delta
-        : 0;
+      const gained = p.lastAnswer?.questionIdx === state.questionIdx ? p.lastAnswer.delta : 0;
       return { ...p, oldScore: p.score - gained };
     });
     return [...shadow].sort((a, b) => b.oldScore - a.oldScore);
@@ -506,17 +502,24 @@ function AnimatedLeaderboard({ state }: { state: RoomState }) {
     setPhase("old");
     const t1 = setTimeout(() => setPhase("points"), 250);
     const t2 = setTimeout(() => setPhase("new"), 900);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
   }, [state.questionIdx]);
 
   const oldRank = useMemo(() => {
     const map: Record<string, number> = {};
-    oldSorted.forEach((p, i) => { map[p.id] = i; });
+    oldSorted.forEach((p, i) => {
+      map[p.id] = i;
+    });
     return map;
   }, [oldSorted]);
   const newRank = useMemo(() => {
     const map: Record<string, number> = {};
-    currentSorted.forEach((p, i) => { map[p.id] = i; });
+    currentSorted.forEach((p, i) => {
+      map[p.id] = i;
+    });
     return map;
   }, [currentSorted]);
 
@@ -532,10 +535,8 @@ function AnimatedLeaderboard({ state }: { state: RoomState }) {
           const oldPos = oldRank[p.id] ?? i;
           const newPos = newRank[p.id] ?? i;
           const delta = oldPos - newPos; // >0 up
-          const gained = p.lastAnswer?.questionIdx === state.questionIdx
-            ? p.lastAnswer.delta
-            : 0;
-          const scoreShown = phase === "new" ? p.score : (p.score - gained);
+          const gained = p.lastAnswer?.questionIdx === state.questionIdx ? p.lastAnswer.delta : 0;
+          const scoreShown = phase === "new" ? p.score : p.score - gained;
           return (
             <div
               key={p.id}
@@ -675,9 +676,7 @@ function Finale({
                 {p.avatar}
               </span>
               <span className="mt-2 font-semibold">{p.nickname}</span>
-              <span className="font-mono text-lg font-bold">
-                {p.score.toLocaleString("ru-RU")}
-              </span>
+              <span className="font-mono text-lg font-bold">{p.score.toLocaleString("ru-RU")}</span>
               <div
                 className={`mt-2 w-full rounded-t-2xl ${heights[col]} ${colors[col]} grid place-items-end pb-2 text-3xl font-black text-black/70`}
               >
@@ -696,15 +695,11 @@ function Finale({
               className="flex items-center justify-between rounded-xl bg-[color:var(--pt-surface-strong)] px-4 py-2 text-sm"
             >
               <span className="flex items-center gap-2">
-                <span className="font-mono text-xs text-[color:var(--pt-text-muted)]">
-                  {i + 4}
-                </span>
+                <span className="font-mono text-xs text-[color:var(--pt-text-muted)]">{i + 4}</span>
                 <span>{p.avatar}</span>
                 <span className="font-semibold">{p.nickname}</span>
               </span>
-              <span className="font-mono font-bold">
-                {p.score.toLocaleString("ru-RU")}
-              </span>
+              <span className="font-mono font-bold">{p.score.toLocaleString("ru-RU")}</span>
             </div>
           ))}
         </div>

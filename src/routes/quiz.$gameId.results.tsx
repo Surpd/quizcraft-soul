@@ -180,9 +180,7 @@ function ResultsPage() {
                         : 0;
                       const tone = pct >= 80 ? "success" : pct >= 50 ? "amber" : "danger";
                       const isOffline = r.kind === "offline";
-                      const expanded = isOffline
-                        ? expandedOffline === r.id
-                        : expandedRoom === r.id;
+                      const expanded = isOffline ? expandedOffline === r.id : expandedRoom === r.id;
                       const toggle = () => {
                         if (isOffline) {
                           setExpandedOffline((p) => (p === r.id ? null : r.id));
@@ -227,7 +225,9 @@ function ResultsPage() {
                                 {pct}%
                               </span>
                             </td>
-                            <td className="px-4 py-3 text-muted-foreground">{fmtTime(r.timeSec)}</td>
+                            <td className="px-4 py-3 text-muted-foreground">
+                              {fmtTime(r.timeSec)}
+                            </td>
                             <td className="px-4 py-3 text-muted-foreground">
                               {new Date(r.finishedAt).toLocaleString("ru-RU")}
                             </td>

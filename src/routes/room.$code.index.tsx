@@ -87,6 +87,34 @@ function TeacherRoom() {
     if (state.status === "finished") sfx.fanfare();
   }, [state]);
 
+  // Auto-advance when all players have answered
+  const autoRef = useRef<{ q: number; done: boolean }>({ q: -1, done: false });
+  useEffect(() => {
+    if (!state || state.status !== "active") {
+      if (state && state.status !== "active") {
+        autoRef.current = { q: state.questionIdx, done: false };
+      }
+      return;
+    }
+    if (autoRef.current.q !== state.questionIdx) {
+      autoRef.current = { q: state.questionIdx, done: false };
+    }
+    if (autoRef.current.done) return;
+    const total = state.players.length;
+    if (total === 0) return;
+    const answered = state.players.filter(
+      (p) => p.lastAnswer?.questionIdx === state.questionIdx,
+    ).length;
+    if (answered >= total) {
+      autoRef.current.done = true;
+      (async () => {
+        const { revealAnswer, showLeaderboard } = await import("@/lib/api");
+        await revealAnswer(code);
+        setTimeout(() => { void showLeaderboard(code); }, 1600);
+      })();
+    }
+  }, [state, code]);
+
   const theme = quiz?.config.theme ?? "amber";
 
   if (!state) {

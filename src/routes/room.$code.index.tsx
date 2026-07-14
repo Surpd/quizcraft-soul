@@ -684,12 +684,12 @@ function Finale({
           const colors = ["bg-slate-300", "bg-[color:var(--pt-accent)]", "bg-amber-700"];
           return (
             <div key={p.id} className="flex flex-col items-center">
-              <span
-                className={`text-5xl md:text-6xl ${mapIdx === 0 ? "iq-bounce" : "iq-wiggle"}`}
-                style={{ animationDelay: `${col * 0.15}s` }}
-              >
-                {p.avatar}
-              </span>
+              <Avatar
+                name={p.nickname}
+                size={64}
+                className={`${mapIdx === 0 ? "iq-bounce" : "iq-wiggle"}`}
+              />
+
               <span className="mt-2 font-semibold">{p.nickname}</span>
               <span className="font-mono text-lg font-bold">{p.score.toLocaleString("ru-RU")}</span>
               <div

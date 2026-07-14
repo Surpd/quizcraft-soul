@@ -570,7 +570,7 @@ function AnimatedLeaderboard({ state }: { state: RoomState }) {
                 {phase === "new" && delta < 0 && (
                   <ArrowDown className="h-4 w-4 text-danger iq-pop" />
                 )}
-                <span className="text-2xl">{p.avatar}</span>
+                <Avatar name={p.nickname} size={32} />
                 <span className="font-semibold">{p.nickname}</span>
               </div>
               <div className="relative flex items-center gap-3">

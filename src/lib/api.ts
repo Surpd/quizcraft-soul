@@ -156,12 +156,20 @@ export interface JeopardyRoomState {
   selectedQ: number | null;
   buzzedPlayerId: string | null;
   buzzedPlayerIds: string[]; // buzz mode: players who already got a wrong attempt
+  buzzedAnswer: string | null; // text the buzzed player submitted
+  buzzStartAt: number | null; // ms — start of personal 30s answer timer
+  buzzTimeoutMs: number; // ms — personal answer window
   questionTotalMs: number; // buzz mode: full timer for the current question
   questionElapsedMs: number; // buzz mode: accumulated elapsed time (frozen while answering)
   showAnswer: boolean;
+  awaitingBonus: boolean; // turn-wrong: teacher can distribute bonus before advancing
   finalBets: Record<string, number>;
   finalAnswers: Record<string, boolean>;
   finalGiven: Record<string, string>;
+  finalRevealOrder: string[];
+  finalRevealIdx: number; // -1 not started
+  finalRevealStep: "bet" | "answer" | "score" | "done";
+  finalRevealAt: number | null;
   lastDelta?: { playerId: string; delta: number } | null;
 }
 

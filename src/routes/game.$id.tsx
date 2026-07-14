@@ -230,24 +230,29 @@ function GameDashboard() {
             </h1>
           )}
 
-          <p className="mt-1 text-sm text-muted-foreground">
+          <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
+            <span>Владелец:</span>
             {isMine ? (
-              "Владелец: Вы"
+              <span className="inline-flex items-center gap-1.5 font-semibold text-foreground">
+                <Avatar name={user!.name} avatar={user!.avatar} size={22} /> Вы
+              </span>
             ) : game.ownerId && game.ownerName ? (
-              <>
-                Владелец:{" "}
-                <Link
-                  to="/profile/$userId"
-                  params={{ userId: game.ownerId }}
-                  className="font-semibold text-primary hover:underline"
-                >
-                  {game.ownerName}
-                </Link>
-              </>
+              <Link
+                to="/profile/$userId"
+                params={{ userId: game.ownerId }}
+                className="inline-flex items-center gap-1.5 font-semibold text-primary hover:underline"
+              >
+                <Avatar
+                  name={game.ownerName}
+                  avatar={findUserById(game.ownerId)?.avatar}
+                  size={22}
+                />
+                {game.ownerName}
+              </Link>
             ) : (
-              "Владелец: неизвестен"
+              <span>неизвестен</span>
             )}
-          </p>
+          </div>
           {game.forkedOwnerName && (
             <p className="text-sm text-muted-foreground">
               На основе игры от {game.forkedOwnerName}

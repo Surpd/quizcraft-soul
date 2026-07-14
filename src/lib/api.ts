@@ -580,11 +580,41 @@ export async function selectJeopardyQuestion(
       j.selectedQ = qIdx;
       j.buzzedPlayerId = null;
       j.buzzedPlayerIds = [];
+      j.buzzedAnswer = null;
+      j.buzzStartAt = null;
+      j.awaitingBonus = false;
       j.showAnswer = false;
       j.phase = "question";
       j.questionTotalMs = Math.max(5, timeBase + timeStep * tier) * 1000;
       j.questionElapsedMs = 0;
       s.questionStartAt = Date.now();
+    }),
+  );
+}
+
+// Buzz-mode: player submits typed answer during personal 30s window.
+export async function submitJeopardyBuzzAnswer(code: string, playerId: string, given: string) {
+  return fake(
+    mutJeopardy(code, (j) => {
+      if (j.buzzedPlayerId !== playerId) return;
+      j.buzzedAnswer = given;
+    }),
+  );
+}
+
+// Teacher: after turn-wrong bonus distribution, advance turn + close cell.
+export async function finalizeJeopardyTurnWrong(code: string) {
+  return fake(
+    mutJeopardy(code, (j, s) => {
+      if (!j.awaitingBonus) return;
+      j.awaitingBonus = false;
+      j.currentPlayerIdx = (j.currentPlayerIdx + 1) % Math.max(1, s.players.length);
+      j.showAnswer = true;
+      j.phase = "reveal";
+      if (j.selectedCat != null && j.selectedQ != null) {
+        const key = `${j.round}-${j.selectedCat}-${j.selectedQ}`;
+        if (!j.usedKeys.includes(key)) j.usedKeys.push(key);
+      }
     }),
   );
 }

@@ -35,7 +35,10 @@ function StudentPlay() {
   const [lastEarned, setLastEarned] = useState<number>(0);
   const [muted, setMutedState] = useState(true);
   const [timeLeft, setTimeLeft] = useState<number>(0);
+  const [showStreak, setShowStreak] = useState(false);
+  const [streakFading, setStreakFading] = useState(false);
   const prevStatus = useRef<RoomState["status"] | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => setMutedState(isMuted()), []);
 

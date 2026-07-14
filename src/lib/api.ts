@@ -238,7 +238,7 @@ export async function getRoomState(code: string) {
 export async function startRoom(code: string) {
   const s = readRoom(code); if (!s) return fake(null);
   s.status = "active"; s.questionIdx = 0; s.questionStartAt = Date.now();
-  s.players.forEach((p) => { p.lastAnswer = undefined; });
+  s.players.forEach((p) => { p.lastAnswer = undefined; p.answerHistory = []; });
   writeRoom(s); return fake(s);
 }
 export async function revealAnswer(code: string) {

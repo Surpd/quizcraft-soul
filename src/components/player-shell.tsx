@@ -1,6 +1,6 @@
 // Player-side atoms shared by all three plays: timer bar, back link, chrome shell.
 import { Link } from "@tanstack/react-router";
-import { ArrowLeft, Home } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import type { PlayerTheme } from "@/lib/types";
 import type { ReactNode } from "react";
 import { AnimatedBackground } from "./animated-bg";
@@ -15,14 +15,7 @@ export function PlayerShell({
   return (
     <div data-scope="player" className={`relative pt-${theme}`}>
       <AnimatedBackground theme={theme} />
-      <Link
-        to="/"
-        aria-label="На главную"
-        className="fixed top-4 left-4 z-50 grid h-10 w-10 place-items-center rounded-full border border-[color:var(--pt-border)] bg-[color:var(--pt-surface-strong)] text-[color:var(--pt-text)] backdrop-blur-md transition-colors hover:bg-[color:var(--pt-accent)] hover:text-black"
-      >
-        <Home className="h-4 w-4" />
-      </Link>
-      <div className="relative z-10">{children}</div>
+      <div className="relative z-10 pt-6 sm:pt-8">{children}</div>
     </div>
   );
 }

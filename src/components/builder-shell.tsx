@@ -81,7 +81,7 @@ export function BuilderShell({
 
           <div className={sidebar ? "flex flex-col gap-6 lg:flex-row" : ""}>
             {sidebar && (
-              <aside className="lg:sticky lg:top-24 lg:w-52 lg:flex-shrink-0 lg:self-start">
+              <aside className="hidden lg:sticky lg:top-24 lg:block lg:w-52 lg:flex-shrink-0 lg:self-start">
                 <div className="surface-card p-3">{sidebar}</div>
               </aside>
             )}

@@ -11,6 +11,7 @@ import {
   type DragEndEvent,
 } from "@dnd-kit/core";
 import { LaTeX } from "@/lib/latex";
+import { fitOptionSize, fitQuestionSize } from "@/lib/fit-text";
 import type { QuizQuestion } from "@/lib/types";
 
 function shuffle<T>(arr: T[]): T[] {
@@ -71,7 +72,7 @@ export function QuizQuestionCard({
           className="mx-auto mb-4 max-h-56 rounded-xl border border-[color:var(--pt-border)] object-contain"
         />
       )}
-      <div className="mb-6 text-center text-xl md:text-2xl font-semibold leading-snug">
+      <div className={`mb-6 text-center font-semibold leading-snug ${fitQuestionSize(question.q)}`}>
         <LaTeX>{question.q}</LaTeX>
       </div>
 
@@ -104,7 +105,7 @@ export function QuizQuestionCard({
                 <span className="grid h-9 w-9 flex-shrink-0 place-items-center rounded-full bg-[color:var(--pt-accent)] text-sm font-bold text-black">
                   {String.fromCharCode(65 + i)}
                 </span>
-                <span className="min-w-0"><LaTeX>{opt}</LaTeX></span>
+                <span className={`min-w-0 break-words ${fitOptionSize(opt)}`}><LaTeX>{opt}</LaTeX></span>
               </button>
             );
           })}

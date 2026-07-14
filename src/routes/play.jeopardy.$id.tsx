@@ -5,6 +5,7 @@ import { PlayerShell, TimerBar } from "@/components/player-shell";
 import { LaTeX } from "@/lib/latex";
 import { loadGame } from "@/lib/storage";
 import { submitJeopardyResult } from "@/lib/api";
+import { fitQuestionSize } from "@/lib/fit-text";
 import type { JeopardyData } from "@/lib/types";
 
 export const Route = createFileRoute("/play/jeopardy/$id")({
@@ -325,7 +326,7 @@ function PlayJeopardy() {
                 className="mx-auto mt-4 max-h-60 rounded-xl object-contain"
               />
             )}
-            <div className="mt-6 rounded-3xl border border-[color:var(--pt-border)] bg-[color:var(--pt-surface)] p-8 text-center text-2xl font-semibold">
+            <div className={`mt-6 rounded-3xl border border-[color:var(--pt-border)] bg-[color:var(--pt-surface)] p-8 text-center font-semibold ${fitQuestionSize(data.final.q)}`}>
               <LaTeX>{data.final.q}</LaTeX>
             </div>
             {showAnswer && (
@@ -409,7 +410,7 @@ function PlayJeopardy() {
                   className="mx-auto mt-4 max-h-56 rounded-xl object-contain"
                 />
               )}
-              <div className="mt-6 text-center text-2xl font-semibold">
+              <div className={`mt-6 text-center font-semibold ${fitQuestionSize(q.q)}`}>
                 <LaTeX>{q.q}</LaTeX>
               </div>
               {showAnswer && (

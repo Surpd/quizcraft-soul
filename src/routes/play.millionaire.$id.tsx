@@ -4,6 +4,7 @@ import { Sparkles, RefreshCw } from "lucide-react";
 import { PlayerShell, TimerBar } from "@/components/player-shell";
 import { LaTeX } from "@/lib/latex";
 import { loadGame } from "@/lib/storage";
+import { fitOptionSize, fitQuestionSize } from "@/lib/fit-text";
 import type { MilestoneMode, MillionaireData, MillionaireQuestion } from "@/lib/types";
 
 export const Route = createFileRoute("/play/millionaire/$id")({
@@ -171,7 +172,7 @@ function PlayMillionaire() {
                   className="mx-auto mt-6 max-h-56 rounded-xl object-contain"
                 />
               )}
-              <div className="mt-6 rounded-3xl border border-[color:var(--pt-border)] bg-[color:var(--pt-surface)] p-8 text-center text-2xl font-semibold backdrop-blur-md">
+              <div className={`mt-6 rounded-3xl border border-[color:var(--pt-border)] bg-[color:var(--pt-surface)] p-8 text-center font-semibold backdrop-blur-md ${fitQuestionSize(current.q)}`}>
                 <LaTeX>{current.q}</LaTeX>
               </div>
 
@@ -201,7 +202,7 @@ function PlayMillionaire() {
                       <span className="grid h-10 w-10 flex-shrink-0 place-items-center rounded-full bg-[color:var(--pt-accent)] font-bold text-black">
                         {String.fromCharCode(65 + oi)}
                       </span>
-                      <span className="text-lg"><LaTeX>{opt.text}</LaTeX></span>
+                      <span className={`min-w-0 break-words ${fitOptionSize(opt.text)}`}><LaTeX>{opt.text}</LaTeX></span>
                     </button>
                   );
                 })}

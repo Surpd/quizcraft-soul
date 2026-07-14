@@ -381,17 +381,6 @@ function GameDashboard() {
           </div>
         )}
 
-        {/* Results link */}
-        {!isPrivateOther && (
-          <div className="surface-card p-6">
-            {game.kind === "millionaire" ? (
-              <p className="text-sm text-muted-foreground">
-                Статистика прохождений доступна для форматов «Квиз» и «Своя игра».
-              </p>
-            ) : (
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <h2 className="font-display text-base font-bold">Результаты прохождений</h2>
         {/* Results (owner) vs Content (foreign) */}
         {!isPrivateOther && (
           isMine ? (

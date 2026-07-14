@@ -9,43 +9,26 @@ import type {
   QuizQuestion,
   StoredGame,
 } from "@/lib/types";
+import { formatQuizAnswer } from "@/lib/format-answer";
 
 const QTYPE_LABEL: Record<string, string> = {
-  choice: "Выбор",
-  bool: "Да/нет",
+  choice: "ABCD",
+  bool: "Да/Нет",
   text: "Текст",
-  matching: "Соответствия",
+  matching: "Пары",
+  close: "Пропуски",
+  ordering: "Порядок",
 };
-
-function formatQuizAnswer(q: QuizQuestion): string {
-  if (q.type === "choice") {
-    const idx = Number(q.answer);
-    if (Number.isNaN(idx)) return q.answer || "—";
-    return q.options[idx] || q.answer || "—";
-  }
-  if (q.type === "bool") {
-    return q.answer === "true" ? "Да" : q.answer === "false" ? "Нет" : q.answer || "—";
-  }
-  if (q.type === "matching") {
-    try {
-      const pairs = JSON.parse(q.answer || "[]") as { left: string; right: string }[];
-      if (!Array.isArray(pairs)) return q.answer || "—";
-      return pairs
-        .filter((p) => p && (p.left || p.right))
-        .map((p) => `${p.left} → ${p.right}`)
-        .join(", ") || "—";
-    } catch {
-      return q.answer || "—";
-    }
-  }
-  return q.answer || "—";
-}
 
 export function gameSummary(g: StoredGame): string {
   if (g.kind === "quiz") {
     const d = g.data as QuizData;
     const n = d?.questions?.length ?? 0;
-    return `${n} ${plural(n, "вопрос", "вопроса", "вопросов")}`;
+    const types = new Set((d?.questions ?? []).map((q) => q.type));
+    const labels = Array.from(types)
+      .map((t) => QTYPE_LABEL[t] ?? t)
+      .join(", ");
+    return `${n} ${plural(n, "вопрос", "вопроса", "вопросов")}${labels ? ` (${labels})` : ""}`;
   }
   if (g.kind === "jeopardy") {
     const d = g.data as JeopardyData;

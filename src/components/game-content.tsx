@@ -6,6 +6,7 @@ import type {
   JeopardyData,
   MillionaireData,
   QuizData,
+  QuizQuestion,
   StoredGame,
 } from "@/lib/types";
 
@@ -15,6 +16,30 @@ const QTYPE_LABEL: Record<string, string> = {
   text: "Текст",
   matching: "Соответствия",
 };
+
+function formatQuizAnswer(q: QuizQuestion): string {
+  if (q.type === "choice") {
+    const idx = Number(q.answer);
+    if (Number.isNaN(idx)) return q.answer || "—";
+    return q.options[idx] || q.answer || "—";
+  }
+  if (q.type === "bool") {
+    return q.answer === "true" ? "Да" : q.answer === "false" ? "Нет" : q.answer || "—";
+  }
+  if (q.type === "matching") {
+    try {
+      const pairs = JSON.parse(q.answer || "[]") as { left: string; right: string }[];
+      if (!Array.isArray(pairs)) return q.answer || "—";
+      return pairs
+        .filter((p) => p && (p.left || p.right))
+        .map((p) => `${p.left} → ${p.right}`)
+        .join(", ") || "—";
+    } catch {
+      return q.answer || "—";
+    }
+  }
+  return q.answer || "—";
+}
 
 export function gameSummary(g: StoredGame): string {
   if (g.kind === "quiz") {

@@ -821,12 +821,52 @@ export async function revealJeopardyFinal(code: string) {
     mutJeopardy(code, (j, s) => {
       j.showAnswer = true;
       j.phase = "final-reveal";
-      // Apply bets
-      s.players.forEach((p) => {
-        const bet = j.finalBets[p.id] ?? 0;
-        const ok = j.finalAnswers[p.id] ?? false;
+      // Setup animation order (ascending score → suspense: reveal weakest first)
+      j.finalRevealOrder = [...s.players]
+        .sort((a, b) => a.score - b.score)
+        .map((p) => p.id);
+      j.finalRevealIdx = -1;
+      j.finalRevealStep = "done";
+      j.finalRevealAt = null;
+    }),
+  );
+}
+
+// Advance the auto-anim: 4 steps per player (bet → answer → score → next).
+export async function advanceJeopardyFinalReveal(code: string) {
+  return fake(
+    mutJeopardy(code, (j, s) => {
+      if (j.phase !== "final-reveal") return;
+      if (j.finalRevealIdx < 0) {
+        j.finalRevealIdx = 0;
+        j.finalRevealStep = "bet";
+        j.finalRevealAt = Date.now();
+        return;
+      }
+      const order: ("bet" | "answer" | "score")[] = ["bet", "answer", "score"];
+      const cur = order.indexOf(j.finalRevealStep as "bet" | "answer" | "score");
+      if (cur >= 0 && cur < 2) {
+        j.finalRevealStep = order[cur + 1];
+        j.finalRevealAt = Date.now();
+        return;
+      }
+      // apply score for current player, move to next
+      const pid = j.finalRevealOrder[j.finalRevealIdx];
+      const p = s.players.find((x) => x.id === pid);
+      if (p) {
+        const bet = j.finalBets[pid] ?? 0;
+        const ok = j.finalAnswers[pid] ?? false;
         p.score = p.score + (ok ? bet : -bet);
-      });
+        j.lastDelta = { playerId: pid, delta: ok ? bet : -bet };
+      }
+      if (j.finalRevealIdx + 1 >= j.finalRevealOrder.length) {
+        j.finalRevealStep = "done";
+        j.finalRevealAt = Date.now();
+      } else {
+        j.finalRevealIdx += 1;
+        j.finalRevealStep = "bet";
+        j.finalRevealAt = Date.now();
+      }
     }),
   );
 }

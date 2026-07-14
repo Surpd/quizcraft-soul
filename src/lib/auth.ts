@@ -19,6 +19,70 @@ type StoredUser = User & {
 const USERS_KEY = "islandquiz.v1.auth.users";
 export const SESSION_KEY = "islandquiz.v1.auth.session";
 
+declare global {
+  interface Window {
+    __islandQuizAuthStoragePatched?: boolean;
+  }
+}
+
+function getStoredSessionUser(): { id: string; name: string } | null {
+  if (typeof window === "undefined") return null;
+  const id = localStorage.getItem(SESSION_KEY);
+  if (!id) return null;
+  try {
+    const users = JSON.parse(localStorage.getItem(USERS_KEY) || "[]") as StoredUser[];
+    const user = users.find((u) => u.id === id);
+    return user ? { id: user.id, name: user.name || user.email || "Пользователь" } : null;
+  } catch {
+    return null;
+  }
+}
+
+function isGameStorageKey(key: string): boolean {
+  return (
+    key.startsWith("islandquiz.v1.quiz.") ||
+    key.startsWith("islandquiz.v1.jeopardy.") ||
+    key.startsWith("islandquiz.v1.millionaire.")
+  );
+}
+
+function withCurrentOwner(value: string): string {
+  const me = getStoredSessionUser();
+  if (!me) return value;
+  try {
+    const record = JSON.parse(value) as { ownerId?: string; ownerName?: string; visibility?: string };
+    if (record && typeof record === "object" && (!record.ownerId || record.ownerId === me.id)) {
+      record.ownerId = me.id;
+      record.ownerName = me.name;
+      record.visibility = record.visibility ?? "private";
+      return JSON.stringify(record);
+    }
+  } catch {
+    /* leave non-JSON values untouched */
+  }
+  return value;
+}
+
+function patchLocalStorageForAuthKeys() {
+  if (typeof window === "undefined" || window.__islandQuizAuthStoragePatched) return;
+  const nativeSetItem = window.localStorage.setItem.bind(window.localStorage);
+  const nativeRemoveItem = window.localStorage.removeItem.bind(window.localStorage);
+
+  window.localStorage.setItem = (key: string, value: string) => {
+    nativeSetItem(key, isGameStorageKey(key) ? withCurrentOwner(value) : value);
+  };
+  window.localStorage.removeItem = (key: string) => {
+    // storage.cleanupInvalidGames() scans all islandquiz.v1.* keys and would
+    // otherwise delete auth records because they are not game-shaped objects.
+    if (key === USERS_KEY || key === SESSION_KEY) return;
+    nativeRemoveItem(key);
+  };
+
+  window.__islandQuizAuthStoragePatched = true;
+}
+
+patchLocalStorageForAuthKeys();
+
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }

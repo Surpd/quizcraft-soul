@@ -6,23 +6,6 @@ import type { GameKind, StoredGame } from "./types";
 const NS = "islandquiz.v1";
 const key = (kind: GameKind, id: string) => `${NS}.${kind}.${id}`;
 
-function getLocalAuthUser(): { id: string; name: string } | null {
-  if (typeof window === "undefined") return null;
-  const id = localStorage.getItem(`${NS}.auth.session`);
-  if (!id) return null;
-  try {
-    const users = JSON.parse(localStorage.getItem(`${NS}.auth.users`) || "[]") as Array<{
-      id?: string;
-      name?: string;
-      email?: string;
-    }>;
-    const user = users.find((u) => u.id === id);
-    return user?.id ? { id: user.id, name: user.name || user.email || "Пользователь" } : null;
-  } catch {
-    return null;
-  }
-}
-
 export function newId(): string {
   // 8-char base36, human-friendly for share URLs
   return (
@@ -37,17 +20,12 @@ export function saveGame<T>(
   meta?: Partial<Omit<StoredGame, "id" | "kind" | "data" | "updatedAt">>,
 ): StoredGame<T> {
   const existing = loadGame<T>(kind, id);
-  const me = getLocalAuthUser();
-  const ownerMeta = me && (!existing || !existing.ownerId || existing.ownerId === me.id)
-    ? { ownerId: me.id, ownerName: me.name, visibility: existing?.visibility ?? meta?.visibility ?? "private" }
-    : {};
   const record: StoredGame<T> = {
     ...(existing ?? {}),
     id,
     kind,
     data,
     updatedAt: Date.now(),
-    ...ownerMeta,
     ...(meta ?? {}),
   };
   if (typeof window === "undefined") return record;
@@ -112,7 +90,6 @@ export function cleanupInvalidGames(): number {
     if (k.startsWith(`${NS}.results.`)) continue;
     if (k.startsWith(`${NS}.jresults.`)) continue;
     if (k.startsWith(`${NS}.online-results.`)) continue;
-    if (k.startsWith(`${NS}.auth.`)) continue;
     try {
       const rec = JSON.parse(localStorage.getItem(k)!);
       if (!isValidGame(rec)) toRemove.push(k);

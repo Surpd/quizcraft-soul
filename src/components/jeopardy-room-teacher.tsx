@@ -679,9 +679,11 @@ function JBoard({
 function JLeaderboard({
   state,
   highlightId,
+  onAdjust,
 }: {
   state: RoomState;
   highlightId: string | null;
+  onAdjust?: (id: string, d: number) => void;
 }) {
   const sorted = [...state.players].sort((a, b) => b.score - a.score);
   const lastId = state.jeopardy?.lastDelta?.playerId;
@@ -695,7 +697,7 @@ function JLeaderboard({
         {sorted.map((p, i) => (
           <div
             key={p.id}
-            className={`relative flex items-center justify-between rounded-xl px-3 py-2 transition-all ${
+            className={`relative rounded-xl px-3 py-2 transition-all ${
               p.id === highlightId
                 ? "bg-[color:var(--pt-accent)]/25 ring-2 ring-[color:var(--pt-accent)]"
                 : i === 0
@@ -703,16 +705,19 @@ function JLeaderboard({
                   : "bg-[color:var(--pt-surface-strong)]"
             }`}
           >
-            <div className="flex items-center gap-2 truncate">
-              <span className="w-5 font-mono text-xs text-[color:var(--pt-text-muted)]">
-                {i + 1}
-              </span>
-              <Avatar name={p.nickname} size={22} />
-              <span className="truncate font-semibold">{p.nickname}</span>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex min-w-0 items-center gap-2 truncate">
+                <span className="w-5 font-mono text-xs text-[color:var(--pt-text-muted)]">
+                  {i + 1}
+                </span>
+                <Avatar name={p.nickname} size={22} />
+                <span className="truncate font-semibold">{p.nickname}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <EditableScore player={p} onAdjust={onAdjust} />
+                {onAdjust && <InlineAdjustButtons player={p} onAdjust={onAdjust} />}
+              </div>
             </div>
-            <span className="font-mono text-sm font-bold">
-              {p.score.toLocaleString("ru-RU")}
-            </span>
             {p.id === lastId && lastDelta !== 0 && (
               <span
                 className={`iq-points-fly absolute -top-2 right-2 rounded-full px-2 py-0.5 text-xs font-bold ${
@@ -730,23 +735,75 @@ function JLeaderboard({
   );
 }
 
-function JManagePanel({
-  state,
+function EditableScore({
+  player,
   onAdjust,
 }: {
-  state: RoomState;
+  player: RoomPlayer;
+  onAdjust?: (id: string, d: number) => void;
+}) {
+  const [edit, setEdit] = useState(false);
+  const [val, setVal] = useState(String(player.score));
+  useEffect(() => {
+    if (!edit) setVal(String(player.score));
+  }, [player.score, edit]);
+  const apply = () => {
+    const n = Math.floor(Number(val));
+    if (!Number.isNaN(n) && n !== player.score && onAdjust) {
+      onAdjust(player.id, n - player.score);
+    }
+    setEdit(false);
+  };
+  if (!onAdjust) return <span className="font-mono text-sm font-bold">{player.score.toLocaleString("ru-RU")}</span>;
+  return edit ? (
+    <input
+      type="number"
+      value={val}
+      autoFocus
+      onChange={(e) => setVal(e.target.value)}
+      onBlur={apply}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") apply();
+        if (e.key === "Escape") setEdit(false);
+      }}
+      className="w-20 rounded bg-[color:var(--pt-surface)] px-2 py-0.5 text-right font-mono text-sm font-bold"
+    />
+  ) : (
+    <button
+      onClick={() => setEdit(true)}
+      className="rounded px-1 font-mono text-sm font-bold hover:bg-[color:var(--pt-surface)]"
+      title="Изменить очки"
+    >
+      {player.score.toLocaleString("ru-RU")}
+    </button>
+  );
+}
+
+function InlineAdjustButtons({
+  player,
+  onAdjust,
+}: {
+  player: RoomPlayer;
   onAdjust: (id: string, d: number) => void;
 }) {
   return (
-    <div className="rounded-3xl border border-[color:var(--pt-border)] bg-[color:var(--pt-surface)] p-4 backdrop-blur-md">
-      <p className="mb-2 text-xs font-semibold uppercase text-[color:var(--pt-text-muted)]">
-        Корректировка очков
-      </p>
-      <div className="space-y-2">
-        {state.players.map((p) => (
-          <ScoreAdjustRow key={p.id} player={p} onAdjust={onAdjust} />
-        ))}
-      </div>
+    <div className="flex items-center gap-1">
+      <button
+        onClick={() => onAdjust(player.id, -100)}
+        className="grid h-6 w-6 place-items-center rounded bg-[color:var(--pt-surface)] hover:bg-danger/20 hover:text-danger"
+        aria-label="−100"
+        title="−100"
+      >
+        <Minus className="h-3 w-3" />
+      </button>
+      <button
+        onClick={() => onAdjust(player.id, 100)}
+        className="grid h-6 w-6 place-items-center rounded bg-[color:var(--pt-surface)] hover:bg-success/20 hover:text-success"
+        aria-label="+100"
+        title="+100"
+      >
+        <Plus className="h-3 w-3" />
+      </button>
     </div>
   );
 }

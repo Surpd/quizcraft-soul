@@ -11,8 +11,10 @@ import {
   Radio,
   ArrowRight,
   Flame,
-
+  Sparkles,
 } from "lucide-react";
+import { Avatar } from "@/components/avatar";
+import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -21,7 +23,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Создавайте квизы, свою игру и миллионера. Пять тем, экспорт в Excel, LaTeX-формулы, drag-and-drop и всё локально в вашем браузере.",
+          "Создавайте квизы, свою игру и миллионера. AI-помощник, онлайн-комнаты, библиотека, шаринг, пять тем, экспорт в Excel и LaTeX-формулы.",
       },
     ],
   }),
@@ -68,6 +70,8 @@ const features = [
 ];
 
 function Home() {
+  const { user } = useAuth();
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
@@ -93,7 +97,23 @@ function Home() {
               Присоединиться
             </Link>
           </nav>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            {user ? (
+              <Link
+                to="/profile"
+                className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1.5 text-sm font-semibold hover:bg-surface-muted"
+              >
+                <Avatar name={user.name} size={28} />
+                <span className="max-w-[12ch] truncate">{user.name}</span>
+              </Link>
+            ) : (
+              <Link
+                to="/login"
+                className="rounded-full px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-surface-muted"
+              >
+                Войти
+              </Link>
+            )}
             <Link to="/builder/quiz" className="btn-primary">
               Создать игру
             </Link>
@@ -120,19 +140,19 @@ function Home() {
                 которые <span className="text-primary">хочется</span> проходить
               </h1>
               <p className="mt-6 max-w-lg text-base leading-relaxed text-muted-foreground md:text-lg">
-                Личный инструмент для квизов, «Своей игры» и «Миллионера». Тёплые темы, LaTeX-формулы, экспорт в Excel и
-                всё локально — без аккаунтов и подписок.
+                Личный инструмент для квизов, «Своей игры» и «Миллионера». AI-помощник генерирует вопросы, онлайн-комнаты
+                объединяют участников, а библиотека и шаринг помогают делиться играми с другими пользователями.
               </p>
               <div className="mt-10 flex flex-wrap gap-3">
                 <Link to="/builder/quiz" className="btn-accent">
                   Создать игру
                 </Link>
-                <a
-                  href="#formats"
+                <Link
+                  to="/library"
                   className="rounded-2xl border-2 border-border-strong bg-surface px-8 py-4 text-lg font-bold text-foreground transition-colors hover:bg-foreground hover:text-white"
                 >
-                  Смотреть форматы
-                </a>
+                  Библиотека
+                </Link>
               </div>
             </div>
 
@@ -224,7 +244,8 @@ function Home() {
                 </div>
                 <h2 className="font-display text-3xl font-black md:text-4xl">Ваша библиотека квизов</h2>
                 <p className="mt-4 text-muted-foreground">
-                  Все созданные игры хранятся в одном месте. Открывайте, редактируйте, запускайте — без ограничений.
+                  Все созданные игры хранятся в одном месте. Делайте игры публичными, добавляйте чужие к себе, ищите по
+                  тегам и категориям, редактируйте и запускайте — без ограничений.
                 </p>
                 <Link to="/library" className="btn-accent mt-6 inline-flex">
                   Перейти в библиотеку <ArrowRight className="h-4 w-4" />
@@ -302,11 +323,59 @@ function Home() {
                 </div>
                 <h2 className="font-display text-3xl font-black md:text-4xl">Играйте вместе в реальном времени</h2>
                 <p className="mt-4 text-muted-foreground">
-                  Создайте комнату, поделитесь кодом — и ученики подключатся со своих устройств. Стрики, рейтинг, подиум
-                  — всё как в Kahoot!
+                  Создайте комнату, поделитесь кодом — и участники подключатся со своих устройств. Работает для Квиза и
+                  «Своей игры»: стрики, рейтинг, подиум — всё как в Kahoot!
                 </p>
                 <Link to="/join" className="btn-accent mt-6 inline-flex">
                   Попробовать онлайн-режим <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* AI helper block */}
+        <section className="bg-surface py-20 sm:py-24">
+          <div className="mx-auto max-w-7xl px-6">
+            <div className="grid items-center gap-10 md:grid-cols-2">
+              <div className="order-2 md:order-1">
+                <div className="surface-card rotate-1 p-6 shadow-lift">
+                  <div className="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-primary">
+                    <Sparkles className="h-4 w-4" /> AI-помощник
+                  </div>
+                  <div className="space-y-3">
+                    <div className="rounded-lg bg-surface-muted p-3">
+                      <p className="text-xs text-muted-foreground">Тема</p>
+                      <p className="font-display font-bold">Космос</p>
+                    </div>
+                    <div className="rounded-lg border border-primary/30 bg-primary-soft p-3">
+                      <p className="text-xs font-semibold text-primary">Сгенерированный вопрос</p>
+                      <p className="mt-1 text-sm font-medium">
+                        Какая планета Солнечной системы вращается вокруг своей оси задом наперёд?
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="rounded-lg border border-border-strong p-2 text-xs">Марс</div>
+                      <div className="rounded-lg border-2 border-primary bg-primary-soft p-2 text-xs font-semibold">
+                        Венера
+                      </div>
+                      <div className="rounded-lg border border-border-strong p-2 text-xs">Юпитер</div>
+                      <div className="rounded-lg border border-border-strong p-2 text-xs">Сатурн</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="order-1 md:order-2">
+                <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-accent-soft px-3 py-1 text-xs font-bold uppercase tracking-wider text-accent">
+                  <Sparkles className="h-3.5 w-3.5" /> AI-помощник
+                </div>
+                <h2 className="font-display text-3xl font-black md:text-4xl">ИИ помогает создавать вопросы</h2>
+                <p className="mt-4 text-muted-foreground">
+                  Введите тему — получите готовые вопросы, улучшайте формулировки, генерируйте целые квизы и категории
+                  для «Своей игры". Экономьте время на подготовку.
+                </p>
+                <Link to="/builder/quiz" className="btn-accent mt-6 inline-flex">
+                  Создать с AI <ArrowRight className="h-4 w-4" />
                 </Link>
               </div>
             </div>
@@ -346,9 +415,17 @@ function Home() {
               <div className="pointer-events-none absolute bottom-0 left-0 h-64 w-64 translate-y-16 -translate-x-16 rounded-full bg-accent/30 blur-3xl" />
               <h2 className="relative font-display text-3xl font-black md:text-4xl">Готовы попробовать?</h2>
               <p className="relative mt-3 text-white/70">Создайте свой первый квиз за пару минут.</p>
-              <Link to="/builder/quiz" className="btn-accent relative mt-8 inline-flex">
-                Начать сейчас
-              </Link>
+              <div className="relative mt-8 flex flex-wrap items-center justify-center gap-3">
+                <Link to="/builder/quiz" className="btn-accent inline-flex">
+                  Создать игру
+                </Link>
+                <Link
+                  to="/register"
+                  className="inline-flex rounded-2xl border-2 border-white/30 px-8 py-4 text-lg font-bold text-white transition-colors hover:bg-white/10"
+                >
+                  Зарегистрироваться
+                </Link>
+              </div>
             </div>
           </div>
         </section>

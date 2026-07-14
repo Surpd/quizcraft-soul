@@ -268,10 +268,10 @@ function Home() {
                   </div>
                   <div className="space-y-2">
                     {[
-                      { n: "🦩 Ева", s: 2450, hot: 4 },
-                      { n: "🐢 Марк", s: 2180, hot: 2 },
-                      { n: "🐬 Лиза", s: 1990 },
-                      { n: "🦜 Тим", s: 1720 },
+                      { n: "Ева", s: 2450, hot: 4 },
+                      { n: "Марк", s: 2180, hot: 2 },
+                      { n: "Лиза", s: 1990 },
+                      { n: "Тим", s: 1720 },
                     ].map((p, i) => (
                       <div
                         key={p.n}
@@ -281,14 +281,16 @@ function Home() {
                           <span className="w-4 font-mono text-xs text-muted-foreground">{i + 1}</span>
                           <span>{p.n}</span>
                           {p.hot && (
-                            <span className="rounded-full bg-amber/20 px-1.5 text-[10px] font-bold text-amber">
-                              🔥{p.hot}
+                            <span className="inline-flex items-center gap-0.5 rounded-full bg-amber/20 px-1.5 text-[10px] font-bold text-amber">
+                              <Flame className="h-3 w-3" />
+                              {p.hot}
                             </span>
                           )}
                         </div>
                         <span className="font-mono text-sm font-bold">{p.s.toLocaleString("ru-RU")}</span>
                       </div>
                     ))}
+
                   </div>
                 </div>
               </div>

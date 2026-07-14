@@ -24,7 +24,12 @@ export function exportQuizExcel(data: QuizData) {
     type: q.type,
     question: q.q,
     options: q.options.join(" | "),
-    answer: q.type === "matching" ? formatMatchingForCell(q.answer) : q.answer,
+    answer:
+      q.type === "matching"
+        ? formatMatchingForCell(q.answer)
+        : q.type === "close" || q.type === "ordering"
+          ? formatListForCell(q.answer)
+          : q.answer,
     points: q.points,
     time: q.time,
   }));
@@ -37,6 +42,16 @@ function formatMatchingForCell(raw: string): string {
   try {
     const pairs = JSON.parse(raw || "[]") as { left: string; right: string }[];
     return pairs.map((p) => `${p.left} → ${p.right}`).join("; ");
+  } catch {
+    return raw;
+  }
+}
+
+function formatListForCell(raw: string): string {
+  try {
+    const arr = JSON.parse(raw || "[]") as string[];
+    if (!Array.isArray(arr)) return raw;
+    return arr.join(" | ");
   } catch {
     return raw;
   }

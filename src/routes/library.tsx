@@ -401,7 +401,7 @@ function GameCard({
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
-            window.location.href = `/profile/${g.ownerId}`;
+            nav({ to: "/profile/$userId", params: { userId: g.ownerId } });
           }}
           className="inline-flex items-center gap-1.5 self-start text-xs text-muted-foreground hover:text-primary hover:underline"
         >

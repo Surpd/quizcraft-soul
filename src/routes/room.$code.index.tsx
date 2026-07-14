@@ -485,59 +485,87 @@ function LiveLeaderboard({ state }: { state: RoomState }) {
 }
 
 function AnimatedLeaderboard({ state }: { state: RoomState }) {
-  const sorted = useMemo(
+  const currentSorted = useMemo(
     () => [...state.players].sort((a, b) => b.score - a.score),
     [state.players],
   );
-  const prevRanksRef = useRef<Record<string, number>>({});
-  const [ranks] = useState<Record<string, number>>({});
-  // capture previous ranks BEFORE update
-  const prev = prevRanksRef.current;
+
+  // Compute "old" ordering (before this question's delta) and old scores
+  const oldSorted = useMemo(() => {
+    const shadow = state.players.map((p) => {
+      const gained = p.lastAnswer?.questionIdx === state.questionIdx
+        ? p.lastAnswer.delta
+        : 0;
+      return { ...p, oldScore: p.score - gained };
+    });
+    return [...shadow].sort((a, b) => b.oldScore - a.oldScore);
+  }, [state.players, state.questionIdx]);
+
+  const [phase, setPhase] = useState<"old" | "points" | "new">("old");
   useEffect(() => {
-    const next: Record<string, number> = {};
-    sorted.forEach((p, i) => (next[p.id] = i));
-    prevRanksRef.current = next;
-    // hack: keep hook stable
-    void ranks;
-  }, [sorted, ranks]);
+    setPhase("old");
+    const t1 = setTimeout(() => setPhase("points"), 250);
+    const t2 = setTimeout(() => setPhase("new"), 900);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [state.questionIdx]);
+
+  const oldRank = useMemo(() => {
+    const map: Record<string, number> = {};
+    oldSorted.forEach((p, i) => { map[p.id] = i; });
+    return map;
+  }, [oldSorted]);
+  const newRank = useMemo(() => {
+    const map: Record<string, number> = {};
+    currentSorted.forEach((p, i) => { map[p.id] = i; });
+    return map;
+  }, [currentSorted]);
+
+  const display = phase === "new" ? currentSorted : oldSorted;
 
   return (
     <div className="rounded-3xl border border-[color:var(--pt-border)] bg-[color:var(--pt-surface)] p-6 backdrop-blur-md">
       <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-[color:var(--pt-text-muted)]">
         <Trophy className="h-4 w-4" /> Таблица результатов
       </div>
-      <div className="space-y-3">
-        {sorted.map((p, i) => {
-          const prevRank = prev[p.id];
-          const delta = prevRank === undefined ? 0 : prevRank - i; // >0 up
-          const gained = p.lastAnswer?.questionIdx === state.questionIdx ? p.lastAnswer.delta : 0;
+      <div className="relative">
+        {display.map((p, i) => {
+          const oldPos = oldRank[p.id] ?? i;
+          const newPos = newRank[p.id] ?? i;
+          const delta = oldPos - newPos; // >0 up
+          const gained = p.lastAnswer?.questionIdx === state.questionIdx
+            ? p.lastAnswer.delta
+            : 0;
+          const scoreShown = phase === "new" ? p.score : (p.score - gained);
           return (
             <div
               key={p.id}
-              className={`flex items-center justify-between rounded-2xl px-4 py-3 text-lg transition-all duration-500 ${
-                i === 0
+              className={`mb-3 flex items-center justify-between rounded-2xl px-4 py-3 text-lg transition-all duration-500 ease-out ${
+                (phase === "new" ? newPos : oldPos) === 0
                   ? "bg-[color:var(--pt-accent)]/20"
                   : "bg-[color:var(--pt-surface-strong)]"
               }`}
-              style={{ transform: "translateZ(0)" }}
             >
               <div className="flex items-center gap-3">
                 <span className="grid h-8 w-8 place-items-center rounded-full bg-[color:var(--pt-surface)] font-display text-sm font-black">
-                  {i + 1}
+                  {(phase === "new" ? newPos : oldPos) + 1}
                 </span>
-                {delta > 0 && <ArrowUp className="h-4 w-4 text-success" />}
-                {delta < 0 && <ArrowDown className="h-4 w-4 text-danger" />}
+                {phase === "new" && delta > 0 && (
+                  <ArrowUp className="h-4 w-4 text-success iq-pop" />
+                )}
+                {phase === "new" && delta < 0 && (
+                  <ArrowDown className="h-4 w-4 text-danger iq-pop" />
+                )}
                 <span className="text-2xl">{p.avatar}</span>
                 <span className="font-semibold">{p.nickname}</span>
               </div>
               <div className="relative flex items-center gap-3">
-                {gained > 0 && (
+                {phase === "points" && gained > 0 && (
                   <span className="iq-points-fly absolute -top-2 right-16 rounded-full bg-success/20 px-2 py-0.5 text-xs font-bold text-success">
                     +{gained}
                   </span>
                 )}
-                <span className="font-mono text-xl font-bold">
-                  {p.score.toLocaleString("ru-RU")}
+                <span className="font-mono text-xl font-bold tabular-nums">
+                  {scoreShown.toLocaleString("ru-RU")}
                 </span>
               </div>
             </div>

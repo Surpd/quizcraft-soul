@@ -1199,6 +1199,20 @@ export async function generateQuestion(input: {
         ],
       };
     }
+    if (effectiveFormat === "quiz-close") {
+      return {
+        ...base,
+        question: `[MOCK] [${difficulty}] Столица Франции — ___, Германии — ___`,
+        correctAnswer: "Париж|Берлин",
+      };
+    }
+    if (effectiveFormat === "quiz-ordering") {
+      return {
+        ...base,
+        question: `[MOCK] [${difficulty}] Расставьте по возрастанию:`,
+        options: ["[MOCK] Один", "[MOCK] Два", "[MOCK] Три", "[MOCK] Четыре"],
+      };
+    }
     // choice / millionaire / default
     return {
       ...base,

@@ -82,7 +82,7 @@ function ResultsPage() {
       const winner = sorted[0];
       const extra = Math.max(0, sorted.length - 1);
       const name = winner
-        ? `${winner.avatar} ${winner.nickname}${extra > 0 ? ` и ещё ${extra}` : ""}`
+        ? `${winner.nickname}${extra > 0 ? ` и ещё ${extra}` : ""}`
         : `Комната ${r.roomCode}`;
       return {
         kind: "online",

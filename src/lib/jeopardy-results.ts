@@ -19,6 +19,7 @@ export interface JeopardyResult {
   winnerId: string | null;
   hasFinal: boolean;
   userId?: string;
+  avatar?: string;
 }
 
 const NS = "islandquiz.v1.jresults";

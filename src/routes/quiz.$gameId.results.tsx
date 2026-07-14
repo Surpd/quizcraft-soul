@@ -209,7 +209,13 @@ function ResultsPage() {
                                 </span>
                               )}
                             </td>
-                            <td className="px-4 py-3 font-semibold">{r.playerName}</td>
+                            <td className="px-4 py-3 font-semibold">
+                              <PlayerCell
+                                name={r.playerName}
+                                avatar={isOffline ? r.raw.avatar : undefined}
+                                userId={isOffline ? r.raw.userId : undefined}
+                              />
+                            </td>
                             <td className="px-4 py-3 font-mono">
                               {r.score}
                               {isOffline && (
@@ -424,6 +430,33 @@ function PlayerAnswers({ player }: { player: OnlineQuizPlayerResult }) {
         </tbody>
       </table>
     </div>
+  );
+}
+
+function PlayerCell({
+  name,
+  avatar,
+  userId,
+}: {
+  name: string;
+  avatar?: string;
+  userId?: string;
+}) {
+  return (
+    <span className="inline-flex items-center gap-2">
+      <Avatar name={name} avatar={avatar} size={28} />
+      {userId ? (
+        <Link
+          to="/profile/$userId"
+          params={{ userId }}
+          className="hover:text-primary hover:underline"
+        >
+          {name}
+        </Link>
+      ) : (
+        <span>{name}</span>
+      )}
+    </span>
   );
 }
 

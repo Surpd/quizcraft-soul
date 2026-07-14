@@ -2,9 +2,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Sparkles, RefreshCw } from "lucide-react";
 import { PlayerShell, TimerBar } from "@/components/player-shell";
+import { Avatar } from "@/components/avatar";
 import { LaTeX } from "@/lib/latex";
 import { loadGame } from "@/lib/storage";
 import { fitOptionSize, fitQuestionSize } from "@/lib/fit-text";
+import { useAuth } from "@/hooks/use-auth";
 import type { MilestoneMode, MillionaireData, MillionaireQuestion } from "@/lib/types";
 
 export const Route = createFileRoute("/play/millionaire/$id")({
@@ -27,6 +29,7 @@ function guaranteedMoney(idx: number, questions: MillionaireQuestion[], mileston
 
 function PlayMillionaire() {
   const { id } = Route.useParams();
+  const { user } = useAuth();
   const [data, setData] = useState<MillionaireData | null>(null);
   const [idx, setIdx] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
@@ -138,6 +141,12 @@ function PlayMillionaire() {
 
   return (
     <PlayerShell theme={config.theme}>
+      {user && (
+        <div className="fixed left-4 top-4 z-40 flex items-center gap-2 rounded-full border border-[color:var(--pt-border)] bg-[color:var(--pt-surface)] px-3 py-1.5 backdrop-blur-md">
+          <Avatar name={user.name} avatar={user.avatar} size={26} />
+          <span className="text-sm font-semibold">{user.name}</span>
+        </div>
+      )}
       <div className="mx-auto flex min-h-screen max-w-5xl items-center justify-center gap-6 px-4 py-16 lg:pr-56">
         <div className="min-w-0 flex-1">
           {phase === "playing" && (

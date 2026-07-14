@@ -22,6 +22,7 @@ export interface QuizResult {
   timeSec: number;
   finishedAt: number;
   userId?: string;
+  avatar?: string;
   answers?: QuizAnswerDetail[];
 }
 

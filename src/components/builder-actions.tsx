@@ -230,17 +230,17 @@ export function BuilderFabs({ kind, savedId, onSave, onSaveAsCopy, themeAccent }
 
   return (
     <>
-      <div className="fixed bottom-6 right-6 z-40 flex items-center gap-2">
+      <div className="fixed bottom-4 right-4 left-4 z-40 flex items-center justify-end gap-1.5 sm:bottom-6 sm:right-6 sm:left-auto sm:gap-2">
         {/* Visibility */}
         <div ref={visRef} className="relative">
           <button
             type="button"
             onClick={() => setVisOpen((v) => !v)}
-            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-2 text-xs font-semibold shadow-lift hover:bg-surface-muted"
+            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-2.5 py-2 text-xs font-semibold shadow-lift hover:bg-surface-muted sm:px-3"
             title="Видимость игры"
           >
             <CurrentIcon className="h-3.5 w-3.5 text-primary" />
-            {current.label}
+            <span className="hidden sm:inline">{current.label}</span>
             <ChevronDown className="h-3 w-3 opacity-60" />
           </button>
           {visOpen && (
@@ -269,17 +269,17 @@ export function BuilderFabs({ kind, savedId, onSave, onSaveAsCopy, themeAccent }
           <button
             type="button"
             onClick={() => onSave()}
-            className="inline-flex items-center gap-2 px-5 py-3 text-sm font-bold text-white transition-transform hover:scale-[1.02] active:scale-95"
+            className="inline-flex items-center gap-2 px-3 py-2.5 text-sm font-bold text-white transition-transform hover:scale-[1.02] active:scale-95 sm:px-5 sm:py-3"
             style={{ background: "var(--foreground)" }}
           >
             <Save className="h-4 w-4" />
-            Сохранить
+            <span className="hidden xs:inline sm:inline">Сохранить</span>
           </button>
           <button
             type="button"
             onClick={() => setOpenSaveMenu((v) => !v)}
             aria-label="Ещё"
-            className="grid place-items-center border-l border-white/20 px-3 text-white hover:bg-white/10"
+            className="grid place-items-center border-l border-white/20 px-2 text-white hover:bg-white/10 sm:px-3"
             style={{ background: "var(--foreground)" }}
           >
             <ChevronDown className="h-4 w-4" />
@@ -303,12 +303,13 @@ export function BuilderFabs({ kind, savedId, onSave, onSaveAsCopy, themeAccent }
         <button
           type="button"
           onClick={handlePlay}
-          className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-bold shadow-lift transition-transform hover:scale-[1.03] active:scale-95"
+          className="inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-bold shadow-lift transition-transform hover:scale-[1.03] active:scale-95 sm:px-6 sm:py-3"
           style={{ background: themeAccent ?? "var(--primary)", color: themeAccent ? "#000" : "#fff" }}
         >
           <Play className="h-4 w-4" /> Играть
         </button>
       </div>
+
 
       {openPlay && savedId && (
         <PlayModal gameId={savedId} kind={kind} onClose={() => setOpenPlay(false)} />

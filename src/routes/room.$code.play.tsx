@@ -124,12 +124,29 @@ function StudentPlay() {
   const doSubmit = async (timeout = false) => {
     if (!state || !question || !me || submitted) return;
     setSubmitted(true);
-    const correct = timeout ? false : checkQuizAnswer(question, value);
+    // Matching-specific empty-check: if no pairs placed, count as wrong
+    let effectiveValue = value;
+    if (question.type === "matching") {
+      try {
+        const map = JSON.parse(value || "{}") as Record<string, string>;
+        if (Object.keys(map).length === 0) effectiveValue = "";
+      } catch {
+        effectiveValue = "";
+      }
+    }
+    const correct = timeout || !effectiveValue
+      ? false
+      : checkQuizAnswer(question, effectiveValue);
     const total = (question.time || 30) * 1000;
     const timeMs = state.questionStartAt
       ? Math.min(total, Date.now() - state.questionStartAt)
       : total;
-    await submitAnswer(code, me.playerId, { correct, timeMs, totalMs: total });
+    await submitAnswer(code, me.playerId, {
+      correct,
+      timeMs,
+      totalMs: total,
+      given: effectiveValue,
+    });
   };
 
   const onToggleMute = () => setMutedState(toggleMute());

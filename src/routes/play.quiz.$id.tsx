@@ -63,10 +63,12 @@ function checkAnswer(q: QuizQuestion, given: string): boolean {
 
 function PlayQuiz() {
   const { id } = Route.useParams();
+  const { user } = useAuth();
   const [stored, setStored] = useState<QuizData | null>(null);
   const [loading, setLoading] = useState(true);
   const [phase, setPhase] = useState<"start" | "playing" | "done">("start");
   const [name, setName] = useState("");
+  const [nameTouched, setNameTouched] = useState(false);
   const [order, setOrder] = useState<number[]>([]);
   const [idx, setIdx] = useState(0);
   const [answers, setAnswers] = useState<QAnswer[]>([]);
@@ -75,6 +77,11 @@ function PlayQuiz() {
   const [feedback, setFeedback] = useState<"correct" | "wrong" | null>(null);
   const startedAt = useRef<number>(0);
   const savedRef = useRef(false);
+
+  // Prefill name from profile if logged in and user hasn't edited it.
+  useEffect(() => {
+    if (user && !nameTouched && !name) setName(user.name);
+  }, [user, nameTouched, name]);
 
   useEffect(() => {
     const g = loadGame<QuizData>("quiz", id);

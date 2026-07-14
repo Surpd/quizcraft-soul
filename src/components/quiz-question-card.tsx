@@ -11,6 +11,7 @@ import {
   type DragEndEvent,
 } from "@dnd-kit/core";
 import { LaTeX } from "@/lib/latex";
+import { fitOptionSize, fitQuestionSize } from "@/lib/fit-text";
 import type { QuizQuestion } from "@/lib/types";
 
 function shuffle<T>(arr: T[]): T[] {

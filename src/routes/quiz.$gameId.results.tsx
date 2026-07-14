@@ -200,7 +200,7 @@ function ResultsPage() {
                             <td className="px-4 py-3">
                               {isOffline ? (
                                 <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-muted px-2.5 py-1 text-xs font-semibold text-muted-foreground">
-                                  <Home className="h-3 w-3" /> Офлайн
+                                  <User className="h-3 w-3" /> Офлайн
                                 </span>
                               ) : (
                                 <span className="inline-flex items-center gap-1.5 rounded-full bg-primary-soft px-2.5 py-1 text-xs font-semibold text-primary">

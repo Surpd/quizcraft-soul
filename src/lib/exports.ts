@@ -148,13 +148,29 @@ export async function importQuizXlsx(file: File, defaultTime: number): Promise<Q
   return rows.map((r) => {
     const type = ((r.type ?? "choice") as QuizQuestionType) || "choice";
     const opts = r.options ? String(r.options).split("|").map((s) => s.trim()) : [];
+    let answer = String(r.answer ?? "");
+    if (type === "close" || type === "ordering") {
+      // Answer stored as JSON array; accept "a | b | c" or JSON.
+      let arr: string[] = [];
+      if (answer.trim().startsWith("[")) {
+        try {
+          const parsed = JSON.parse(answer);
+          if (Array.isArray(parsed)) arr = parsed.map((x) => String(x ?? ""));
+        } catch {
+          arr = [];
+        }
+      } else {
+        arr = answer.split("|").map((s) => s.trim()).filter(Boolean);
+      }
+      answer = JSON.stringify(arr);
+    }
     return {
       id: newId(),
       type,
       q: String(r.question ?? ""),
       image: "",
       options: type === "choice" ? (opts.length ? opts : ["", "", "", ""]) : [],
-      answer: String(r.answer ?? ""),
+      answer,
       points: parseInt(String(r.points ?? "100")) || 100,
       time: parseInt(String(r.time ?? defaultTime)) || defaultTime,
     };

@@ -3,7 +3,7 @@
 // the offline experience. Sends the computed correctness up to the shared
 // room state so the teacher's projector can drive the flow.
 
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Hourglass, Trophy, Timer, Volume2, VolumeX, Users } from "lucide-react";
 import { PlayerShell, TimerBar } from "@/components/player-shell";
@@ -35,7 +35,10 @@ function StudentPlay() {
   const [lastEarned, setLastEarned] = useState<number>(0);
   const [muted, setMutedState] = useState(true);
   const [timeLeft, setTimeLeft] = useState<number>(0);
+  const [showStreak, setShowStreak] = useState(false);
+  const [streakFading, setStreakFading] = useState(false);
   const prevStatus = useRef<RoomState["status"] | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => setMutedState(isMuted()), []);
 
@@ -124,6 +127,31 @@ function StudentPlay() {
       if (place > 0 && place <= 3) sfx.fanfare();
     }
   }, [state, me]);
+
+  // Animate streak toast when it reaches 2+
+  useEffect(() => {
+    if (myPlayer?.streak && myPlayer.streak >= 2) {
+      setShowStreak(true);
+      setStreakFading(false);
+      const fade = setTimeout(() => setStreakFading(true), 4700);
+      const hide = setTimeout(() => setShowStreak(false), 5000);
+      return () => {
+        clearTimeout(fade);
+        clearTimeout(hide);
+      };
+    }
+    setShowStreak(false);
+    setStreakFading(false);
+  }, [myPlayer?.streak]);
+
+  // Redirect kicked players to /join
+  useEffect(() => {
+    if (!state || !me) return;
+    const stillHere = state.players.some((p) => p.id === me.playerId);
+    if (!stillHere) {
+      navigate({ to: "/join", replace: true });
+    }
+  }, [state, me, navigate]);
 
   const doSubmit = async (timeout = false) => {
     if (!state || !question || !me || submitted) return;
@@ -258,11 +286,13 @@ function StudentPlay() {
           <p className="font-mono text-2xl font-bold">
             {myPlayer?.score.toLocaleString("ru-RU") ?? 0}
           </p>
-          {myPlayer?.streak && myPlayer.streak >= 2 ? (
-            <p className="mt-3 text-sm font-semibold text-[color:var(--pt-accent)]">
-              🔥 Стрик {myPlayer.streak}!
-            </p>
-          ) : null}
+          {showStreak && (
+            <div
+              className={`fixed left-1/2 bottom-8 z-50 -translate-x-1/2 rounded-full bg-[color:var(--pt-accent)] px-4 py-2 font-bold text-black shadow-lg transition-opacity duration-300 ${streakFading ? "opacity-0" : "opacity-100"} animate-slide-up`}
+            >
+              🔥 Стрик {myPlayer?.streak}!
+            </div>
+          )}
           <p className="mt-6 text-sm text-[color:var(--pt-text-muted)]">Ждём следующий вопрос...</p>
         </div>
       </PlayerShell>
@@ -359,11 +389,13 @@ function StudentPlay() {
           </p>
         )}
 
-        {myPlayer?.streak && myPlayer.streak >= 2 ? (
-          <p className="mt-3 text-center text-sm font-semibold text-[color:var(--pt-accent)]">
-            🔥 Стрик {myPlayer.streak}!
-          </p>
-        ) : null}
+        {showStreak && (
+          <div
+            className={`fixed left-1/2 bottom-8 z-50 -translate-x-1/2 rounded-full bg-[color:var(--pt-accent)] px-4 py-2 font-bold text-black shadow-lg transition-opacity duration-300 ${streakFading ? "opacity-0" : "opacity-100"} animate-slide-up`}
+          >
+            🔥 Стрик {myPlayer?.streak}!
+          </div>
+        )}
       </div>
     </PlayerShell>
   );

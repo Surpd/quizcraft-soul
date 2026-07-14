@@ -112,7 +112,7 @@ function PlayMillionaire() {
       timeSec: Math.max(1, Math.round((Date.now() - startedAtRef.current) / 1000)),
       answers: [...answersRef.current],
     });
-  }, [phase, wonAmount, id, idx, user, questions, milestones]);
+  }, [phase, wonAmount, id, idx, user, questions, milestones, playerName]);
 
   if (!data || !config) {
     return (

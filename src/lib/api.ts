@@ -129,9 +129,38 @@ export interface RoomPlayer {
   connected: boolean;
   lastAnswer?: RoomAnswerRecord;
   answerHistory?: RoomAnswerRecord[];
+  jCorrect?: number;
+  jWrong?: number;
 }
 
 export type RoomStatus = "waiting" | "active" | "reveal" | "leaderboard" | "finished";
+
+export type JeopardyPhase =
+  | "lobby"
+  | "board"
+  | "question"
+  | "answering"
+  | "reveal"
+  | "final-bets"
+  | "final-question"
+  | "final-reveal"
+  | "podium";
+
+export interface JeopardyRoomState {
+  phase: JeopardyPhase;
+  mode: "buzz" | "turn";
+  round: number;
+  currentPlayerIdx: number;
+  usedKeys: string[];
+  selectedCat: number | null;
+  selectedQ: number | null;
+  buzzedPlayerId: string | null;
+  showAnswer: boolean;
+  finalBets: Record<string, number>;
+  finalAnswers: Record<string, boolean>;
+  finalGiven: Record<string, string>;
+  lastDelta?: { playerId: string; delta: number } | null;
+}
 
 export interface RoomState {
   code: string;
@@ -144,6 +173,7 @@ export interface RoomState {
   players: RoomPlayer[];
   fastestPlayerId?: string;
   createdAt: number;
+  jeopardy?: JeopardyRoomState;
 }
 
 const ROOM_PREFIX = "islandquiz.room.v1.";

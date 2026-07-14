@@ -245,9 +245,14 @@ function BuilderJeopardy() {
               </button>
               <button
                 onClick={() => addCategory(ri)}
+                disabled={round.length >= LIMITS.jeopardyCategoriesPerRound}
                 aria-label="Добавить категорию"
-                title="Добавить категорию"
-                className="grid h-8 w-8 flex-shrink-0 place-items-center rounded-md border border-border-strong bg-surface text-primary hover:bg-primary-soft"
+                title={
+                  round.length >= LIMITS.jeopardyCategoriesPerRound
+                    ? `Максимум ${LIMITS.jeopardyCategoriesPerRound} категорий`
+                    : "Добавить категорию"
+                }
+                className="grid h-8 w-8 flex-shrink-0 place-items-center rounded-md border border-border-strong bg-surface text-primary hover:bg-primary-soft disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <Plus className="h-3.5 w-3.5" />
               </button>

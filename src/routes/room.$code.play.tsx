@@ -200,6 +200,12 @@ function StudentPlay() {
 
   if (!state) return <FullScreen theme={theme} msg="Загружаем комнату..." />;
 
+  // Dispatch to Jeopardy player when the game is a Jeopardy room
+  if (state.gameKind === "jeopardy" && state.jeopardy) {
+    return <JeopardyRoomPlayer state={state} code={code} me={me} />;
+  }
+
+
   const MuteBtn = (
     <button
       onClick={onToggleMute}

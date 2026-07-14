@@ -14,7 +14,6 @@ export const Route = createFileRoute("/play/millionaire/$id")({
   component: PlayMillionaire,
 });
 
-
 function milestoneIndices(mode: MilestoneMode, total: number): Set<number> {
   if (mode === "none") return new Set();
   if (total <= 0) return new Set();
@@ -23,7 +22,6 @@ function milestoneIndices(mode: MilestoneMode, total: number): Set<number> {
 }
 
 function guaranteedMoney(idx: number, questions: MillionaireQuestion[], milestones: Set<number>): number {
-  // walk backwards from current answered index for the last passed milestone
   let last = 0;
   for (let i = 0; i < idx; i++) if (milestones.has(i)) last = questions[i].money;
   return last;
@@ -49,12 +47,11 @@ function PlayMillionaire() {
     if (g) setData(g.data);
   }, [id]);
 
-
   const config = data?.config;
   const questions = data?.questions ?? [];
   const milestones = useMemo(
     () => milestoneIndices(config?.milestones ?? "three", questions.length),
-    [config, questions],
+    [config?.milestones, questions.length],
   );
 
   useEffect(() => {
@@ -65,7 +62,6 @@ function PlayMillionaire() {
         if (prev <= 1) {
           clearInterval(t);
           setRevealed(true);
-          // время вышло — записываем как «нет ответа»
           const q = questions[idx];
           if (q) {
             const ci = q.options.findIndex((o) => o.correct);
@@ -85,8 +81,7 @@ function PlayMillionaire() {
       });
     }, 1000);
     return () => clearInterval(t);
-  }, [idx, phase, config, questions, questions.length]);
-
+  }, [idx, phase, config, questions]);
 
   if (!data || !config) {
     return (
@@ -143,9 +138,7 @@ function PlayMillionaire() {
 
   const useFifty = () => {
     if (fiftyUsed || revealed) return;
-    const wrongs = current.options
-      .map((_, i) => i)
-      .filter((i) => i !== correctIdx);
+    const wrongs = current.options.map((_, i) => i).filter((i) => i !== correctIdx);
     const shuffled = wrongs.sort(() => Math.random() - 0.5);
     setHidden(new Set(shuffled.slice(0, 2)));
     setFiftyUsed(true);
@@ -163,13 +156,8 @@ function PlayMillionaire() {
     startedAtRef.current = Date.now();
   };
 
-
   const wonAmount =
-    phase === "won"
-      ? questions.at(-1)!.money
-      : phase === "lost"
-        ? guaranteedMoney(idx, questions, milestones)
-        : 0;
+    phase === "won" ? questions.at(-1)!.money : phase === "lost" ? guaranteedMoney(idx, questions, milestones) : 0;
 
   // Сохраняем результат один раз при завершении
   useEffect(() => {
@@ -188,9 +176,7 @@ function PlayMillionaire() {
       timeSec: Math.max(1, Math.round((Date.now() - startedAtRef.current) / 1000)),
       answers: [...answersRef.current],
     });
-  }, [phase, wonAmount, id, idx, questions, milestones, user]);
-
-
+  }, [phase, wonAmount, id, idx, user]);
 
   return (
     <PlayerShell theme={config.theme}>
@@ -205,13 +191,12 @@ function PlayMillionaire() {
           {phase === "playing" && (
             <>
               <div className="mb-3 flex items-center justify-between text-xs uppercase tracking-widest text-[color:var(--pt-text-muted)]">
-                <span>Вопрос {idx + 1} из {questions.length}</span>
+                <span>
+                  Вопрос {idx + 1} из {questions.length}
+                </span>
                 <span>{timeLeft}с</span>
               </div>
-              <TimerBar
-                pct={(timeLeft / config.timePerQuestion) * 100}
-                urgent={timeLeft <= 5}
-              />
+              <TimerBar pct={(timeLeft / config.timePerQuestion) * 100} urgent={timeLeft <= 5} />
 
               <div className="mt-6 flex gap-2">
                 <button
@@ -228,13 +213,11 @@ function PlayMillionaire() {
               </div>
 
               {current.image && (
-                <img
-                  src={current.image}
-                  alt=""
-                  className="mx-auto mt-6 max-h-56 rounded-xl object-contain"
-                />
+                <img src={current.image} alt="" className="mx-auto mt-6 max-h-56 rounded-xl object-contain" />
               )}
-              <div className={`mt-6 rounded-3xl border border-[color:var(--pt-border)] bg-[color:var(--pt-surface)] p-8 text-center font-semibold backdrop-blur-md ${fitQuestionSize(current.q)}`}>
+              <div
+                className={`mt-6 rounded-3xl border border-[color:var(--pt-border)] bg-[color:var(--pt-surface)] p-8 text-center font-semibold backdrop-blur-md ${fitQuestionSize(current.q)}`}
+              >
                 <LaTeX>{current.q}</LaTeX>
               </div>
 
@@ -264,7 +247,9 @@ function PlayMillionaire() {
                       <span className="grid h-10 w-10 flex-shrink-0 place-items-center rounded-full bg-[color:var(--pt-accent)] font-bold text-black">
                         {String.fromCharCode(65 + oi)}
                       </span>
-                      <span className={`min-w-0 break-words ${fitOptionSize(opt.text)}`}><LaTeX>{opt.text}</LaTeX></span>
+                      <span className={`min-w-0 break-words ${fitOptionSize(opt.text)}`}>
+                        <LaTeX>{opt.text}</LaTeX>
+                      </span>
                     </button>
                   );
                 })}

@@ -40,6 +40,10 @@ import {
   verifyUserCredentials,
 } from "./auth";
 
+// Re-export types consumed by other modules so the facade stays the single entry point.
+export type { User } from "./auth";
+export type { GameKind, GameVisibility, StoredGame } from "./types";
+
 // ---------- Fake latency helper ----------
 const fake = <T,>(value: T, ms = 120): Promise<T> => new Promise((resolve) => setTimeout(() => resolve(value), ms));
 
@@ -245,18 +249,18 @@ export async function submitResult(payload: Parameters<typeof saveQuizResult>[0]
 }
 
 // ---------- Jeopardy results ----------
-// TODO(server): заменить на GET /api/jeopardy/:gameId/results
+// TODO(server): GET /api/jeopardy/:gameId/results
 export async function getJeopardyResults(gameId: string): Promise<JeopardyResult[]> {
   return fake(loadJeopardyResults(gameId));
 }
 
-// TODO(server): заменить на GET /api/jeopardy/:gameId/results/:resultId
+// TODO(server): GET /api/jeopardy/:gameId/results/:resultId
 export async function getJeopardyGameDetail(gameId: string, resultId: string): Promise<JeopardyResult | null> {
   const all = loadJeopardyResults(gameId);
   return fake(all.find((r) => r.id === resultId) ?? null);
 }
 
-// TODO(server): заменить на POST /api/jeopardy/:gameId/results
+// TODO(server): POST /api/jeopardy/:gameId/results
 export async function submitJeopardyResult(payload: Parameters<typeof saveJeopardyResult>[0]) {
   const rec = saveJeopardyResult(payload);
   return fake({ ok: true, id: rec.id });
@@ -1086,7 +1090,7 @@ export interface GeneratedJeopardyQuestion {
   a: string;
 }
 
-// TODO(server): POST /api/ai/improve-question
+// TODO(server): POST /api/ai/generate-improve-question
 export async function improveQuestion(input: {
   currentText: string;
   format: string; // "quiz-choice" | "quiz-bool" | "quiz-text" | "quiz-matching" | "jeopardy" | "millionaire"
@@ -1293,6 +1297,8 @@ export async function listPlayedGameIdsForUser(userId: string): Promise<Set<stri
     if (k.startsWith("islandquiz.v1.results.")) gameId = k.slice("islandquiz.v1.results.".length);
     else if (k.startsWith("islandquiz.v1.jresults.")) gameId = k.slice("islandquiz.v1.jresults.".length);
     else if (k.startsWith("islandquiz.v1.online-results.")) gameId = k.slice("islandquiz.v1.online-results.".length);
+    else if (k.startsWith("islandquiz.v1.millionaire-results."))
+      gameId = k.slice("islandquiz.v1.millionaire-results.".length);
     else continue;
     try {
       const arr = JSON.parse(localStorage.getItem(k) || "[]") as Array<Record<string, unknown>>;

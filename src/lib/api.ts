@@ -106,14 +106,15 @@ export async function saveGame<T = AnyGameData>(input: SaveGameInput<T>) {
   const existing = _loadGame<T>(input.kind, id);
   const me = getCurrentUser();
   const meta: Partial<StoredGame> = {};
-  if (!existing) {
-    if (me) {
-      meta.ownerId = me.id;
-      meta.ownerName = me.name;
-      meta.visibility = "private";
-    } else {
-      meta.visibility = "link";
-    }
+  // Attach ownerId whenever a logged-in user creates OR owns/claims a game
+  // without an owner. Fixes: new games saved as anonymous when logged in,
+  // and orphan binding not persisting ownerId on existing records.
+  if (me && (!existing || !existing.ownerId || existing.ownerId === me.id)) {
+    meta.ownerId = me.id;
+    meta.ownerName = me.name;
+    if (!existing) meta.visibility = "private";
+  } else if (!existing && !me) {
+    meta.visibility = "link";
   }
   _saveGame<T>(input.kind, id, input.data, meta);
   return fake({ id, play_url: `/play/${input.kind}/${id}` });

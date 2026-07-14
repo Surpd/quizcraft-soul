@@ -202,7 +202,7 @@ function PlayMillionaire() {
                       <span className="grid h-10 w-10 flex-shrink-0 place-items-center rounded-full bg-[color:var(--pt-accent)] font-bold text-black">
                         {String.fromCharCode(65 + oi)}
                       </span>
-                      <span className="text-lg"><LaTeX>{opt.text}</LaTeX></span>
+                      <span className={`min-w-0 break-words ${fitOptionSize(opt.text)}`}><LaTeX>{opt.text}</LaTeX></span>
                     </button>
                   );
                 })}

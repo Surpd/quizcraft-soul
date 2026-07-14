@@ -574,35 +574,9 @@ export function JeopardyRoomTeacher({ state, code }: { state: RoomState; code: s
           </div>
         )}
 
-        {/* FINAL REVEAL */}
+        {/* FINAL REVEAL — auto-anim */}
         {j.phase === "final-reveal" && (
-          <div className="mt-6 animate-fade-up rounded-3xl border border-[color:var(--pt-border)] bg-[color:var(--pt-surface)] p-8 text-center">
-            <Trophy className="mx-auto mb-2 h-10 w-10 text-[color:var(--pt-accent)]" />
-            <h2 className="font-display text-3xl font-black">Финал завершён</h2>
-            <div className="mt-4 space-y-2">
-              {[...state.players]
-                .sort((a, b) => b.score - a.score)
-                .map((p, i) => (
-                  <div
-                    key={p.id}
-                    className="flex items-center justify-between rounded-xl bg-[color:var(--pt-surface-strong)] px-4 py-3"
-                  >
-                    <span className="flex items-center gap-2">
-                      <span className="font-mono">{i + 1}</span>
-                      <Avatar name={p.nickname} size={26} />
-                      <b>{p.nickname}</b>
-                    </span>
-                    <span className="font-mono font-bold">{p.score}</span>
-                  </div>
-                ))}
-            </div>
-            <button
-              onClick={() => finishJeopardyGame(code)}
-              className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[color:var(--pt-accent)] px-6 py-3 font-bold text-black"
-            >
-              <Trophy className="h-4 w-4" /> Показать подиум
-            </button>
-          </div>
+          <FinalRevealAnim state={state} code={code} game={game} />
         )}
 
         {/* PODIUM */}

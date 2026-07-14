@@ -58,7 +58,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     async updateProfile(patch) {
       const u = await apiUpdateProfile(patch);
-      if (u) setUser(u);
+      if (u) {
+        // Set new reference to force re-render even if fields shallow-equal.
+        setUser({ ...u });
+      } else {
+        // Fallback: refetch from storage.
+        refresh();
+      }
     },
     async forkGame(gameId) {
       return apiForkGame(gameId);

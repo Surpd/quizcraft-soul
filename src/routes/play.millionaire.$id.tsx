@@ -164,24 +164,32 @@ function PlayMillionaire() {
   };
 
 
-  const useFifty = () => {
-    if (fiftyUsed || revealed) return;
-    const wrongs = current.options
-      .map((_, i) => i)
-      .filter((i) => i !== correctIdx);
-    const shuffled = wrongs.sort(() => Math.random() - 0.5);
-    setHidden(new Set(shuffled.slice(0, 2)));
-    setFiftyUsed(true);
-  };
+  const wonAmount =
+    phase === "won"
+      ? questions.at(-1)!.money
+      : phase === "lost"
+        ? guaranteedMoney(idx, questions, milestones)
+        : 0;
 
-  const restart = () => {
-    setIdx(0);
-    setSelected(null);
-    setRevealed(false);
-    setPhase("playing");
-    setFiftyUsed(false);
-    setHidden(new Set());
-  };
+  // Сохраняем результат один раз при завершении
+  useEffect(() => {
+    if (phase === "playing" || savedRef.current || !questions.length) return;
+    savedRef.current = true;
+    const reached = answersRef.current.filter((a) => a.isCorrect).length;
+    saveMillionaireResult({
+      gameId: id,
+      playerName: user?.name || "Аноним",
+      avatar: user?.avatar,
+      outcome: phase,
+      wonAmount,
+      guaranteedAmount: guaranteedMoney(idx, questions, milestones),
+      reachedCount: reached,
+      totalQuestions: questions.length,
+      timeSec: Math.max(1, Math.round((Date.now() - startedAtRef.current) / 1000)),
+      answers: [...answersRef.current],
+    });
+  }, [phase, wonAmount, id, idx, questions, milestones, user]);
+
 
   const wonAmount =
     phase === "won"

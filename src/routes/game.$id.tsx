@@ -16,8 +16,10 @@ import {
 } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { PlayModal } from "@/components/play-modal";
+import { RatingStars } from "@/components/rating-stars";
 import { useAuth } from "@/hooks/use-auth";
-import { findGame, deleteGame, saveGame } from "@/lib/api";
+import { findGame, deleteGame, saveGame, computeRatingStats, getMyRating, rateGame } from "@/lib/api";
+
 import {
   exportQuizExcel,
   exportJeopardyExcel,

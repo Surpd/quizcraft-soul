@@ -290,7 +290,7 @@ function StudentPlay() {
             <div
               className={`fixed left-1/2 bottom-8 z-50 -translate-x-1/2 rounded-full bg-[color:var(--pt-accent)] px-4 py-2 font-bold text-black shadow-lg transition-opacity duration-300 ${streakFading ? "opacity-0" : "opacity-100"} animate-slide-up`}
             >
-              🔥 Стрик {myPlayer.streak}!
+              🔥 Стрик {myPlayer?.streak}!
             </div>
           )}
           <p className="mt-6 text-sm text-[color:var(--pt-text-muted)]">Ждём следующий вопрос...</p>

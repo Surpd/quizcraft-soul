@@ -65,6 +65,11 @@ function LoginPage() {
           </button>
         </form>
         <p className="mt-4 text-center text-sm text-muted-foreground">
+          <Link to="/forgot-password" className="font-semibold text-primary hover:underline">
+            Забыли пароль?
+          </Link>
+        </p>
+        <p className="mt-2 text-center text-sm text-muted-foreground">
           Нет аккаунта?{" "}
           <Link to="/register" className="font-semibold text-primary hover:underline">
             Зарегистрироваться

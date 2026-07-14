@@ -71,44 +71,6 @@ function GameDashboard() {
     };
   }, [id]);
 
-  const jStats = useMemo(() => {
-    if (!jResults.length) return null;
-    const teamTotals = new Map<string, { name: string; total: number }>();
-    let bestScore = -Infinity;
-    for (const r of jResults) {
-      for (const t of r.teams) {
-        const prev = teamTotals.get(t.name) ?? { name: t.name, total: 0 };
-        teamTotals.set(t.name, { name: t.name, total: prev.total + t.score });
-        if (t.score > bestScore) bestScore = t.score;
-      }
-    }
-    const top = [...teamTotals.values()].sort((a, b) => b.total - a.total)[0];
-    return {
-      count: jResults.length,
-      topTeam: top?.name ?? "—",
-      bestScore: Number.isFinite(bestScore) ? bestScore : 0,
-    };
-  }, [jResults]);
-
-  const stats = useMemo(() => {
-    if (!results.length) return null;
-    const totals = results.reduce(
-      (acc, r) => {
-        acc.score += r.score;
-        acc.pct += r.totalQuestions ? (r.correctCount / r.totalQuestions) * 100 : 0;
-        acc.best = Math.min(acc.best, r.timeSec || Infinity);
-        return acc;
-      },
-      { score: 0, pct: 0, best: Infinity },
-    );
-    return {
-      count: results.length,
-      avgScore: Math.round(totals.score / results.length),
-      avgPct: Math.round(totals.pct / results.length),
-      bestTime: Number.isFinite(totals.best) ? totals.best : 0,
-    };
-  }, [results]);
-
   const startOnline = async () => {
     if (!game) return;
     setBusyMsg("Создаём комнату…");

@@ -3,7 +3,7 @@
 // the offline experience. Sends the computed correctness up to the shared
 // room state so the teacher's projector can drive the flow.
 
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Hourglass, Trophy, Timer, Volume2, VolumeX, Users } from "lucide-react";
 import { PlayerShell, TimerBar } from "@/components/player-shell";

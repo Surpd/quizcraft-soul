@@ -242,7 +242,7 @@ function StudentPlay() {
                       : "bg-[color:var(--pt-surface-strong)]"
                   }`}
                 >
-                  <span>{p.avatar}</span>
+                  <Avatar name={p.nickname} size={22} />
                   {p.nickname}
                 </div>
               ))}

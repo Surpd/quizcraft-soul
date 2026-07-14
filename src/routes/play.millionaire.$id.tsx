@@ -81,7 +81,7 @@ function PlayMillionaire() {
       });
     }, 1000);
     return () => clearInterval(t);
-  }, [idx, phase, config, questions]);
+  }, [idx, phase, config, questions.length]);
 
   if (!data || !config) {
     return (

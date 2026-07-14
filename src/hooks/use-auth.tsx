@@ -49,12 +49,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return r.ok ? { ok: true } : { ok: false, error: r.error };
       },
       async register(name, email, password) {
-        console.log("[DEBUG] useAuth.register called, calling apiRegister...");
         const r = await apiRegister({ name, email, password });
-        console.log("[DEBUG] apiRegister returned:", r);
         if (r.ok) setUser(r.user);
         return r.ok ? { ok: true } : { ok: false, error: r.error };
-      },,
+      },
       async logout() {
         await apiLogout();
         setUser(null);

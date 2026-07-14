@@ -37,6 +37,7 @@ import {
   getSessionUserId,
   setSessionUserId,
   updateUserRecord,
+  verifyUserCredentials,
 } from "./auth";
 
 // ---------- Fake latency helper ----------
@@ -45,28 +46,16 @@ const fake = <T,>(value: T, ms = 120): Promise<T> => new Promise((resolve) => se
 // ---------- Auth (stub) ----------
 // TODO(server): POST /api/auth/register
 export async function register(input: { email: string; password: string; name: string }) {
-  console.log("[DEBUG] register called with:", input);
   const email = input.email.trim().toLowerCase();
   if (!email || !input.password || !input.name.trim()) {
     return fake({ ok: false as const, error: "Заполните все поля" });
   }
-
-  // Inline createUser
-  const USERS_KEY = "islandquiz.v1.auth.users";
-  const SESSION_KEY = "islandquiz.v1.auth.session";
-  const list = JSON.parse(localStorage.getItem(USERS_KEY) || "[]");
-  if (list.find((u: any) => u.email.toLowerCase() === email)) {
+  if (findUserByEmail(email)) {
     return fake({ ok: false as const, error: "Пользователь с таким email уже существует" });
   }
-  const user = {
-    id: Math.random().toString(36).slice(2, 10),
-    email,
-    name: input.name.trim() || email.split("@")[0],
-    createdAt: Date.now(),
-  };
-  list.push(user);
-  localStorage.setItem(USERS_KEY, JSON.stringify(list));
-  localStorage.setItem(SESSION_KEY, user.id);
+  const user = createUser({ email, name: input.name, password: input.password });
+  setSessionUserId(user.id);
+  await bindOrphanGames();
 
   return fake({ ok: true as const, user });
 }
@@ -77,12 +66,12 @@ export async function login(input: { email: string; password: string }) {
   if (!email || !input.password) {
     return fake({ ok: false as const, error: "Заполните все поля" });
   }
-  let user = findUserByEmail(email);
+  const user = verifyUserCredentials(email, input.password);
   if (!user) {
-    // Stub: unknown email → auto-provision (as documented in the spec).
-    user = createUser({ email, name: email.split("@")[0] });
+    return fake({ ok: false as const, error: "Неверный email или пароль" });
   }
   setSessionUserId(user.id);
+  await bindOrphanGames();
   return fake({ ok: true as const, user });
 }
 

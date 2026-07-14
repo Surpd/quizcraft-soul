@@ -350,6 +350,7 @@ function GameCard({
   onForked: () => void;
 }) {
   const { user, forkGame } = useAuth();
+  const nav = useNavigate();
   const Icon = KIND_ICON[g.kind] ?? FileText;
   const VisIcon = g.visibility === "public" ? Globe : g.visibility === "link" ? Link2 : Lock;
   const isMine = user && g.ownerId === user.id;

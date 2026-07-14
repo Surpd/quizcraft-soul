@@ -10,11 +10,11 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as RegisterRouteImport } from './routes/register'
-import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LibraryRouteImport } from './routes/library'
 import { Route as JoinRouteImport } from './routes/join'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ProfileIndexRouteImport } from './routes/profile.index'
 import { Route as RoomCodeRouteImport } from './routes/room.$code'
 import { Route as ProfileUserIdRouteImport } from './routes/profile.$userId'
 import { Route as GameIdRouteImport } from './routes/game.$id'
@@ -33,11 +33,6 @@ import { Route as JeopardyGameIdResultsRouteImport } from './routes/jeopardy.$ga
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ProfileRoute = ProfileRouteImport.update({
-  id: '/profile',
-  path: '/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -60,15 +55,20 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProfileIndexRoute = ProfileIndexRouteImport.update({
+  id: '/profile/',
+  path: '/profile/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RoomCodeRoute = RoomCodeRouteImport.update({
   id: '/room/$code',
   path: '/room/$code',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfileUserIdRoute = ProfileUserIdRouteImport.update({
-  id: '/$userId',
-  path: '/$userId',
-  getParentRoute: () => ProfileRoute,
+  id: '/profile/$userId',
+  path: '/profile/$userId',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const GameIdRoute = GameIdRouteImport.update({
   id: '/game/$id',
@@ -136,7 +136,6 @@ export interface FileRoutesByFullPath {
   '/join': typeof JoinRoute
   '/library': typeof LibraryRoute
   '/login': typeof LoginRoute
-  '/profile': typeof ProfileRouteWithChildren
   '/register': typeof RegisterRoute
   '/builder/jeopardy': typeof BuilderJeopardyRoute
   '/builder/millionaire': typeof BuilderMillionaireRoute
@@ -144,6 +143,7 @@ export interface FileRoutesByFullPath {
   '/game/$id': typeof GameIdRoute
   '/profile/$userId': typeof ProfileUserIdRoute
   '/room/$code': typeof RoomCodeRouteWithChildren
+  '/profile/': typeof ProfileIndexRoute
   '/jeopardy/$gameId/results': typeof JeopardyGameIdResultsRoute
   '/play/jeopardy/$id': typeof PlayJeopardyIdRoute
   '/play/millionaire/$id': typeof PlayMillionaireIdRoute
@@ -158,13 +158,13 @@ export interface FileRoutesByTo {
   '/join': typeof JoinRoute
   '/library': typeof LibraryRoute
   '/login': typeof LoginRoute
-  '/profile': typeof ProfileRouteWithChildren
   '/register': typeof RegisterRoute
   '/builder/jeopardy': typeof BuilderJeopardyRoute
   '/builder/millionaire': typeof BuilderMillionaireRoute
   '/builder/quiz': typeof BuilderQuizRoute
   '/game/$id': typeof GameIdRoute
   '/profile/$userId': typeof ProfileUserIdRoute
+  '/profile': typeof ProfileIndexRoute
   '/jeopardy/$gameId/results': typeof JeopardyGameIdResultsRoute
   '/play/jeopardy/$id': typeof PlayJeopardyIdRoute
   '/play/millionaire/$id': typeof PlayMillionaireIdRoute
@@ -180,7 +180,6 @@ export interface FileRoutesById {
   '/join': typeof JoinRoute
   '/library': typeof LibraryRoute
   '/login': typeof LoginRoute
-  '/profile': typeof ProfileRouteWithChildren
   '/register': typeof RegisterRoute
   '/builder/jeopardy': typeof BuilderJeopardyRoute
   '/builder/millionaire': typeof BuilderMillionaireRoute
@@ -188,6 +187,7 @@ export interface FileRoutesById {
   '/game/$id': typeof GameIdRoute
   '/profile/$userId': typeof ProfileUserIdRoute
   '/room/$code': typeof RoomCodeRouteWithChildren
+  '/profile/': typeof ProfileIndexRoute
   '/jeopardy/$gameId/results': typeof JeopardyGameIdResultsRoute
   '/play/jeopardy/$id': typeof PlayJeopardyIdRoute
   '/play/millionaire/$id': typeof PlayMillionaireIdRoute
@@ -204,7 +204,6 @@ export interface FileRouteTypes {
     | '/join'
     | '/library'
     | '/login'
-    | '/profile'
     | '/register'
     | '/builder/jeopardy'
     | '/builder/millionaire'
@@ -212,6 +211,7 @@ export interface FileRouteTypes {
     | '/game/$id'
     | '/profile/$userId'
     | '/room/$code'
+    | '/profile/'
     | '/jeopardy/$gameId/results'
     | '/play/jeopardy/$id'
     | '/play/millionaire/$id'
@@ -226,13 +226,13 @@ export interface FileRouteTypes {
     | '/join'
     | '/library'
     | '/login'
-    | '/profile'
     | '/register'
     | '/builder/jeopardy'
     | '/builder/millionaire'
     | '/builder/quiz'
     | '/game/$id'
     | '/profile/$userId'
+    | '/profile'
     | '/jeopardy/$gameId/results'
     | '/play/jeopardy/$id'
     | '/play/millionaire/$id'
@@ -247,7 +247,6 @@ export interface FileRouteTypes {
     | '/join'
     | '/library'
     | '/login'
-    | '/profile'
     | '/register'
     | '/builder/jeopardy'
     | '/builder/millionaire'
@@ -255,6 +254,7 @@ export interface FileRouteTypes {
     | '/game/$id'
     | '/profile/$userId'
     | '/room/$code'
+    | '/profile/'
     | '/jeopardy/$gameId/results'
     | '/play/jeopardy/$id'
     | '/play/millionaire/$id'
@@ -270,13 +270,14 @@ export interface RootRouteChildren {
   JoinRoute: typeof JoinRoute
   LibraryRoute: typeof LibraryRoute
   LoginRoute: typeof LoginRoute
-  ProfileRoute: typeof ProfileRouteWithChildren
   RegisterRoute: typeof RegisterRoute
   BuilderJeopardyRoute: typeof BuilderJeopardyRoute
   BuilderMillionaireRoute: typeof BuilderMillionaireRoute
   BuilderQuizRoute: typeof BuilderQuizRoute
   GameIdRoute: typeof GameIdRoute
+  ProfileUserIdRoute: typeof ProfileUserIdRoute
   RoomCodeRoute: typeof RoomCodeRouteWithChildren
+  ProfileIndexRoute: typeof ProfileIndexRoute
   JeopardyGameIdResultsRoute: typeof JeopardyGameIdResultsRoute
   PlayJeopardyIdRoute: typeof PlayJeopardyIdRoute
   PlayMillionaireIdRoute: typeof PlayMillionaireIdRoute
@@ -291,13 +292,6 @@ declare module '@tanstack/react-router' {
       path: '/register'
       fullPath: '/register'
       preLoaderRoute: typeof RegisterRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/profile': {
-      id: '/profile'
-      path: '/profile'
-      fullPath: '/profile'
-      preLoaderRoute: typeof ProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -328,6 +322,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/profile/': {
+      id: '/profile/'
+      path: '/profile'
+      fullPath: '/profile/'
+      preLoaderRoute: typeof ProfileIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/room/$code': {
       id: '/room/$code'
       path: '/room/$code'
@@ -337,10 +338,10 @@ declare module '@tanstack/react-router' {
     }
     '/profile/$userId': {
       id: '/profile/$userId'
-      path: '/$userId'
+      path: '/profile/$userId'
       fullPath: '/profile/$userId'
       preLoaderRoute: typeof ProfileUserIdRouteImport
-      parentRoute: typeof ProfileRoute
+      parentRoute: typeof rootRouteImport
     }
     '/game/$id': {
       id: '/game/$id'
@@ -429,17 +430,6 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface ProfileRouteChildren {
-  ProfileUserIdRoute: typeof ProfileUserIdRoute
-}
-
-const ProfileRouteChildren: ProfileRouteChildren = {
-  ProfileUserIdRoute: ProfileUserIdRoute,
-}
-
-const ProfileRouteWithChildren =
-  ProfileRoute._addFileChildren(ProfileRouteChildren)
-
 interface RoomCodeRouteChildren {
   RoomCodeAnswersRoute: typeof RoomCodeAnswersRoute
   RoomCodePlayRoute: typeof RoomCodePlayRoute
@@ -461,13 +451,14 @@ const rootRouteChildren: RootRouteChildren = {
   JoinRoute: JoinRoute,
   LibraryRoute: LibraryRoute,
   LoginRoute: LoginRoute,
-  ProfileRoute: ProfileRouteWithChildren,
   RegisterRoute: RegisterRoute,
   BuilderJeopardyRoute: BuilderJeopardyRoute,
   BuilderMillionaireRoute: BuilderMillionaireRoute,
   BuilderQuizRoute: BuilderQuizRoute,
   GameIdRoute: GameIdRoute,
+  ProfileUserIdRoute: ProfileUserIdRoute,
   RoomCodeRoute: RoomCodeRouteWithChildren,
+  ProfileIndexRoute: ProfileIndexRoute,
   JeopardyGameIdResultsRoute: JeopardyGameIdResultsRoute,
   PlayJeopardyIdRoute: PlayJeopardyIdRoute,
   PlayMillionaireIdRoute: PlayMillionaireIdRoute,

@@ -7,7 +7,7 @@ import { listGames } from "@/lib/api";
 import type { StoredGame } from "@/lib/types";
 import { Upload, Trash2 } from "lucide-react";
 
-export const Route = createFileRoute("/profile")({
+export const Route = createFileRoute("/profile/")({
   head: () => ({ meta: [{ title: "Профиль — IslandQuiz" }] }),
   component: ProfilePage,
 });

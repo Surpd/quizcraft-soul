@@ -1,7 +1,8 @@
-// Teacher-side online Jeopardy room. Grid selection, buzz/turn modes,
-// judgement buttons, final round, podium. Reuses PlayerShell theme.
+// Teacher-side online Jeopardy room. Grid selection (both modes),
+// buzz timer with pause/resume, judgement buttons, score adjustment
+// (± with custom amount), final round, podium.
 import { Link } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Copy,
   Play,
@@ -12,21 +13,30 @@ import {
   Volume2,
   VolumeX,
   Check,
-  RefreshCw,
   Flag,
   SkipForward,
   ArrowLeft,
   Plus,
   Minus,
+  Bell,
+  RotateCw,
+  Mic,
+  Lock,
+  Timer as TimerIcon,
+  StopCircle,
+  Flame,
 } from "lucide-react";
 import { PlayerShell } from "@/components/player-shell";
+import { Avatar } from "@/components/avatar";
 import { LaTeX } from "@/lib/latex";
 import { loadGame } from "@/lib/api";
 import {
   setJeopardyMode,
   startJeopardyGame,
+  selectJeopardyQuestion,
   acceptJeopardyAnswer,
   skipJeopardyQuestion,
+  closeJeopardyQuestion,
   endJeopardyRound,
   backToBoard,
   startJeopardyFinalQuestion,
@@ -47,6 +57,7 @@ export function JeopardyRoomTeacher({ state, code }: { state: RoomState; code: s
   const [muted, setMutedState] = useState(true);
   const [copied, setCopied] = useState(false);
   const prevPhase = useRef<string | null>(null);
+  const [timeLeft, setTimeLeft] = useState(0);
 
   useEffect(() => setMutedState(isMuted()), []);
   useEffect(() => {
@@ -65,6 +76,32 @@ export function JeopardyRoomTeacher({ state, code }: { state: RoomState; code: s
     if (j.phase === "reveal") sfx.click();
     if (j.phase === "podium") sfx.fanfare();
   }, [j.phase]);
+
+  // Buzz-mode timer
+  useEffect(() => {
+    if (j.mode !== "buzz") return;
+    if (j.phase !== "question" && j.phase !== "answering") return;
+    const tick = () => {
+      const running =
+        j.phase === "question" && state.questionStartAt
+          ? Date.now() - state.questionStartAt
+          : 0;
+      const elapsed = j.questionElapsedMs + running;
+      setTimeLeft(Math.max(0, j.questionTotalMs - elapsed));
+    };
+    tick();
+    const id = window.setInterval(tick, 200);
+    return () => window.clearInterval(id);
+  }, [j.mode, j.phase, j.questionElapsedMs, j.questionTotalMs, state.questionStartAt]);
+
+  // Auto-close on timeout (only teacher triggers this)
+  useEffect(() => {
+    if (j.mode !== "buzz" || j.phase !== "question") return;
+    if (timeLeft > 0) return;
+    if (!state.questionStartAt) return;
+    void closeJeopardyQuestion(code);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timeLeft, j.phase, j.mode]);
 
   if (!game) {
     return (
@@ -119,6 +156,13 @@ export function JeopardyRoomTeacher({ state, code }: { state: RoomState; code: s
     </div>
   );
 
+  const highlightId =
+    j.mode === "turn" && currentPlayer
+      ? currentPlayer.id
+      : j.mode === "buzz"
+        ? j.buzzedPlayerId
+        : null;
+
   return (
     <PlayerShell theme={theme}>
       <div className="mx-auto max-w-6xl px-4 py-6 md:px-8">
@@ -149,21 +193,21 @@ export function JeopardyRoomTeacher({ state, code }: { state: RoomState; code: s
                 <div className="inline-flex overflow-hidden rounded-xl border border-[color:var(--pt-border)]">
                   <button
                     onClick={() => setJeopardyMode(code, "buzz")}
-                    className={`px-4 py-2 text-sm font-bold ${j.mode === "buzz" ? "bg-[color:var(--pt-accent)] text-black" : "bg-[color:var(--pt-surface-strong)]"}`}
+                    className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-bold ${j.mode === "buzz" ? "bg-[color:var(--pt-accent)] text-black" : "bg-[color:var(--pt-surface-strong)]"}`}
                   >
-                    🔔 По нажатию
+                    <Bell className="h-4 w-4" /> По нажатию
                   </button>
                   <button
                     onClick={() => setJeopardyMode(code, "turn")}
-                    className={`px-4 py-2 text-sm font-bold ${j.mode === "turn" ? "bg-[color:var(--pt-accent)] text-black" : "bg-[color:var(--pt-surface-strong)]"}`}
+                    className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-bold ${j.mode === "turn" ? "bg-[color:var(--pt-accent)] text-black" : "bg-[color:var(--pt-surface-strong)]"}`}
                   >
-                    🔄 По очереди
+                    <RotateCw className="h-4 w-4" /> По очереди
                   </button>
                 </div>
                 <p className="mt-2 text-xs text-[color:var(--pt-text-muted)]">
                   {j.mode === "buzz"
-                    ? "Игроки нажимают кнопку — кто первый, тот отвечает."
-                    : "Игроки выбирают вопросы по очереди."}
+                    ? "Учитель открывает вопрос — команды жмут кнопку. Первый отвечает; при ошибке таймер продолжается и другие могут жать."
+                    : "Команды выбирают вопросы по очереди. Ход всегда переходит следующей команде."}
                 </p>
               </div>
 
@@ -184,7 +228,7 @@ export function JeopardyRoomTeacher({ state, code }: { state: RoomState; code: s
             </div>
             <div className="rounded-3xl border border-[color:var(--pt-border)] bg-[color:var(--pt-surface)] p-6 backdrop-blur-md md:col-span-2">
               <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[color:var(--pt-text-muted)]">
-                <Users className="h-4 w-4" /> Игроки ({state.players.length})
+                <Users className="h-4 w-4" /> Команды ({state.players.length})
               </div>
               {state.players.length === 0 ? (
                 <p className="text-sm text-[color:var(--pt-text-muted)]">Ждём подключения...</p>
@@ -195,7 +239,7 @@ export function JeopardyRoomTeacher({ state, code }: { state: RoomState; code: s
                       key={p.id}
                       className="iq-pop flex items-center gap-2 rounded-full bg-[color:var(--pt-surface-strong)] px-3 py-1.5 text-sm font-semibold"
                     >
-                      <span className="text-lg">{p.avatar}</span>
+                      <Avatar name={p.nickname} size={24} />
                       {p.nickname}
                       <button
                         onClick={() => kickPlayer(code, p.id)}
@@ -222,8 +266,9 @@ export function JeopardyRoomTeacher({ state, code }: { state: RoomState; code: s
                 </span>
                 <div className="flex items-center gap-2 text-xs">
                   {j.mode === "turn" && currentPlayer && (
-                    <span className="rounded-full bg-[color:var(--pt-accent)]/20 px-3 py-1 font-bold text-[color:var(--pt-accent)]">
-                      Ход: {currentPlayer.avatar} {currentPlayer.nickname}
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-[color:var(--pt-accent)]/20 px-3 py-1 font-bold text-[color:var(--pt-accent)]">
+                      <Avatar name={currentPlayer.nickname} size={18} /> Ход:{" "}
+                      {currentPlayer.nickname}
                     </span>
                   )}
                   <button
@@ -238,11 +283,18 @@ export function JeopardyRoomTeacher({ state, code }: { state: RoomState; code: s
                 round={currentRound}
                 usedKeys={j.usedKeys}
                 roundIdx={j.round}
-                selectable={false}
+                onSelect={(ci, ri) => {
+                  sfx.click();
+                  selectJeopardyQuestion(code, null, ci, ri);
+                }}
               />
             </div>
             <div className="space-y-4">
-              <JLeaderboard state={state} />
+              <JLeaderboard state={state} highlightId={highlightId} />
+              <JManagePanel
+                state={state}
+                onAdjust={(id, d) => adjustJeopardyScore(code, id, d)}
+              />
             </div>
           </div>
         )}
@@ -257,12 +309,35 @@ export function JeopardyRoomTeacher({ state, code }: { state: RoomState; code: s
                     {currentRound[j.selectedCat!]?.category ?? `Категория ${j.selectedCat! + 1}`} ·{" "}
                     <span className="text-[color:var(--pt-accent)]">{question.points}</span>
                   </span>
-                  <button
-                    onClick={() => skipJeopardyQuestion(code)}
-                    className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--pt-border)] bg-[color:var(--pt-surface-strong)] px-3 py-1.5 text-xs font-semibold"
-                  >
-                    <SkipForward className="h-3 w-3" /> Пропустить
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {j.mode === "buzz" &&
+                      (j.phase === "question" || j.phase === "answering") && (
+                        <span
+                          className={`inline-flex items-center gap-1 rounded-full px-3 py-1 font-mono text-sm font-bold ${
+                            timeLeft <= 5000
+                              ? "bg-danger/20 text-danger"
+                              : "bg-[color:var(--pt-surface-strong)]"
+                          }`}
+                        >
+                          <TimerIcon className="h-3.5 w-3.5" />
+                          {Math.ceil(timeLeft / 1000)}с
+                        </span>
+                      )}
+                    {(j.phase === "question" || j.phase === "answering") && (
+                      <button
+                        onClick={() => closeJeopardyQuestion(code)}
+                        className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--pt-border)] bg-[color:var(--pt-surface-strong)] px-3 py-1.5 text-xs font-semibold"
+                      >
+                        <StopCircle className="h-3 w-3" /> Закрыть
+                      </button>
+                    )}
+                    <button
+                      onClick={() => skipJeopardyQuestion(code)}
+                      className="inline-flex items-center gap-1 rounded-lg border border-[color:var(--pt-border)] bg-[color:var(--pt-surface-strong)] px-3 py-1.5 text-xs font-semibold"
+                    >
+                      <SkipForward className="h-3 w-3" /> Пропустить
+                    </button>
+                  </div>
                 </div>
                 {question.image && (
                   <img
@@ -285,8 +360,8 @@ export function JeopardyRoomTeacher({ state, code }: { state: RoomState; code: s
                 {j.phase === "answering" && buzzed && (
                   <div className="mt-6 rounded-2xl bg-[color:var(--pt-accent)]/15 p-4 text-center">
                     <p className="text-sm text-[color:var(--pt-text-muted)]">Отвечает:</p>
-                    <p className="mt-1 font-display text-2xl font-black">
-                      {buzzed.avatar} {buzzed.nickname}
+                    <p className="mt-1 flex items-center justify-center gap-2 font-display text-2xl font-black">
+                      <Avatar name={buzzed.nickname} size={32} /> {buzzed.nickname}
                     </p>
                   </div>
                 )}
@@ -294,8 +369,8 @@ export function JeopardyRoomTeacher({ state, code }: { state: RoomState; code: s
                 {j.mode === "turn" && j.phase === "question" && currentPlayer && (
                   <div className="mt-6 rounded-2xl bg-[color:var(--pt-accent)]/15 p-4 text-center">
                     <p className="text-sm text-[color:var(--pt-text-muted)]">Отвечает по очереди:</p>
-                    <p className="mt-1 font-display text-2xl font-black">
-                      {currentPlayer.avatar} {currentPlayer.nickname}
+                    <p className="mt-1 flex items-center justify-center gap-2 font-display text-2xl font-black">
+                      <Avatar name={currentPlayer.nickname} size={32} /> {currentPlayer.nickname}
                     </p>
                   </div>
                 )}
@@ -331,7 +406,7 @@ export function JeopardyRoomTeacher({ state, code }: { state: RoomState; code: s
                 )}
               </div>
               <div className="space-y-4">
-                <JLeaderboard state={state} />
+                <JLeaderboard state={state} highlightId={highlightId} />
                 <JManagePanel
                   state={state}
                   onAdjust={(id, d) => adjustJeopardyScore(code, id, d)}
@@ -357,7 +432,7 @@ export function JeopardyRoomTeacher({ state, code }: { state: RoomState; code: s
                     className="flex items-center justify-between rounded-xl bg-[color:var(--pt-surface-strong)] px-4 py-3"
                   >
                     <span className="flex items-center gap-2">
-                      <span>{p.avatar}</span> <b>{p.nickname}</b>
+                      <Avatar name={p.nickname} size={28} /> <b>{p.nickname}</b>
                       <span className="text-xs text-[color:var(--pt-text-muted)]">
                         · счёт: {p.score}
                       </span>
@@ -366,7 +441,9 @@ export function JeopardyRoomTeacher({ state, code }: { state: RoomState; code: s
                       {bet == null ? (
                         <span className="text-[color:var(--pt-text-muted)]">не поставил</span>
                       ) : (
-                        <span className="font-bold text-[color:var(--pt-accent)]">🔒 {bet}</span>
+                        <span className="inline-flex items-center gap-1 font-bold text-[color:var(--pt-accent)]">
+                          <Lock className="h-3.5 w-3.5" /> {bet}
+                        </span>
                       )}
                     </span>
                   </div>
@@ -414,7 +491,7 @@ export function JeopardyRoomTeacher({ state, code }: { state: RoomState; code: s
                     className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-[color:var(--pt-surface-strong)] px-4 py-3"
                   >
                     <span className="flex items-center gap-2">
-                      <span>{p.avatar}</span>
+                      <Avatar name={p.nickname} size={26} />
                       <b>{p.nickname}</b>
                       <span className="text-xs text-[color:var(--pt-text-muted)]">
                         · ставка {j.finalBets[p.id] ?? 0}
@@ -462,7 +539,7 @@ export function JeopardyRoomTeacher({ state, code }: { state: RoomState; code: s
                   >
                     <span className="flex items-center gap-2">
                       <span className="font-mono">{i + 1}</span>
-                      <span>{p.avatar}</span>
+                      <Avatar name={p.nickname} size={26} />
                       <b>{p.nickname}</b>
                     </span>
                     <span className="font-mono font-bold">{p.score}</span>
@@ -489,12 +566,12 @@ function JBoard({
   round,
   usedKeys,
   roundIdx,
-  selectable,
+  onSelect,
 }: {
   round: JeopardyData["rounds"][number];
   usedKeys: string[];
   roundIdx: number;
-  selectable: boolean;
+  onSelect: (catIdx: number, qIdx: number) => void;
 }) {
   const maxRows = round.reduce((m, c) => Math.max(m, c.questions.length), 0);
   return (
@@ -528,19 +605,20 @@ function JBoard({
           const key = `${roundIdx}-${ci}-${ri}`;
           const used = usedKeys.includes(key);
           return (
-            <div
+            <button
+              type="button"
               key={`q-${ci}-${ri}`}
+              onClick={() => !used && onSelect(ci, ri)}
+              disabled={used}
               style={{ gridColumn: ci + 1, gridRow: ri + 2 }}
-              className={`grid place-items-center rounded-xl border border-[color:var(--pt-border)] p-6 font-display text-2xl font-black ${
+              className={`grid place-items-center rounded-xl border border-[color:var(--pt-border)] p-6 font-display text-2xl font-black transition-all ${
                 used
-                  ? "opacity-20"
-                  : selectable
-                    ? "bg-[color:var(--pt-surface)] text-[color:var(--pt-accent)]"
-                    : "bg-[color:var(--pt-surface)] text-[color:var(--pt-accent)]"
+                  ? "cursor-not-allowed opacity-20"
+                  : "bg-[color:var(--pt-surface)] text-[color:var(--pt-accent)] hover:scale-105 hover:bg-[color:var(--pt-accent)]/10"
               }`}
             >
               {q.points}
-            </div>
+            </button>
           );
         }),
       )}
@@ -548,7 +626,13 @@ function JBoard({
   );
 }
 
-function JLeaderboard({ state }: { state: RoomState }) {
+function JLeaderboard({
+  state,
+  highlightId,
+}: {
+  state: RoomState;
+  highlightId: string | null;
+}) {
   const sorted = [...state.players].sort((a, b) => b.score - a.score);
   const lastId = state.jeopardy?.lastDelta?.playerId;
   const lastDelta = state.jeopardy?.lastDelta?.delta ?? 0;
@@ -562,14 +646,18 @@ function JLeaderboard({ state }: { state: RoomState }) {
           <div
             key={p.id}
             className={`relative flex items-center justify-between rounded-xl px-3 py-2 transition-all ${
-              i === 0 ? "bg-[color:var(--pt-accent)]/15" : "bg-[color:var(--pt-surface-strong)]"
+              p.id === highlightId
+                ? "bg-[color:var(--pt-accent)]/25 ring-2 ring-[color:var(--pt-accent)]"
+                : i === 0
+                  ? "bg-[color:var(--pt-accent)]/15"
+                  : "bg-[color:var(--pt-surface-strong)]"
             }`}
           >
             <div className="flex items-center gap-2 truncate">
               <span className="w-5 font-mono text-xs text-[color:var(--pt-text-muted)]">
                 {i + 1}
               </span>
-              <span>{p.avatar}</span>
+              <Avatar name={p.nickname} size={22} />
               <span className="truncate font-semibold">{p.nickname}</span>
             </div>
             <span className="font-mono text-sm font-bold">
@@ -606,30 +694,80 @@ function JManagePanel({
       </p>
       <div className="space-y-2">
         {state.players.map((p) => (
-          <div
-            key={p.id}
-            className="flex items-center justify-between rounded-xl bg-[color:var(--pt-surface-strong)] px-2 py-1.5 text-xs"
-          >
-            <span className="truncate">
-              {p.avatar} {p.nickname}
-            </span>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => onAdjust(p.id, -100)}
-                className="grid h-6 w-6 place-items-center rounded bg-[color:var(--pt-surface)] hover:bg-danger/20 hover:text-danger"
-              >
-                <Minus className="h-3 w-3" />
-              </button>
-              <button
-                onClick={() => onAdjust(p.id, 100)}
-                className="grid h-6 w-6 place-items-center rounded bg-[color:var(--pt-surface)] hover:bg-success/20 hover:text-success"
-              >
-                <Plus className="h-3 w-3" />
-              </button>
-            </div>
-          </div>
+          <ScoreAdjustRow key={p.id} player={p} onAdjust={onAdjust} />
         ))}
       </div>
+    </div>
+  );
+}
+
+function ScoreAdjustRow({
+  player,
+  onAdjust,
+}: {
+  player: RoomPlayer;
+  onAdjust: (id: string, d: number) => void;
+}) {
+  const [open, setOpen] = useState<null | "plus" | "minus">(null);
+  const [val, setVal] = useState("100");
+  const apply = () => {
+    const n = Math.max(0, Math.floor(Number(val) || 0));
+    if (n === 0) return setOpen(null);
+    onAdjust(player.id, open === "minus" ? -n : n);
+    setOpen(null);
+  };
+  return (
+    <div className="rounded-xl bg-[color:var(--pt-surface-strong)] px-2 py-1.5 text-xs">
+      <div className="flex items-center justify-between gap-2">
+        <span className="flex min-w-0 items-center gap-1.5 truncate">
+          <Avatar name={player.nickname} size={18} />
+          <span className="truncate font-semibold">{player.nickname}</span>
+          <span className="ml-1 font-mono text-[color:var(--pt-text-muted)]">
+            {player.score}
+          </span>
+        </span>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => {
+              setOpen(open === "minus" ? null : "minus");
+              setVal("100");
+            }}
+            className="grid h-6 w-6 place-items-center rounded bg-[color:var(--pt-surface)] hover:bg-danger/20 hover:text-danger"
+            aria-label="Отнять"
+          >
+            <Minus className="h-3 w-3" />
+          </button>
+          <button
+            onClick={() => {
+              setOpen(open === "plus" ? null : "plus");
+              setVal("100");
+            }}
+            className="grid h-6 w-6 place-items-center rounded bg-[color:var(--pt-surface)] hover:bg-success/20 hover:text-success"
+            aria-label="Добавить"
+          >
+            <Plus className="h-3 w-3" />
+          </button>
+        </div>
+      </div>
+      {open && (
+        <div className="mt-1.5 flex items-center gap-1.5">
+          <input
+            type="number"
+            value={val}
+            onChange={(e) => setVal(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && apply()}
+            className="w-full rounded bg-[color:var(--pt-surface)] px-2 py-1 text-right font-mono text-xs"
+            autoFocus
+          />
+          <button
+            onClick={apply}
+            className={`rounded px-2 py-1 text-xs font-bold text-white ${open === "plus" ? "bg-success" : "bg-danger"}`}
+          >
+            {open === "plus" ? "+" : "−"}
+            {val || 0}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -649,14 +787,14 @@ function JPodium({ players, gameId }: { players: RoomPlayer[]; gameId: string })
           if (!p) return <div key={col} />;
           const heights = ["h-32", "h-44", "h-24"];
           const colors = ["bg-slate-300", "bg-[color:var(--pt-accent)]", "bg-amber-700"];
+          const trophyColors = ["text-slate-300", "text-[color:var(--pt-accent)]", "text-amber-700"];
           return (
             <div key={p.id} className="flex flex-col items-center">
-              <span
-                className={`text-5xl md:text-6xl ${mapIdx === 0 ? "iq-bounce" : "iq-wiggle"}`}
+              <Trophy
+                className={`h-10 w-10 md:h-12 md:w-12 ${trophyColors[col]} ${mapIdx === 0 ? "iq-bounce" : "iq-wiggle"}`}
                 style={{ animationDelay: `${col * 0.15}s` }}
-              >
-                {p.avatar}
-              </span>
+              />
+              <Avatar name={p.nickname} size={48} className="mt-2" />
               <span className="mt-2 font-semibold">{p.nickname}</span>
               <span className="font-mono text-lg font-bold">
                 {p.score.toLocaleString("ru-RU")}
@@ -682,7 +820,7 @@ function JPodium({ players, gameId }: { players: RoomPlayer[]; gameId: string })
                 <span className="font-mono text-xs text-[color:var(--pt-text-muted)]">
                   {i + 4}
                 </span>
-                <span>{p.avatar}</span>
+                <Avatar name={p.nickname} size={24} />
                 <span className="font-semibold">{p.nickname}</span>
               </span>
               <span className="font-mono font-bold">{p.score.toLocaleString("ru-RU")}</span>
@@ -706,6 +844,8 @@ function JPodium({ players, gameId }: { players: RoomPlayer[]; gameId: string })
           <X className="h-4 w-4" /> Закрыть
         </Link>
       </div>
+      {/* Flame kept as icon in case future spec uses streaks */}
+      <Flame className="hidden" />
     </div>
   );
 }

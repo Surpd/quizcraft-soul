@@ -40,11 +40,15 @@ function PlayMillionaire() {
   const [fiftyUsed, setFiftyUsed] = useState(false);
   const [hidden, setHidden] = useState<Set<number>>(new Set());
   const [timeLeft, setTimeLeft] = useState(0);
+  const startedAtRef = useRef<number>(Date.now());
+  const answersRef = useRef<MillionaireAnswerDetail[]>([]);
+  const savedRef = useRef(false);
 
   useEffect(() => {
     const g = loadGame<MillionaireData>("millionaire", id);
     if (g) setData(g.data);
   }, [id]);
+
 
   const config = data?.config;
   const questions = data?.questions ?? [];

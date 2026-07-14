@@ -262,7 +262,7 @@ function StudentPlay() {
       <PlayerShell theme={theme}>
         <div className="mx-auto max-w-md px-6 py-16 text-center">
           <div className="flex justify-center">{MuteBtn}</div>
-          <div className={`mt-6 text-7xl ${isPodium ? "iq-bounce" : "iq-pop"}`}>{me.avatar}</div>
+          <Avatar name={me.nickname} size={96} className={`mx-auto mt-6 ${isPodium ? "iq-bounce" : "iq-pop"}`} />
           <Trophy className="mx-auto mt-4 h-10 w-10 text-[color:var(--pt-accent)]" />
           <h1 className="mt-2 font-display text-3xl font-black">Финал</h1>
           <p className="mt-1 text-[color:var(--pt-text-muted)]">

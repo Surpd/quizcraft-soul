@@ -299,8 +299,14 @@ function PlayQuiz() {
               onGo={goTo}
             />
             <div className="flex items-center justify-between text-xs uppercase tracking-widest text-[color:var(--pt-text-muted)]">
-              <span>
-                {idx + 1} / {order.length}
+              <span className="inline-flex items-center gap-2 normal-case tracking-normal">
+                {(user || name.trim()) && (
+                  <Avatar name={name || user?.name || "?"} avatar={user?.avatar} size={22} />
+                )}
+                <span className="font-semibold text-[color:var(--pt-text)]">
+                  {name || user?.name || "Гость"}
+                </span>
+                <span className="opacity-60">· {idx + 1} / {order.length}</span>
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <Timer className="h-3.5 w-3.5" />

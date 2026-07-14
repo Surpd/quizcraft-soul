@@ -191,12 +191,6 @@ function PlayMillionaire() {
   }, [phase, wonAmount, id, idx, questions, milestones, user]);
 
 
-  const wonAmount =
-    phase === "won"
-      ? questions.at(-1)!.money
-      : phase === "lost"
-        ? guaranteedMoney(idx, questions, milestones)
-        : 0;
 
   return (
     <PlayerShell theme={config.theme}>

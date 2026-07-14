@@ -711,7 +711,7 @@ function Finale({
             >
               <span className="flex items-center gap-2">
                 <span className="font-mono text-xs text-[color:var(--pt-text-muted)]">{i + 4}</span>
-                <span>{p.avatar}</span>
+                <Avatar name={p.nickname} size={22} />
                 <span className="font-semibold">{p.nickname}</span>
               </span>
               <span className="font-mono font-bold">{p.score.toLocaleString("ru-RU")}</span>

@@ -96,14 +96,15 @@ function PlayMillionaire() {
 
   // Сохраняем результат один раз при завершении (объявлено до early return, чтобы порядок хуков не менялся)
   useEffect(() => {
-    if (phase === "playing" || savedRef.current || !questions.length) return;
+    if (phase === "playing" || phase === "start" || savedRef.current || !questions.length) return;
     savedRef.current = true;
     const reached = answersRef.current.filter((a) => a.isCorrect).length;
     saveMillionaireResult({
       gameId: id,
-      playerName: user?.name || "Аноним",
+      playerName: playerName.trim() || user?.name || "Аноним",
       avatar: user?.avatar,
       outcome: phase,
+
       wonAmount,
       guaranteedAmount: guaranteedMoney(idx, questions, milestones),
       reachedCount: reached,

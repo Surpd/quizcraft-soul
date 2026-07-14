@@ -4,6 +4,7 @@ import { Sparkles, RefreshCw } from "lucide-react";
 import { PlayerShell, TimerBar } from "@/components/player-shell";
 import { LaTeX } from "@/lib/latex";
 import { loadGame } from "@/lib/storage";
+import { fitOptionSize, fitQuestionSize } from "@/lib/fit-text";
 import type { MilestoneMode, MillionaireData, MillionaireQuestion } from "@/lib/types";
 
 export const Route = createFileRoute("/play/millionaire/$id")({

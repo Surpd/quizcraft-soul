@@ -645,3 +645,147 @@ function Draggable({ value }: { value: string }) {
     </div>
   );
 }
+
+function CloseBoard({
+  question,
+  value,
+  onChange,
+  disabled,
+}: {
+  question: QuizQuestion;
+  value: string;
+  onChange: (v: string) => void;
+  disabled: boolean;
+}) {
+  const correct = useMemo(() => {
+    try {
+      const a = JSON.parse(question.answer || "[]") as string[];
+      return Array.isArray(a) ? a : [];
+    } catch {
+      return [];
+    }
+  }, [question.answer]);
+  const parts = question.q.split("___");
+  const blanks = parts.length - 1;
+  const values: string[] = useMemo(() => {
+    try {
+      const a = JSON.parse(value || "[]") as string[];
+      const out = Array.isArray(a) ? [...a] : [];
+      while (out.length < blanks) out.push("");
+      out.length = blanks;
+      return out;
+    } catch {
+      return Array(blanks).fill("");
+    }
+  }, [value, blanks]);
+  const setAt = (i: number, v: string) => {
+    const next = [...values];
+    next[i] = v;
+    onChange(JSON.stringify(next));
+  };
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-2 text-lg leading-relaxed">
+      {parts.map((p, i) => (
+        <span key={i} className="contents">
+          <LaTeX>{p}</LaTeX>
+          {i < blanks && (
+            <input
+              disabled={disabled}
+              value={values[i] ?? ""}
+              onChange={(e) => setAt(i, e.target.value)}
+              placeholder="…"
+              size={Math.max(6, (correct[i] || "").length + 2)}
+              className="inline-block rounded-lg border-2 border-[color:var(--pt-border)] bg-[color:var(--pt-surface-strong)] px-2 py-1 text-center font-semibold outline-none focus:border-[color:var(--pt-accent)]"
+            />
+          )}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function OrderingBoard({
+  question,
+  value,
+  onChange,
+  disabled,
+}: {
+  question: QuizQuestion;
+  value: string;
+  onChange: (v: string) => void;
+  disabled: boolean;
+}) {
+  const correct = useMemo(() => {
+    try {
+      const a = JSON.parse(question.answer || "[]") as string[];
+      return Array.isArray(a) ? a.filter(Boolean) : [];
+    } catch {
+      return [];
+    }
+  }, [question.answer]);
+
+  // Initial shuffle once per question (fresh per mount).
+  const initial = useMemo(() => shuffle(correct), [correct]);
+  const items: string[] = useMemo(() => {
+    try {
+      const a = JSON.parse(value || "null");
+      if (Array.isArray(a) && a.length === correct.length) return a as string[];
+    } catch {
+      // ignore
+    }
+    return initial;
+  }, [value, initial, correct.length]);
+
+  // Ensure parent state has an initial value so submit sends something.
+  useEffect(() => {
+    if (!value) onChange(JSON.stringify(initial));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const move = (i: number, dir: -1 | 1) => {
+    if (disabled) return;
+    const j = i + dir;
+    if (j < 0 || j >= items.length) return;
+    const next = [...items];
+    [next[i], next[j]] = [next[j], next[i]];
+    onChange(JSON.stringify(next));
+  };
+
+  return (
+    <div className="space-y-2">
+      {items.map((v, i) => (
+        <div
+          key={`${v}-${i}`}
+          className="flex items-center gap-3 rounded-xl border-2 border-[color:var(--pt-border)] bg-[color:var(--pt-surface-strong)] px-4 py-3"
+        >
+          <span className="grid h-8 w-8 flex-shrink-0 place-items-center rounded-full bg-[color:var(--pt-accent)] font-bold text-black">
+            {i + 1}
+          </span>
+          <span className="min-w-0 flex-1 break-words text-sm font-semibold">
+            <LaTeX>{v}</LaTeX>
+          </span>
+          <div className="flex flex-col gap-1">
+            <button
+              type="button"
+              disabled={disabled || i === 0}
+              onClick={() => move(i, -1)}
+              className="rounded p-1 text-[color:var(--pt-text-muted)] hover:text-[color:var(--pt-accent)] disabled:opacity-30"
+              aria-label="Вверх"
+            >
+              ▲
+            </button>
+            <button
+              type="button"
+              disabled={disabled || i === items.length - 1}
+              onClick={() => move(i, 1)}
+              className="rounded p-1 text-[color:var(--pt-text-muted)] hover:text-[color:var(--pt-accent)] disabled:opacity-30"
+              aria-label="Вниз"
+            >
+              ▼
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}

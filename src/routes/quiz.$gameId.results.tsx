@@ -192,9 +192,8 @@ function ResultsPage() {
                         }
                       };
                       return (
-                        <>
+                        <FragmentWithKey key={r.id}>
                           <tr
-                            key={r.id}
                             className="cursor-pointer border-t border-border hover:bg-surface-muted/60"
                             onClick={toggle}
                           >

@@ -507,7 +507,9 @@ function QuestionCard({
   const qRef = useRef<HTMLTextAreaElement>(null);
   const optRefs = useRef<(HTMLInputElement | null)[]>([]);
   const aiType: "choice" | "bool" | "text" | undefined =
-    question.type === "matching" ? undefined : question.type;
+    question.type === "choice" || question.type === "bool" || question.type === "text"
+      ? question.type
+      : undefined;
   const aiFormat = `quiz-${question.type}`;
   return (
     <div id={`q-${question.id}`} className="surface-card space-y-4 p-6 scroll-mt-24">

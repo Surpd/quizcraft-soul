@@ -21,6 +21,7 @@ import { LaTeX } from "@/lib/latex";
 import {
   loadGame,
   buzzJeopardy,
+  submitJeopardyBuzzAnswer,
   submitJeopardyFinalBet,
   submitJeopardyFinalAnswer,
   type RoomState,

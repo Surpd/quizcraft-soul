@@ -8,6 +8,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Hourglass, Trophy, Timer, Volume2, VolumeX, Users } from "lucide-react";
 import { PlayerShell, TimerBar } from "@/components/player-shell";
 import { QuizQuestionCard, checkQuizAnswer } from "@/components/quiz-question-card";
+import { JeopardyRoomPlayer } from "@/components/jeopardy-room-player";
 import { subscribeRoom, loadGame, submitAnswer, type RoomState } from "@/lib/api";
 import { sfx, isMuted, toggleMute } from "@/lib/sounds";
 import type { QuizData, QuizQuestion } from "@/lib/types";

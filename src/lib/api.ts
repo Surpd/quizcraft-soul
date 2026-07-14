@@ -155,12 +155,16 @@ export interface JeopardyRoomState {
   selectedCat: number | null;
   selectedQ: number | null;
   buzzedPlayerId: string | null;
+  buzzedPlayerIds: string[]; // buzz mode: players who already got a wrong attempt
+  questionTotalMs: number; // buzz mode: full timer for the current question
+  questionElapsedMs: number; // buzz mode: accumulated elapsed time (frozen while answering)
   showAnswer: boolean;
   finalBets: Record<string, number>;
   finalAnswers: Record<string, boolean>;
   finalGiven: Record<string, string>;
   lastDelta?: { playerId: string; delta: number } | null;
 }
+
 
 export interface RoomState {
   code: string;

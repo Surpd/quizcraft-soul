@@ -83,6 +83,34 @@ function PlayMillionaire() {
     return () => clearInterval(t);
   }, [idx, phase, config, questions.length]);
 
+  const current = questions[idx];
+  const correctIdxEarly = current ? current.options.findIndex((o) => o.correct) : -1;
+  const wonAmount =
+    phase === "won"
+      ? (questions.at(-1)?.money ?? 0)
+      : phase === "lost"
+        ? guaranteedMoney(idx, questions, milestones)
+        : 0;
+
+  // Сохраняем результат один раз при завершении (объявлено до early return, чтобы порядок хуков не менялся)
+  useEffect(() => {
+    if (phase === "playing" || savedRef.current || !questions.length) return;
+    savedRef.current = true;
+    const reached = answersRef.current.filter((a) => a.isCorrect).length;
+    saveMillionaireResult({
+      gameId: id,
+      playerName: user?.name || "Аноним",
+      avatar: user?.avatar,
+      outcome: phase,
+      wonAmount,
+      guaranteedAmount: guaranteedMoney(idx, questions, milestones),
+      reachedCount: reached,
+      totalQuestions: questions.length,
+      timeSec: Math.max(1, Math.round((Date.now() - startedAtRef.current) / 1000)),
+      answers: [...answersRef.current],
+    });
+  }, [phase, wonAmount, id, idx, user, questions, milestones]);
+
   if (!data || !config) {
     return (
       <PlayerShell theme="amber">
@@ -93,7 +121,6 @@ function PlayMillionaire() {
     );
   }
 
-  const current = questions[idx];
   if (!current) {
     return (
       <PlayerShell theme={config.theme}>
@@ -103,6 +130,7 @@ function PlayMillionaire() {
       </PlayerShell>
     );
   }
+
 
   const correctIdx = current.options.findIndex((o) => o.correct);
 
@@ -156,27 +184,8 @@ function PlayMillionaire() {
     startedAtRef.current = Date.now();
   };
 
-  const wonAmount =
-    phase === "won" ? questions.at(-1)!.money : phase === "lost" ? guaranteedMoney(idx, questions, milestones) : 0;
+  void correctIdxEarly;
 
-  // Сохраняем результат один раз при завершении
-  useEffect(() => {
-    if (phase === "playing" || savedRef.current || !questions.length) return;
-    savedRef.current = true;
-    const reached = answersRef.current.filter((a) => a.isCorrect).length;
-    saveMillionaireResult({
-      gameId: id,
-      playerName: user?.name || "Аноним",
-      avatar: user?.avatar,
-      outcome: phase,
-      wonAmount,
-      guaranteedAmount: guaranteedMoney(idx, questions, milestones),
-      reachedCount: reached,
-      totalQuestions: questions.length,
-      timeSec: Math.max(1, Math.round((Date.now() - startedAtRef.current) / 1000)),
-      answers: [...answersRef.current],
-    });
-  }, [phase, wonAmount, id, idx, user]);
 
   return (
     <PlayerShell theme={config.theme}>

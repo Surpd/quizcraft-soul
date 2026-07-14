@@ -329,7 +329,9 @@ export async function restartRoom(code: string) {
   s.questionIdx = 0;
   s.questionStartAt = null;
   s.fastestPlayerId = undefined;
-  s.players.forEach((p) => { p.score = 0; p.streak = 0; p.lastAnswer = undefined; });
+  s.players.forEach((p) => {
+    p.score = 0; p.streak = 0; p.lastAnswer = undefined; p.answerHistory = [];
+  });
   writeRoom(s); return fake(s);
 }
 
@@ -353,7 +355,7 @@ export function computeKahootScore(opts: {
 export async function submitAnswer(
   code: string,
   playerId: string,
-  payload: { correct: boolean; timeMs: number; totalMs: number },
+  payload: { correct: boolean; timeMs: number; totalMs: number; given?: string },
 ) {
   const s = readRoom(code);
   if (!s) return fake({ correct: false, score: 0 });
@@ -370,14 +372,25 @@ export async function submitAnswer(
   });
   p.score += delta;
   p.streak = streakAfter;
-  p.lastAnswer = {
+  const rec: RoomAnswerRecord = {
     questionIdx: s.questionIdx,
     correct: payload.correct,
     delta,
     timeMs: payload.timeMs,
+    given: payload.given ?? "",
   };
+  p.lastAnswer = rec;
+  if (!p.answerHistory) p.answerHistory = [];
+  // Replace any earlier record for this question (in case of edge cases)
+  p.answerHistory = p.answerHistory.filter((a) => a.questionIdx !== s.questionIdx);
+  p.answerHistory.push(rec);
   writeRoom(s);
   return fake({ correct: payload.correct, score: p.score, delta });
+}
+
+// TODO(server): GET /api/quiz/:gameId/online-results
+export async function getOnlineResults(gameId: string): Promise<OnlineQuizResult[]> {
+  return fake(loadOnlineQuizResults(gameId));
 }
 
 export async function listRooms() {

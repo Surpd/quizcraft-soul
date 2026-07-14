@@ -367,3 +367,10 @@
 }
 .iq-pop { animation: iq-pop 0.4s ease-out both; }
 
+/* Streak toast: slides up and fades out */
+@keyframes slide-up {
+  from { transform: translate(-50%, 20px); opacity: 0; }
+  to { transform: translate(-50%, 0); opacity: 1; }
+}
+.animate-slide-up { animation: slide-up 0.3s ease-out both; }
+

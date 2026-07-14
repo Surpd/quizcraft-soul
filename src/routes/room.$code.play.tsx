@@ -5,13 +5,15 @@
 
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Hourglass, Trophy, Timer, Volume2, VolumeX, Users } from "lucide-react";
+import { Hourglass, Trophy, Timer, Volume2, VolumeX, Users, Flame, Check, X } from "lucide-react";
 import { PlayerShell, TimerBar } from "@/components/player-shell";
+import { Avatar } from "@/components/avatar";
 import { QuizQuestionCard, checkQuizAnswer } from "@/components/quiz-question-card";
 import { JeopardyRoomPlayer } from "@/components/jeopardy-room-player";
 import { subscribeRoom, loadGame, submitAnswer, type RoomState } from "@/lib/api";
 import { sfx, isMuted, toggleMute } from "@/lib/sounds";
 import type { QuizData, QuizQuestion } from "@/lib/types";
+
 
 export const Route = createFileRoute("/room/$code/play")({
   head: () => ({

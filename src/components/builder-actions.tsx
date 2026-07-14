@@ -190,12 +190,13 @@ export function BuilderFabs({ kind, savedId, onSave, onSaveAsCopy, themeAccent }
   const handlePlay = () => {
     const id = onSave();
     if (!id) return;
-    if (kind === "quiz") {
+    if (kind === "quiz" || kind === "jeopardy") {
       setOpenQuizModal(true);
     } else {
       window.open(`/play/${kind}/${id}`, "_blank", "noopener");
     }
   };
+
 
   return (
     <>

@@ -39,41 +39,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .finally(() => setLoading(false));
   }, []);
 
-  const value = useMemo<AuthValue>(() => ({
-    user,
-    isLoading,
-    async login(email, password) {
-      const r = await apiLogin({ email, password });
-      if (r.ok) setUser(r.user);
-      return r.ok ? { ok: true } : { ok: false, error: r.error };
-    },
-    async register(name, email, password) {
-      const r = await apiRegister({ name, email, password });
-      if (r.ok) setUser(r.user);
-      return r.ok ? { ok: true } : { ok: false, error: r.error };
-    },
-    async logout() {
-      await apiLogout();
-      setUser(null);
-    },
-    async updateProfile(patch) {
-      const u = await apiUpdateProfile(patch);
-      if (u) {
-        // Set new reference to force re-render even if fields shallow-equal.
-        setUser({ ...u });
-      } else {
-        // Fallback: refetch from storage.
-        refresh();
-      }
-    },
-    async forkGame(gameId) {
-      return apiForkGame(gameId);
-    },
-    async setGameVisibility(gameId, v) {
-      await apiSetGameVisibility(gameId, v);
-    },
-    refresh,
-  }), [user, isLoading, refresh]);
+  const value = useMemo<AuthValue>(
+    () => ({
+      user,
+      isLoading,
+      async login(email, password) {
+        const r = await apiLogin({ email, password });
+        if (r.ok) setUser(r.user);
+        return r.ok ? { ok: true } : { ok: false, error: r.error };
+      },
+      async register(name, email, password) {
+        const r = await apiRegister({ name, email, password });
+        if (r.ok) setUser(r.user);
+        return r.ok ? { ok: true } : { ok: false, error: r.error };
+      },
+      async logout() {
+        await apiLogout();
+        setUser(null);
+      },
+      async updateProfile(patch) {
+        const u = await apiUpdateProfile(patch);
+        if (u) {
+          // Set new reference to force re-render even if fields shallow-equal.
+          setUser({ ...u });
+        } else {
+          // Fallback: refetch from storage.
+          refresh();
+        }
+      },
+      async forkGame(gameId) {
+        return apiForkGame(gameId);
+      },
+      async setGameVisibility(gameId, v) {
+        await apiSetGameVisibility(gameId, v);
+      },
+      refresh,
+    }),
+    [user, isLoading, refresh],
+  );
 
   return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>;
 }

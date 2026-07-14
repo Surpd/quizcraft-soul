@@ -40,8 +40,7 @@ import {
 } from "./auth";
 
 // ---------- Fake latency helper ----------
-const fake = <T>(value: T, ms = 120): Promise<T> =>
-  new Promise((resolve) => setTimeout(() => resolve(value), ms));
+const fake = <T,>(value: T, ms = 120): Promise<T> => new Promise((resolve) => setTimeout(() => resolve(value), ms));
 
 // ---------- Auth (stub) ----------
 // TODO(server): POST /api/auth/register
@@ -50,11 +49,24 @@ export async function register(input: { email: string; password: string; name: s
   if (!email || !input.password || !input.name.trim()) {
     return fake({ ok: false as const, error: "Заполните все поля" });
   }
-  if (findUserByEmail(email)) {
+
+  // Inline createUser
+  const USERS_KEY = "islandquiz.v1.auth.users";
+  const SESSION_KEY = "islandquiz.v1.auth.session";
+  const list = JSON.parse(localStorage.getItem(USERS_KEY) || "[]");
+  if (list.find((u: any) => u.email.toLowerCase() === email)) {
     return fake({ ok: false as const, error: "Пользователь с таким email уже существует" });
   }
-  const user = createUser({ email, name: input.name });
-  setSessionUserId(user.id);
+  const user = {
+    id: Math.random().toString(36).slice(2, 10),
+    email,
+    name: input.name.trim() || email.split("@")[0],
+    createdAt: Date.now(),
+  };
+  list.push(user);
+  localStorage.setItem(USERS_KEY, JSON.stringify(list));
+  localStorage.setItem(SESSION_KEY, user.id);
+
   return fake({ ok: true as const, user });
 }
 
@@ -179,7 +191,6 @@ export function countOrphanGames(): number {
   return _listGames().filter((g) => !g.ownerId).length;
 }
 
-
 export async function loadGame<T = AnyGameData>(kind: GameKind, id: string) {
   const rec = _loadGame<T>(kind, id);
   return fake(rec);
@@ -226,10 +237,7 @@ export async function getJeopardyResults(gameId: string): Promise<JeopardyResult
 }
 
 // TODO(server): заменить на GET /api/jeopardy/:gameId/results/:resultId
-export async function getJeopardyGameDetail(
-  gameId: string,
-  resultId: string,
-): Promise<JeopardyResult | null> {
+export async function getJeopardyGameDetail(gameId: string, resultId: string): Promise<JeopardyResult | null> {
   const all = loadJeopardyResults(gameId);
   return fake(all.find((r) => r.id === resultId) ?? null);
 }
@@ -304,7 +312,6 @@ export interface JeopardyRoomState {
   finalRevealAt: number | null;
   lastDelta?: { playerId: string; delta: number } | null;
 }
-
 
 export interface RoomState {
   code: string;
@@ -381,7 +388,7 @@ export async function createRoom(gameKind: GameKind, gameId: string) {
     createdAt: Date.now(),
     ...(gameKind === "jeopardy"
       ? {
-      jeopardy: {
+          jeopardy: {
             phase: "lobby" as const,
             mode: "buzz" as const,
             round: 0,
@@ -407,7 +414,6 @@ export async function createRoom(gameKind: GameKind, gameId: string) {
             finalRevealAt: null,
             lastDelta: null,
           },
-
         }
       : {}),
   };
@@ -460,9 +466,7 @@ export async function revealAnswer(code: string) {
   const s = readRoom(code);
   if (!s) return fake(null);
   s.status = "reveal";
-  const answered = s.players.filter(
-    (p) => p.lastAnswer?.questionIdx === s.questionIdx && p.lastAnswer.correct,
-  );
+  const answered = s.players.filter((p) => p.lastAnswer?.questionIdx === s.questionIdx && p.lastAnswer.correct);
   const fastest = answered.sort((a, b) => a.lastAnswer!.timeMs - b.lastAnswer!.timeMs)[0];
   s.fastestPlayerId = fastest?.id;
   writeRoom(s);
@@ -574,12 +578,7 @@ export async function restartRoom(code: string) {
 }
 
 // Kahoot-style scoring (TZ §0)
-export function computeKahootScore(opts: {
-  correct: boolean;
-  timeMs: number;
-  totalMs: number;
-  streakBefore: number;
-}) {
+export function computeKahootScore(opts: { correct: boolean; timeMs: number; totalMs: number; streakBefore: number }) {
   if (!opts.correct) return { delta: 0, streakAfter: 0 };
   const ratio = Math.max(0, 1 - opts.timeMs / Math.max(1, opts.totalMs));
   const base = 1000;
@@ -659,7 +658,11 @@ function mutJeopardy(code: string, fn: (j: JeopardyRoomState, s: RoomState) => v
 }
 
 export async function setJeopardyMode(code: string, mode: "buzz" | "turn") {
-  return fake(mutJeopardy(code, (j) => { j.mode = mode; }));
+  return fake(
+    mutJeopardy(code, (j) => {
+      j.mode = mode;
+    }),
+  );
 }
 
 export async function startJeopardyGame(code: string) {
@@ -685,12 +688,7 @@ export async function startJeopardyGame(code: string) {
   );
 }
 
-export async function selectJeopardyQuestion(
-  code: string,
-  playerId: string | null,
-  catIdx: number,
-  qIdx: number,
-) {
+export async function selectJeopardyQuestion(code: string, playerId: string | null, catIdx: number, qIdx: number) {
   return fake(
     mutJeopardy(code, (j, s) => {
       // In turn mode, only current player (or teacher: playerId=null) can select
@@ -777,10 +775,7 @@ export async function acceptJeopardyAnswer(code: string, correct: boolean) {
       const rec = _loadGame<JeopardyData>("jeopardy", s.gameId);
       const q = rec?.data.rounds[j.round]?.[j.selectedCat]?.questions[j.selectedQ];
       const points = q?.points ?? 0;
-      const targetId =
-        j.mode === "buzz"
-          ? j.buzzedPlayerId
-          : (s.players[j.currentPlayerIdx]?.id ?? null);
+      const targetId = j.mode === "buzz" ? j.buzzedPlayerId : (s.players[j.currentPlayerIdx]?.id ?? null);
       if (targetId) {
         const p = s.players.find((x) => x.id === targetId);
         if (p) {
@@ -883,7 +878,6 @@ export async function skipJeopardyQuestion(code: string) {
   );
 }
 
-
 export async function endJeopardyRound(code: string) {
   return fake(
     mutJeopardy(code, (j, s) => {
@@ -954,9 +948,7 @@ export async function revealJeopardyFinal(code: string) {
       j.showAnswer = true;
       j.phase = "final-reveal";
       // Setup animation order (ascending score → suspense: reveal weakest first)
-      j.finalRevealOrder = [...s.players]
-        .sort((a, b) => a.score - b.score)
-        .map((p) => p.id);
+      j.finalRevealOrder = [...s.players].sort((a, b) => a.score - b.score).map((p) => p.id);
       j.finalRevealIdx = -1;
       j.finalRevealStep = "done";
       j.finalRevealAt = null;
@@ -1043,7 +1035,6 @@ export async function adjustJeopardyScore(code: string, playerId: string, delta:
   );
 }
 
-
 // =========================================================================
 //                        AI HELPERS (TZ AI v2.0)
 // =========================================================================
@@ -1115,12 +1106,7 @@ export async function improveQuestion(input: {
     // quiz-choice / millionaire / default
     return {
       ...base,
-      options: [
-        "[MOCK] Правильный",
-        "[MOCK] Неправильный 1",
-        "[MOCK] Неправильный 2",
-        "[MOCK] Неправильный 3",
-      ],
+      options: ["[MOCK] Правильный", "[MOCK] Неправильный 1", "[MOCK] Неправильный 2", "[MOCK] Неправильный 3"],
       correct: Math.floor(Math.random() * 4),
     };
   });
@@ -1206,12 +1192,7 @@ export async function generateQuiz(input: {
       return {
         type,
         question,
-        options: [
-          "[MOCK] Правильный",
-          "[MOCK] Неправильный 1",
-          "[MOCK] Неправильный 2",
-          "[MOCK] Неправильный 3",
-        ],
+        options: ["[MOCK] Правильный", "[MOCK] Неправильный 1", "[MOCK] Неправильный 2", "[MOCK] Неправильный 3"],
         correct: Math.floor(Math.random() * 4),
       };
     }

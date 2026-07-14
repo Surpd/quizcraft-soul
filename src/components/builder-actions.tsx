@@ -338,11 +338,12 @@ function QuizPlayModal({
   );
 }
 
-function OfflineHostView({ gameId, onClose }: { gameId: string; onClose: () => void }) {
+function OfflineHostView({ gameId, kind, onClose }: { gameId: string; kind: GameKind; onClose: () => void }) {
   const playUrl =
     typeof window !== "undefined"
-      ? `${window.location.origin}/play/quiz/${gameId}`
-      : `/play/quiz/${gameId}`;
+      ? `${window.location.origin}/play/${kind}/${gameId}`
+      : `/play/${kind}/${gameId}`;
+
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(playUrl)}`;
   const [copied, setCopied] = useState(false);
 

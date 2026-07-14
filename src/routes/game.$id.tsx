@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ArrowLeft,
   Radio,
@@ -9,16 +9,12 @@ import {
   Pencil,
   Trophy,
   Trash2,
-  ChevronDown,
-  ChevronRight,
   Monitor,
   Copy,
   X,
 } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
-import { findGame, createRoom, deleteGame, getJeopardyResults } from "@/lib/api";
-import { loadQuizResults, type QuizResult } from "@/lib/results";
-import type { JeopardyResult } from "@/lib/jeopardy-results";
+import { findGame, createRoom, deleteGame } from "@/lib/api";
 import {
   exportQuizExcel,
   exportJeopardyExcel,
@@ -27,13 +23,7 @@ import {
   printJeopardy,
   printMillionaire,
 } from "@/lib/exports";
-import type {
-  GameKind,
-  QuizData,
-  JeopardyData,
-  MillionaireData,
-  StoredGame,
-} from "@/lib/types";
+import type { GameKind, QuizData, JeopardyData, MillionaireData, StoredGame } from "@/lib/types";
 
 export const Route = createFileRoute("/game/$id")({
   head: () => ({ meta: [{ title: "Дашборд игры — IslandQuiz" }] }),
@@ -57,10 +47,6 @@ function GameDashboard() {
 
   const [game, setGame] = useState<StoredGame | null | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
-  const [results, setResults] = useState<QuizResult[]>([]);
-  const [jResults, setJResults] = useState<JeopardyResult[]>([]);
-  const [jResultsState, setJResultsState] = useState<"idle" | "loading" | "error">("idle");
-  const [expanded, setExpanded] = useState<string | null>(null);
   const [openHost, setOpenHost] = useState(false);
   const [busyMsg, setBusyMsg] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -76,59 +62,14 @@ function GameDashboard() {
       .then((g) => {
         if (cancel) return;
         setGame(g);
-        if (g?.kind === "quiz") setResults(loadQuizResults(g.id));
-        if (g?.kind === "jeopardy") {
-          setJResultsState("loading");
-          getJeopardyResults(g.id)
-            .then((rs) => {
-              if (cancel) return;
-              setJResults(rs);
-              setJResultsState("idle");
-            })
-            .catch(() => { if (!cancel) setJResultsState("error"); });
-        }
       })
-      .catch((e) => { if (!cancel) setError(e?.message ?? "Не удалось загрузить"); });
-    return () => { cancel = true; };
+      .catch((e) => {
+        if (!cancel) setError(e?.message ?? "Не удалось загрузить");
+      });
+    return () => {
+      cancel = true;
+    };
   }, [id]);
-
-  const jStats = useMemo(() => {
-    if (!jResults.length) return null;
-    const teamTotals = new Map<string, { name: string; total: number }>();
-    let bestScore = -Infinity;
-    for (const r of jResults) {
-      for (const t of r.teams) {
-        const prev = teamTotals.get(t.name) ?? { name: t.name, total: 0 };
-        teamTotals.set(t.name, { name: t.name, total: prev.total + t.score });
-        if (t.score > bestScore) bestScore = t.score;
-      }
-    }
-    const top = [...teamTotals.values()].sort((a, b) => b.total - a.total)[0];
-    return {
-      count: jResults.length,
-      topTeam: top?.name ?? "—",
-      bestScore: Number.isFinite(bestScore) ? bestScore : 0,
-    };
-  }, [jResults]);
-
-  const stats = useMemo(() => {
-    if (!results.length) return null;
-    const totals = results.reduce(
-      (acc, r) => {
-        acc.score += r.score;
-        acc.pct += r.totalQuestions ? (r.correctCount / r.totalQuestions) * 100 : 0;
-        acc.best = Math.min(acc.best, r.timeSec || Infinity);
-        return acc;
-      },
-      { score: 0, pct: 0, best: Infinity },
-    );
-    return {
-      count: results.length,
-      avgScore: Math.round(totals.score / results.length),
-      avgPct: Math.round(totals.pct / results.length),
-      bestTime: Number.isFinite(totals.best) ? totals.best : 0,
-    };
-  }, [results]);
 
   const startOnline = async () => {
     if (!game) return;
@@ -153,7 +94,8 @@ function GameDashboard() {
     if (!game) return;
     try {
       if (game.kind === "quiz") printQuiz(game.data as QuizData, { withAnswers: true });
-      else if (game.kind === "jeopardy") printJeopardy(game.data as JeopardyData, { withAnswers: true });
+      else if (game.kind === "jeopardy")
+        printJeopardy(game.data as JeopardyData, { withAnswers: true });
       else printMillionaire(game.data as MillionaireData, { withAnswers: true });
     } catch {
       showToast("Ошибка печати");
@@ -200,7 +142,9 @@ function GameDashboard() {
         <div className="mx-auto max-w-md px-6 py-16 text-center">
           <h1 className="font-display text-2xl font-bold">Игра не найдена</h1>
           <p className="mt-2 text-muted-foreground">{error ?? "Возможно, она была удалена."}</p>
-          <Link to="/library" className="btn-accent mt-4 inline-flex">В библиотеку</Link>
+          <Link to="/library" className="btn-accent mt-4 inline-flex">
+            В библиотеку
+          </Link>
         </div>
       </div>
     );
@@ -210,7 +154,10 @@ function GameDashboard() {
     <div className="min-h-screen bg-surface">
       <SiteHeader />
       <main className="mx-auto max-w-5xl px-6 py-10">
-        <Link to="/library" className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+        <Link
+          to="/library"
+          className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+        >
           <ArrowLeft className="h-3.5 w-3.5" /> В библиотеку
         </Link>
 
@@ -246,142 +193,29 @@ function GameDashboard() {
           </button>
         </div>
 
-        {/* Stats + Results (quiz only for now) */}
-        {game.kind === "quiz" ? (
-          <>
-            <div className="mb-4 grid gap-3 sm:grid-cols-3">
-              <StatCard label="Прохождений" value={String(stats?.count ?? 0)} />
-              <StatCard label="Средний балл" value={String(stats?.avgScore ?? 0)} />
-              <StatCard
-                label="Лучшее время"
-                value={
-                  stats
-                    ? `${Math.floor(stats.bestTime / 60)}:${String(stats.bestTime % 60).padStart(2, "0")}`
-                    : "—"
-                }
-              />
-            </div>
-
-            <div className="surface-card overflow-hidden">
-              <div className="flex items-center gap-2 border-b border-border px-5 py-3">
-                <Trophy className="h-4 w-4 text-amber" />
-                <h2 className="font-display text-base font-bold">Результаты</h2>
+        {/* Results dashboard link */}
+        <div className="surface-card p-6">
+          {game.kind === "millionaire" ? (
+            <p className="text-sm text-muted-foreground">
+              Статистика прохождений доступна для форматов «Квиз» и «Своя игра».
+            </p>
+          ) : (
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="font-display text-base font-bold">Результаты прохождений</h2>
+                <p className="text-sm text-muted-foreground">
+                  Вся статистика, ответы и таблицы лидеров на отдельной странице.
+                </p>
               </div>
-              {results.length === 0 ? (
-                <div className="p-10 text-center text-sm text-muted-foreground">
-                  Ещё никто не проходил.
-                </div>
-              ) : (
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="bg-surface-muted text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                      <th className="w-8 px-3 py-2"></th>
-                      <th className="px-3 py-2">Игрок</th>
-                      <th className="px-3 py-2">Баллы</th>
-                      <th className="px-3 py-2">% верно</th>
-                      <th className="px-3 py-2">Время</th>
-                      <th className="px-3 py-2">Дата</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {results.flatMap((r) => {
-                      const pct = r.totalQuestions
-                        ? Math.round((r.correctCount / r.totalQuestions) * 100)
-                        : 0;
-                      const isOpen = expanded === r.id;
-                      const rows = [
-                        <tr
-                          key={r.id}
-                          onClick={() => setExpanded(isOpen ? null : r.id)}
-                          className="cursor-pointer border-t border-border hover:bg-surface-muted/60"
-                        >
-                          <td className="px-3 py-2 text-muted-foreground">
-                            {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                          </td>
-                          <td className="px-3 py-2 font-semibold">{r.playerName || "Аноним"}</td>
-                          <td className="px-3 py-2 font-mono">
-                            {r.score}
-                            <span className="text-muted-foreground">/{r.maxScore}</span>
-                          </td>
-                          <td className="px-3 py-2">{pct}%</td>
-                          <td className="px-3 py-2 text-muted-foreground">
-                            {Math.floor(r.timeSec / 60)}:{String(r.timeSec % 60).padStart(2, "0")}
-                          </td>
-                          <td className="px-3 py-2 text-muted-foreground">
-                            {new Date(r.finishedAt).toLocaleString("ru-RU")}
-                          </td>
-                        </tr>,
-                      ];
-                      if (isOpen) {
-                        rows.push(
-                          <tr key={r.id + "-d"} className="bg-surface-muted/40">
-                            <td colSpan={6} className="px-5 py-3">
-                              {r.answers && r.answers.length > 0 ? (
-                                <div className="overflow-hidden rounded-lg border border-border bg-white">
-                                  <table className="w-full text-xs">
-                                    <thead>
-                                      <tr className="bg-surface-muted text-left uppercase tracking-wider text-muted-foreground">
-                                        <th className="w-8 px-2 py-1.5"></th>
-                                        <th className="px-2 py-1.5">Вопрос</th>
-                                        <th className="px-2 py-1.5">Ответ игрока</th>
-                                        <th className="px-2 py-1.5">Правильный</th>
-                                        <th className="px-2 py-1.5">Баллы</th>
-                                      </tr>
-                                    </thead>
-                                    <tbody>
-                                      {r.answers.map((a, i) => (
-                                        <tr key={i} className="border-t border-border align-top">
-                                          <td className="px-2 py-1.5">
-                                            {a.isCorrect ? (
-                                              <span className="text-success">✓</span>
-                                            ) : (
-                                              <span className="text-danger">✕</span>
-                                            )}
-                                          </td>
-                                          <td className="px-2 py-1.5">{a.question}</td>
-                                          <td className={`px-2 py-1.5 ${a.isCorrect ? "text-success" : "text-danger"}`}>
-                                            {a.given || <span className="text-muted-foreground">—</span>}
-                                          </td>
-                                          <td className="px-2 py-1.5 text-muted-foreground">{a.correctAnswer}</td>
-                                          <td className="px-2 py-1.5 font-mono">
-                                            {a.earned}
-                                            <span className="text-muted-foreground">/{a.points}</span>
-                                          </td>
-                                        </tr>
-                                      ))}
-                                    </tbody>
-                                  </table>
-                                </div>
-                              ) : (
-                                <p className="text-xs text-muted-foreground">
-                                  Детализация недоступна: результат сохранён до обновления.
-                                </p>
-                              )}
-                            </td>
-                          </tr>,
-                        );
-                      }
-                      return rows;
-                    })}
-
-                  </tbody>
-                </table>
-              )}
+              <Link
+                to={`/${game.kind}/${game.id}/results`}
+                className="btn-accent inline-flex items-center gap-2"
+              >
+                <Trophy className="h-4 w-4" /> Открыть результаты
+              </Link>
             </div>
-          </>
-        ) : game.kind === "jeopardy" ? (
-          <JeopardyDashboard
-            results={jResults}
-            state={jResultsState}
-            stats={jStats}
-            expanded={expanded}
-            onToggle={(rid) => setExpanded(expanded === rid ? null : rid)}
-          />
-        ) : (
-          <div className="surface-card p-6 text-sm text-muted-foreground">
-            Статистика прохождений доступна для форматов «Квиз» и «Своя игра».
-          </div>
-        )}
+          )}
+        </div>
       </main>
 
       {openHost && game.kind === "quiz" && (
@@ -393,144 +227,6 @@ function GameDashboard() {
           {toast}
         </div>
       )}
-    </div>
-  );
-}
-
-function JeopardyDashboard({
-  results,
-  state,
-  stats,
-  expanded,
-  onToggle,
-}: {
-  results: JeopardyResult[];
-  state: "idle" | "loading" | "error";
-  stats: { count: number; topTeam: string; bestScore: number } | null;
-  expanded: string | null;
-  onToggle: (id: string) => void;
-}) {
-  if (state === "loading") {
-    return <div className="surface-card p-10 text-center text-sm text-muted-foreground">Загружаем результаты…</div>;
-  }
-  if (state === "error") {
-    return <div className="surface-card p-10 text-center text-sm text-danger">Не удалось загрузить результаты</div>;
-  }
-  if (!results.length) {
-    return (
-      <div className="surface-card p-10 text-center text-sm text-muted-foreground">
-        Ещё не сыграно ни одной игры.
-      </div>
-    );
-  }
-  return (
-    <>
-      <div className="mb-4 grid gap-3 sm:grid-cols-3">
-        <StatCard label="Сыграно игр" value={String(stats?.count ?? 0)} />
-        <StatCard label="Топ-команда" value={stats?.topTeam ?? "—"} />
-        <StatCard label="Лучший счёт за игру" value={String(stats?.bestScore ?? 0)} />
-      </div>
-
-      <div className="surface-card overflow-hidden">
-        <div className="flex items-center gap-2 border-b border-border px-5 py-3">
-          <Trophy className="h-4 w-4 text-amber" />
-          <h2 className="font-display text-base font-bold">Сыгранные игры</h2>
-        </div>
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="bg-surface-muted text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">
-              <th className="w-8 px-3 py-2"></th>
-              <th className="px-3 py-2">Дата</th>
-              <th className="px-3 py-2">Команды</th>
-              <th className="px-3 py-2">Победитель</th>
-              <th className="px-3 py-2">Счёт</th>
-              <th className="px-3 py-2">Ставка</th>
-            </tr>
-          </thead>
-          <tbody>
-            {results.flatMap((r) => {
-              const winner = r.teams.find((t) => t.id === r.winnerId) ?? null;
-              const isOpen = expanded === r.id;
-              const rows = [
-                <tr
-                  key={r.id}
-                  onClick={() => onToggle(r.id)}
-                  className="cursor-pointer border-t border-border hover:bg-surface-muted/60"
-                >
-                  <td className="px-3 py-2 text-muted-foreground">
-                    {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                  </td>
-                  <td className="px-3 py-2 text-muted-foreground">
-                    {new Date(r.playedAt).toLocaleString("ru-RU")}
-                  </td>
-                  <td className="px-3 py-2">{r.teams.map((t) => t.name).join(", ")}</td>
-                  <td className="px-3 py-2 font-semibold">{winner?.name ?? "—"}</td>
-                  <td className="px-3 py-2 font-mono">{winner?.score ?? 0}</td>
-                  <td className="px-3 py-2 text-muted-foreground">
-                    {r.hasFinal ? (winner?.finalBet ?? 0) : "—"}
-                  </td>
-                </tr>,
-              ];
-              if (isOpen) {
-                rows.push(
-                  <tr key={r.id + "-d"} className="bg-surface-muted/40">
-                    <td colSpan={6} className="px-5 py-3">
-                      <div className="overflow-hidden rounded-lg border border-border bg-white">
-                        <table className="w-full text-xs">
-                          <thead>
-                            <tr className="bg-surface-muted text-left uppercase tracking-wider text-muted-foreground">
-                              <th className="px-2 py-1.5">Команда</th>
-                              <th className="px-2 py-1.5">Итог</th>
-                              <th className="px-2 py-1.5">Верно</th>
-                              <th className="px-2 py-1.5">Неверно</th>
-                              {r.hasFinal && <th className="px-2 py-1.5">Ставка</th>}
-                              {r.hasFinal && <th className="px-2 py-1.5">Финал</th>}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {[...r.teams]
-                              .sort((a, b) => b.score - a.score)
-                              .map((t) => (
-                                <tr key={t.id} className="border-t border-border">
-                                  <td className="px-2 py-1.5 font-semibold">{t.name}</td>
-                                  <td className="px-2 py-1.5 font-mono">{t.score}</td>
-                                  <td className="px-2 py-1.5 text-success">{t.correct}</td>
-                                  <td className="px-2 py-1.5 text-danger">{t.wrong}</td>
-                                  {r.hasFinal && (
-                                    <td className="px-2 py-1.5">{t.finalBet ?? 0}</td>
-                                  )}
-                                  {r.hasFinal && (
-                                    <td className="px-2 py-1.5">
-                                      {t.finalCorrect ? (
-                                        <span className="text-success">✓</span>
-                                      ) : (
-                                        <span className="text-danger">✕</span>
-                                      )}
-                                    </td>
-                                  )}
-                                </tr>
-                              ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </td>
-                  </tr>,
-                );
-              }
-              return rows;
-            })}
-          </tbody>
-        </table>
-      </div>
-    </>
-  );
-}
-
-function StatCard({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="surface-card p-4 text-center">
-      <div className="font-display text-3xl font-black text-primary">{value}</div>
-      <div className="mt-1 text-xs uppercase tracking-wider text-muted-foreground">{label}</div>
     </div>
   );
 }

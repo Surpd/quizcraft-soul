@@ -210,7 +210,9 @@ function ResultsPage() {
                             <td className="px-4 py-3 font-semibold">{r.playerName}</td>
                             <td className="px-4 py-3 font-mono">
                               {r.score}
-                              <span className="text-muted-foreground">/{r.maxScore}</span>
+                              {isOffline && (
+                                <span className="text-muted-foreground">/{r.maxScore}</span>
+                              )}
                             </td>
                             <td className="px-4 py-3">
                               <span
@@ -354,10 +356,7 @@ function OnlineRoomPlayers({
                 <span className="truncate font-semibold">{p.nickname}</span>
               </span>
               <span className="flex items-center gap-3 text-sm">
-                <span className="font-mono">
-                  {p.score}
-                  <span className="text-muted-foreground">/{p.maxScore}</span>
-                </span>
+                <span className="font-mono">{p.score}</span>
                 <span className="rounded-full bg-surface-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">
                   {pct}%
                 </span>
@@ -409,9 +408,7 @@ function PlayerAnswers({ player }: { player: OnlineQuizPlayerResult }) {
               <td className="px-3 py-2">{a.question}</td>
               <td className="px-3 py-2 font-mono text-xs">{a.given || "—"}</td>
               <td className="px-3 py-2 font-mono text-xs">{a.correctAnswer}</td>
-              <td className="px-3 py-2 font-mono">
-                {a.earned}/{a.points}
-              </td>
+              <td className="px-3 py-2 font-mono">+{a.earned}</td>
             </tr>
           ))}
         </tbody>

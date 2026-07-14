@@ -117,6 +117,14 @@ function PlayMillionaire() {
     setTimeout(() => {
       setRevealed(true);
       const isCorrect = oi === correctIdx;
+      answersRef.current.push({
+        qIdx: idx,
+        money: current.money,
+        question: current.q,
+        given: `${String.fromCharCode(65 + oi)}. ${current.options[oi]?.text ?? ""}`,
+        correctAnswer: `${String.fromCharCode(65 + correctIdx)}. ${current.options[correctIdx]?.text ?? ""}`,
+        isCorrect,
+      });
       setTimeout(() => {
         if (isCorrect) {
           if (idx + 1 >= questions.length) setPhase("won");
@@ -132,6 +140,29 @@ function PlayMillionaire() {
       }, 1600);
     }, 800);
   };
+
+  const useFifty = () => {
+    if (fiftyUsed || revealed) return;
+    const wrongs = current.options
+      .map((_, i) => i)
+      .filter((i) => i !== correctIdx);
+    const shuffled = wrongs.sort(() => Math.random() - 0.5);
+    setHidden(new Set(shuffled.slice(0, 2)));
+    setFiftyUsed(true);
+  };
+
+  const restart = () => {
+    setIdx(0);
+    setSelected(null);
+    setRevealed(false);
+    setPhase("playing");
+    setFiftyUsed(false);
+    setHidden(new Set());
+    answersRef.current = [];
+    savedRef.current = false;
+    startedAtRef.current = Date.now();
+  };
+
 
   const useFifty = () => {
     if (fiftyUsed || revealed) return;

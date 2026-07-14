@@ -45,6 +45,7 @@ const fake = <T,>(value: T, ms = 120): Promise<T> => new Promise((resolve) => se
 // ---------- Auth (stub) ----------
 // TODO(server): POST /api/auth/register
 export async function register(input: { email: string; password: string; name: string }) {
+  console.log("[DEBUG] register called with:", input);
   const email = input.email.trim().toLowerCase();
   if (!email || !input.password || !input.name.trim()) {
     return fake({ ok: false as const, error: "Заполните все поля" });

@@ -30,7 +30,6 @@ import { Route as PlayMillionaireIdRouteImport } from './routes/play.millionaire
 import { Route as PlayJeopardyIdRouteImport } from './routes/play.jeopardy.$id'
 import { Route as MillionaireGameIdResultsRouteImport } from './routes/millionaire.$gameId.results'
 import { Route as JeopardyGameIdResultsRouteImport } from './routes/jeopardy.$gameId.results'
-import { Route as MillionaireGameIdResultsRouteImport } from './routes/millionaire.$gameId.results'
 
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
@@ -136,6 +135,11 @@ const MillionaireGameIdResultsRoute =
 const JeopardyGameIdResultsRoute = JeopardyGameIdResultsRouteImport.update({
   id: '/jeopardy/$gameId/results',
   path: '/jeopardy/$gameId/results',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MillionaireGameIdResultsRoute = MillionaireGameIdResultsRouteImport.update({
+  id: '/millionaire/$gameId/results',
+  path: '/millionaire/$gameId/results',
   getParentRoute: () => rootRouteImport,
 } as any)
 

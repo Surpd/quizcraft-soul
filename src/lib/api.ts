@@ -235,6 +235,25 @@ export async function createRoom(gameKind: GameKind, gameId: string) {
     questionStartAt: null,
     players: [],
     createdAt: Date.now(),
+    ...(gameKind === "jeopardy"
+      ? {
+          jeopardy: {
+            phase: "lobby" as const,
+            mode: "buzz" as const,
+            round: 0,
+            currentPlayerIdx: 0,
+            usedKeys: [],
+            selectedCat: null,
+            selectedQ: null,
+            buzzedPlayerId: null,
+            showAnswer: false,
+            finalBets: {},
+            finalAnswers: {},
+            finalGiven: {},
+            lastDelta: null,
+          },
+        }
+      : {}),
   };
   writeRoom(state);
   return fake({ code, room_url: `/room/${code}` });

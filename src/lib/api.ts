@@ -113,6 +113,14 @@ export async function submitJeopardyResult(
 // Хранение: localStorage + BroadcastChannel("islandquiz.room.<code>").
 // Заменяется на WebSocket без изменения UI.
 
+export interface RoomAnswerRecord {
+  questionIdx: number;
+  correct: boolean;
+  delta: number;
+  timeMs: number;
+  given: string;
+}
+
 export interface RoomPlayer {
   id: string;
   nickname: string;
@@ -120,12 +128,8 @@ export interface RoomPlayer {
   score: number;
   streak: number;
   connected: boolean;
-  lastAnswer?: {
-    questionIdx: number;
-    correct: boolean;
-    delta: number;
-    timeMs: number;
-  };
+  lastAnswer?: RoomAnswerRecord;
+  answerHistory?: RoomAnswerRecord[];
 }
 
 export type RoomStatus = "waiting" | "active" | "reveal" | "leaderboard" | "finished";

@@ -464,23 +464,25 @@ function LiveLeaderboard({ state }: { state: RoomState }) {
                 <span className="w-5 font-mono text-xs text-[color:var(--pt-text-muted)]">
                   {i + 1}
                 </span>
-                <span>{p.avatar}</span>
+                <Avatar name={p.nickname} size={22} />
                 <span className="truncate font-semibold">{p.nickname}</span>
                 {p.streak >= 2 && (
-                  <span className="rounded-full bg-[color:var(--pt-accent)]/20 px-1.5 text-[10px] font-bold text-[color:var(--pt-accent)]">
-                    🔥{p.streak}
+                  <span className="inline-flex items-center gap-0.5 rounded-full bg-[color:var(--pt-accent)]/20 px-1.5 text-[10px] font-bold text-[color:var(--pt-accent)]">
+                    <Flame className="h-3 w-3" />
+                    {p.streak}
                   </span>
                 )}
                 {isFastest && (
-                  <span className="rounded-full bg-success/20 px-1.5 text-[10px] font-bold text-success">
-                    🎯
+                  <span className="grid h-4 w-4 place-items-center rounded-full bg-success/20 text-success">
+                    <Target className="h-3 w-3" />
                   </span>
                 )}
                 {answeredHere && state.status === "active" && (
-                  <span className="rounded-full bg-success/20 px-1.5 text-[10px] font-bold text-success">
-                    ✓
+                  <span className="grid h-4 w-4 place-items-center rounded-full bg-success/20 text-success">
+                    <Check className="h-3 w-3" />
                   </span>
                 )}
+
               </div>
               <span className="font-mono text-sm font-bold">{p.score.toLocaleString("ru-RU")}</span>
             </div>

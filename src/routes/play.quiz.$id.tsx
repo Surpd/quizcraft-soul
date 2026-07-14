@@ -40,26 +40,7 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
-function checkAnswer(q: QuizQuestion, given: string): boolean {
-  if (q.type === "choice" || q.type === "bool") return given === q.answer;
-  if (q.type === "text") {
-    const accept = q.answer
-      .split(",")
-      .map((s) => s.trim().toLowerCase())
-      .filter(Boolean);
-    return accept.some((a) => given.trim().toLowerCase().includes(a));
-  }
-  if (q.type === "matching") {
-    try {
-      const pairs = JSON.parse(q.answer) as { left: string; right: string }[];
-      const givenMap = JSON.parse(given || "{}") as Record<string, string>;
-      return pairs.every((p) => givenMap[p.left] === p.right);
-    } catch {
-      return false;
-    }
-  }
-  return false;
-}
+const checkAnswer = checkQuizAnswerCore;
 
 function PlayQuiz() {
   const { id } = Route.useParams();

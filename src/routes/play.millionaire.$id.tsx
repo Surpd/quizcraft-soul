@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Sparkles, RefreshCw } from "lucide-react";
 import { PlayerShell, TimerBar } from "@/components/player-shell";
 import { Avatar } from "@/components/avatar";
@@ -7,11 +7,13 @@ import { LaTeX } from "@/lib/latex";
 import { loadGame } from "@/lib/storage";
 import { fitOptionSize, fitQuestionSize } from "@/lib/fit-text";
 import { useAuth } from "@/hooks/use-auth";
+import { saveMillionaireResult, type MillionaireAnswerDetail } from "@/lib/results";
 import type { MilestoneMode, MillionaireData, MillionaireQuestion } from "@/lib/types";
 
 export const Route = createFileRoute("/play/millionaire/$id")({
   component: PlayMillionaire,
 });
+
 
 function milestoneIndices(mode: MilestoneMode, total: number): Set<number> {
   if (mode === "none") return new Set();

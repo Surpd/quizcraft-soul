@@ -66,12 +66,15 @@ function ProfilePage() {
       <SiteHeader />
       <main className="mx-auto max-w-2xl px-6 py-10">
         <div className="mb-6 flex items-center gap-4">
-          <Avatar name={user.name} size={64} />
+          <Avatar name={user.name} avatar={user.avatar} size={64} />
           <div>
             <h1 className="font-display text-3xl font-black">{user.name}</h1>
             <p className="text-sm text-muted-foreground">{user.email}</p>
           </div>
         </div>
+
+        <AvatarPicker />
+
 
         <div className="surface-card mb-6 flex flex-col gap-3 p-6">
           <label className="text-sm font-semibold">

@@ -659,6 +659,12 @@ function QuestionCard({
 
       {question.type === "matching" && <MatchingEditor question={question} onPatch={onPatch} />}
 
+      {question.type === "close" && (
+        <CloseEditor question={question} qRef={qRef} onPatch={onPatch} />
+      )}
+
+      {question.type === "ordering" && <OrderingEditor question={question} onPatch={onPatch} />}
+
       <div className="flex flex-wrap gap-3">
         <label className="text-xs text-muted-foreground">
           Баллы

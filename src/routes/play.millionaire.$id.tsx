@@ -65,6 +65,19 @@ function PlayMillionaire() {
         if (prev <= 1) {
           clearInterval(t);
           setRevealed(true);
+          // время вышло — записываем как «нет ответа»
+          const q = questions[idx];
+          if (q) {
+            const ci = q.options.findIndex((o) => o.correct);
+            answersRef.current.push({
+              qIdx: idx,
+              money: q.money,
+              question: q.q,
+              given: "—",
+              correctAnswer: `${String.fromCharCode(65 + ci)}. ${q.options[ci]?.text ?? ""}`,
+              isCorrect: false,
+            });
+          }
           setPhase("lost");
           return 0;
         }
@@ -72,7 +85,8 @@ function PlayMillionaire() {
       });
     }, 1000);
     return () => clearInterval(t);
-  }, [idx, phase, config, questions.length]);
+  }, [idx, phase, config, questions, questions.length]);
+
 
   if (!data || !config) {
     return (

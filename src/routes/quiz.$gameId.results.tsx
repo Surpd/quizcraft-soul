@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { RefreshCw, Trophy, ArrowLeft, Home, Globe, ChevronRight, Check, X } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import {

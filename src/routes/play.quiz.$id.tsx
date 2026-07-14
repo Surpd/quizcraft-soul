@@ -175,7 +175,7 @@ function PlayQuiz() {
         correct: isCorrect,
         earned,
         question: q.q,
-        given: timeout ? "" : current,
+        given: timeout ? "" : formatGivenAnswer(q, current),
         correctAnswer: formatQuizAnswer(q),
         points: q.points,
       },

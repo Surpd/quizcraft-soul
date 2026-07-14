@@ -94,7 +94,7 @@ function QuizContent({ data, withAnswers }: { data: QuizData; withAnswers: boole
               </p>
               {withAnswers && (
                 <p className="mt-1 text-xs text-success">
-                  Ответ: <b>{q.answer || "—"}</b>
+                  Ответ: <b>{formatQuizAnswer(q)}</b>
                 </p>
               )}
             </div>

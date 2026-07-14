@@ -1,6 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { FileText, Grid3x3, Coins, Palette, FileSpreadsheet, Printer, Sigma, Library as LibraryIcon, Radio, ArrowRight } from "lucide-react";
-
+import {
+  FileText,
+  Grid3x3,
+  Coins,
+  Palette,
+  FileSpreadsheet,
+  Printer,
+  Sigma,
+  Library as LibraryIcon,
+  Radio,
+  ArrowRight,
+} from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -41,8 +51,16 @@ const formats = [
 ];
 
 const features = [
-  { icon: Palette, title: "5 визуальных тем", desc: "Amber, Midnight, Classic, Ocean, Forest. Атмосфера меняется одним кликом." },
-  { icon: FileSpreadsheet, title: "Excel и CSV", desc: "Экспорт готовых игр в .xlsx и импорт вопросов из CSV-шаблона." },
+  {
+    icon: Palette,
+    title: "5 визуальных тем",
+    desc: "Amber, Midnight, Classic, Ocean, Forest. Атмосфера меняется одним кликом.",
+  },
+  {
+    icon: FileSpreadsheet,
+    title: "Excel и CSV",
+    desc: "Экспорт готовых игр в .xlsx и импорт вопросов из CSV-шаблона.",
+  },
   { icon: Printer, title: "Печать и PDF", desc: "Раздаточный материал в один клик через встроенную печать браузера." },
   { icon: Sigma, title: "LaTeX-формулы", desc: "Пишите \\(x^2\\) прямо в вопросе — рендерится через KaTeX." },
 ];
@@ -100,8 +118,8 @@ function Home() {
                 которые <span className="text-primary">хочется</span> проходить
               </h1>
               <p className="mt-6 max-w-lg text-base leading-relaxed text-muted-foreground md:text-lg">
-                Личный инструмент для квизов, «Своей игры» и «Миллионера». Тёплые темы, LaTeX-формулы,
-                экспорт в Excel и всё локально — без аккаунтов и подписок.
+                Личный инструмент для квизов, «Своей игры» и «Миллионера». Тёплые темы, LaTeX-формулы, экспорт в Excel и
+                всё локально — без аккаунтов и подписок.
               </p>
               <div className="mt-10 flex flex-wrap gap-3">
                 <Link to="/builder/quiz" className="btn-accent">
@@ -204,8 +222,7 @@ function Home() {
                 </div>
                 <h2 className="font-display text-3xl font-black md:text-4xl">Ваша библиотека квизов</h2>
                 <p className="mt-4 text-muted-foreground">
-                  Все созданные игры хранятся в одном месте. Открывайте, редактируйте, запускайте —
-                  без ограничений.
+                  Все созданные игры хранятся в одном месте. Открывайте, редактируйте, запускайте — без ограничений.
                 </p>
                 <Link to="/library" className="btn-accent mt-6 inline-flex">
                   Перейти в библиотеку <ArrowRight className="h-4 w-4" />
@@ -222,7 +239,9 @@ function Home() {
                     <div className={`grid h-8 w-8 place-items-center rounded-lg ${c.tone}`}>
                       <c.icon className="h-4 w-4" />
                     </div>
-                    <p className="mt-3 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{c.kind}</p>
+                    <p className="mt-3 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                      {c.kind}
+                    </p>
                     <p className="font-display text-sm font-bold">{c.label}</p>
                   </div>
                 ))}
@@ -254,11 +273,18 @@ function Home() {
                       { n: "🐬 Лиза", s: 1990 },
                       { n: "🦜 Тим", s: 1720 },
                     ].map((p, i) => (
-                      <div key={p.n} className={`flex items-center justify-between rounded-xl px-3 py-2 ${i === 0 ? "bg-amber-soft" : "bg-surface-muted"}`}>
+                      <div
+                        key={p.n}
+                        className={`flex items-center justify-between rounded-xl px-3 py-2 ${i === 0 ? "bg-amber-soft" : "bg-surface-muted"}`}
+                      >
                         <div className="flex items-center gap-2 text-sm font-semibold">
                           <span className="w-4 font-mono text-xs text-muted-foreground">{i + 1}</span>
                           <span>{p.n}</span>
-                          {p.hot && <span className="rounded-full bg-amber/20 px-1.5 text-[10px] font-bold text-amber">🔥{p.hot}</span>}
+                          {p.hot && (
+                            <span className="rounded-full bg-amber/20 px-1.5 text-[10px] font-bold text-amber">
+                              🔥{p.hot}
+                            </span>
+                          )}
                         </div>
                         <span className="font-mono text-sm font-bold">{p.s.toLocaleString("ru-RU")}</span>
                       </div>
@@ -272,17 +298,16 @@ function Home() {
                 </div>
                 <h2 className="font-display text-3xl font-black md:text-4xl">Играйте вместе в реальном времени</h2>
                 <p className="mt-4 text-muted-foreground">
-                  Создайте комнату, поделитесь кодом — и ученики подключатся со своих устройств.
-                  Стрики, рейтинг, подиум — всё как в Kahoot!
+                  Создайте комнату, поделитесь кодом — и ученики подключатся со своих устройств. Стрики, рейтинг, подиум
+                  — всё как в Kahoot!
                 </p>
-                <Link to="/library" className="btn-accent mt-6 inline-flex">
+                <Link to="/join" className="btn-accent mt-6 inline-flex">
                   Попробовать онлайн-режим <ArrowRight className="h-4 w-4" />
                 </Link>
               </div>
             </div>
           </div>
         </section>
-
 
         <section id="features" className="py-24 sm:py-32">
           <div className="mx-auto max-w-7xl px-6">
@@ -317,10 +342,7 @@ function Home() {
               <div className="pointer-events-none absolute bottom-0 left-0 h-64 w-64 translate-y-16 -translate-x-16 rounded-full bg-accent/30 blur-3xl" />
               <h2 className="relative font-display text-3xl font-black md:text-4xl">Готовы попробовать?</h2>
               <p className="relative mt-3 text-white/70">Создайте свой первый квиз за пару минут.</p>
-              <Link
-                to="/builder/quiz"
-                className="btn-accent relative mt-8 inline-flex"
-              >
+              <Link to="/builder/quiz" className="btn-accent relative mt-8 inline-flex">
                 Начать сейчас
               </Link>
             </div>

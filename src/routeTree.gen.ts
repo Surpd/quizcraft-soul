@@ -137,11 +137,6 @@ const JeopardyGameIdResultsRoute = JeopardyGameIdResultsRouteImport.update({
   path: '/jeopardy/$gameId/results',
   getParentRoute: () => rootRouteImport,
 } as any)
-const MillionaireGameIdResultsRoute = MillionaireGameIdResultsRouteImport.update({
-  id: '/millionaire/$gameId/results',
-  path: '/millionaire/$gameId/results',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute

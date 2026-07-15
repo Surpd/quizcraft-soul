@@ -232,6 +232,7 @@ function BuilderJeopardy() {
     const data: JeopardyData = { config, rounds, final };
     saveGame<JeopardyData>("jeopardy", id, data, { tags });
     setSavedId(id);
+    clearDraft("jeopardy");
     showToast(savedId ? "Изменения сохранены" : "Игра сохранена!");
     return id;
   };
@@ -240,6 +241,7 @@ function BuilderJeopardy() {
     const id = newId();
     saveGame<JeopardyData>("jeopardy", id, { config, rounds, final }, { tags });
     setSavedId(id);
+    clearDraft("jeopardy");
     showToast("Создана копия");
     return id;
   };

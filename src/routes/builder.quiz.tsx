@@ -287,6 +287,76 @@ function BuilderQuiz() {
     showToast(`AI сгенерировал вопросов: ${next.length}`);
   };
 
+  const settingsPanel = (
+    <div className="space-y-4">
+      <h3 className="font-display font-bold">Настройки квиза</h3>
+      <div className="grid gap-4">
+        <label className="block">
+          <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">Порядок вопросов</span>
+          <select
+            className="input-base"
+            value={config.orderMode}
+            onChange={(e) =>
+              setConfig({ ...config, orderMode: e.target.value as QuizConfig["orderMode"] })
+            }
+          >
+            <option value="sequential">Последовательно</option>
+            <option value="free">В любом порядке</option>
+          </select>
+        </label>
+        <label className="block">
+          <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">
+            {config.orderMode === "free" ? "Общее время (мин)" : "Таймер на вопрос (сек)"}
+          </span>
+          <input
+            type="number"
+            className="input-base"
+            value={config.orderMode === "free" ? config.totalTime : config.defaultTime}
+            onChange={(e) =>
+              config.orderMode === "free"
+                ? setConfig({ ...config, totalTime: parseInt(e.target.value) || 10 })
+                : setConfig({ ...config, defaultTime: parseInt(e.target.value) || 30 })
+            }
+          />
+        </label>
+        <label className="block">
+          <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">Показывать результат</span>
+          <select
+            className="input-base"
+            value={config.showResult}
+            onChange={(e) => setConfig({ ...config, showResult: e.target.value as "each" | "end" })}
+          >
+            <option value="end">В конце</option>
+            <option value="each">После каждого</option>
+          </select>
+        </label>
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={config.shuffleQuestions}
+            onChange={(e) => setConfig({ ...config, shuffleQuestions: e.target.checked })}
+          />
+          Перемешивать вопросы
+        </label>
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={printAnswers}
+            onChange={(e) => setPrintAnswers(e.target.checked)}
+          />
+          Печатать с ответами (иначе — только вопросы)
+        </label>
+        <div>
+          <span className="mb-2 block text-xs font-semibold text-muted-foreground">Тема плеера</span>
+          <ThemeSelect
+            value={config.theme}
+            onChange={(theme: PlayerTheme) => setConfig({ ...config, theme })}
+          />
+        </div>
+      </div>
+    </div>
+  );
+
   const toolbar = (
     <div className="flex flex-wrap items-center justify-center gap-2">
       <AIGenerateQuizButton currentTitle={config.title} onGenerated={applyGeneratedQuiz} />
@@ -298,6 +368,8 @@ function BuilderQuiz() {
         onPrint={(withAnswers) => printQuiz({ config, questions }, { withAnswers })}
         printAnswers={printAnswers}
         onToggleSettings={() => setShowSettings((s) => !s)}
+        settingsOpen={showSettings}
+        settingsPanel={settingsPanel}
       />
       <button className="btn-ghost" onClick={openResults}>
         <BarChart3 className="h-4 w-4" /> Результаты

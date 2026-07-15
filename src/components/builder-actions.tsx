@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
-import { useEffect, useRef, useState } from "react";
+import type { ReactElement, ReactNode } from "react";
+import { Children, cloneElement, isValidElement, useEffect, useRef, useState } from "react";
 import {
   Save,
   Play,
@@ -18,6 +18,7 @@ import {
 import { findGame, setGameVisibility as apiSetGameVisibility } from "@/lib/api";
 import { useAuth } from "@/hooks/use-auth";
 import { PlayModal } from "@/components/play-modal";
+import { cn } from "@/lib/utils";
 import type { GameKind, GameVisibility } from "@/lib/types";
 
 // ---------- Toolbar (Import / Export / Settings) ----------
@@ -34,6 +35,9 @@ interface ToolbarProps {
   settingsPanel?: ReactNode;
   /** Optional advanced settings; shown behind an "Ещё" toggle on desktop. Hidden on mobile. */
   advancedSettingsPanel?: ReactNode;
+  /** Additional buttons rendered inside the toolbar row. On mobile they stretch with the main buttons; on desktop they sit at the right end of the deck. */
+  extraButtons?: ReactNode;
+  className?: string;
 }
 
 export function BuilderToolbar({
@@ -47,6 +51,8 @@ export function BuilderToolbar({
   settingsOpen,
   settingsPanel,
   advancedSettingsPanel,
+  extraButtons,
+  className,
 }: ToolbarProps) {
   const [openImport, setOpenImport] = useState(false);
   const [openExport, setOpenExport] = useState(false);
@@ -64,25 +70,25 @@ export function BuilderToolbar({
   }, []);
 
   return (
-    <div className="relative">
+    <div className={cn("relative flex w-full flex-nowrap items-stretch gap-1", className)}>
       <button
-        className="btn-ghost"
+        className="btn-ghost flex flex-1 items-center justify-center gap-2 md:justify-start"
         onClick={() => setOpenImport(true)}
         aria-label="Импорт"
         title="Импорт"
       >
-        <Upload className="h-4 w-4" />
+        <Upload className="h-4 w-4 shrink-0" />
         <span className="hidden md:inline">Импорт</span>
       </button>
 
-      <div ref={exportRef} className="relative">
+      <div ref={exportRef} className="relative flex flex-1">
         <button
-          className="btn-ghost"
+          className="btn-ghost flex w-full items-center justify-center gap-2 md:justify-start"
           onClick={() => setOpenExport((v) => !v)}
           aria-label="Экспорт"
           title="Экспорт"
         >
-          <FileSpreadsheet className="h-4 w-4" />
+          <FileSpreadsheet className="h-4 w-4 shrink-0" />
           <span className="hidden md:inline">Экспорт</span>
           <ChevronDown className="hidden h-3.5 w-3.5 md:inline" />
         </button>
@@ -111,35 +117,51 @@ export function BuilderToolbar({
         )}
       </div>
 
-      <button
-        className="btn-ghost"
-        onClick={onToggleSettings}
-        aria-label="Настройки"
-        title="Настройки"
-      >
-        <Settings2 className="h-4 w-4" />
-        <span className="hidden md:inline">Настройки</span>
-      </button>
+      <div className="relative flex flex-1">
+        <button
+          className="btn-ghost flex w-full items-center justify-center gap-2 md:justify-start"
+          onClick={onToggleSettings}
+          aria-label="Настройки"
+          title="Настройки"
+        >
+          <Settings2 className="h-4 w-4 shrink-0" />
+          <span className="hidden md:inline">Настройки</span>
+        </button>
+        {settingsOpen && settingsPanel && (
+          <div className="absolute right-0 top-full z-[100] mt-2 w-72 max-md:w-60 max-w-[calc(100vw-2rem)] max-h-[70vh] overflow-y-auto rounded-xl border border-border bg-surface p-4 shadow-lift">
+            {settingsPanel}
+            {advancedSettingsPanel && (
+              <div className="mt-4 hidden md:block">
+                <button
+                  type="button"
+                  onClick={() => setShowAdvanced((s) => !s)}
+                  className="flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
+                >
+                  <ChevronDown
+                    className={`h-3.5 w-3.5 transition-transform ${showAdvanced ? "rotate-180" : ""}`}
+                  />
+                  {showAdvanced ? "Скрыть расширенные" : "Ещё · расширенные настройки"}
+                </button>
+                {showAdvanced && (
+                  <div className="mt-3 border-t border-border pt-3">{advancedSettingsPanel}</div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
-      {settingsOpen && settingsPanel && (
-        <div className="absolute -left-[0.4rem] -right-[0.4rem] top-full z-[100] mt-2 max-h-[70vh] overflow-y-auto rounded-xl border border-border bg-surface p-4 shadow-lift">
-          {settingsPanel}
-          {advancedSettingsPanel && (
-            <div className="mt-4 hidden md:block">
-              <button
-                type="button"
-                onClick={() => setShowAdvanced((s) => !s)}
-                className="flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
-              >
-                <ChevronDown
-                  className={`h-3.5 w-3.5 transition-transform ${showAdvanced ? "rotate-180" : ""}`}
-                />
-                {showAdvanced ? "Скрыть расширенные" : "Ещё · расширенные настройки"}
-              </button>
-              {showAdvanced && (
-                <div className="mt-3 border-t border-border pt-3">{advancedSettingsPanel}</div>
-              )}
-            </div>
+      {extraButtons && (
+        <div className="flex flex-1 items-stretch justify-center gap-1 md:flex-initial">
+          {Children.map(extraButtons, (child) =>
+            isValidElement(child)
+              ? cloneElement(child as ReactElement<{ className?: string }>, {
+                  className: cn(
+                    "flex-1 md:flex-initial justify-center md:justify-start",
+                    (child as ReactElement<{ className?: string }>).props.className
+                  ),
+                })
+              : child
           )}
         </div>
       )}

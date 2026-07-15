@@ -385,29 +385,35 @@ function BuilderQuiz() {
     </div>
   );
 
+  const resultsButton = (
+    <button
+      className="btn-ghost"
+      onClick={openResults}
+      aria-label="Результаты"
+      title="Результаты"
+    >
+      <BarChart3 className="h-4 w-4 shrink-0" />
+      <span className="hidden md:inline">Результаты</span>
+    </button>
+  );
+
   const toolbar = (
-    <div className="flex flex-wrap items-center justify-center gap-2">
-      <BuilderToolbar
-        kind="quiz"
-        onImportFile={handleImport}
-        onDownloadTemplate={() => downloadExcelTemplate("quiz")}
-        onExportExcel={() => exportQuizExcel({ config, questions })}
-        onPrint={(withAnswers) => printQuiz({ config, questions }, { withAnswers })}
-        printAnswers={printAnswers}
-        onToggleSettings={() => setShowSettings((s) => !s)}
-        settingsOpen={showSettings}
-        settingsPanel={settingsPanel}
-        advancedSettingsPanel={advancedSettingsPanel}
-      />
-      <button
-        className="btn-ghost"
-        onClick={openResults}
-        aria-label="Результаты"
-        title="Результаты"
-      >
-        <BarChart3 className="h-4 w-4" />
-        <span className="hidden md:inline">Результаты</span>
-      </button>
+    <div className="flex w-full flex-col gap-2 md:flex-row md:items-stretch">
+      <div className="flex flex-1">
+        <BuilderToolbar
+          kind="quiz"
+          onImportFile={handleImport}
+          onDownloadTemplate={() => downloadExcelTemplate("quiz")}
+          onExportExcel={() => exportQuizExcel({ config, questions })}
+          onPrint={(withAnswers) => printQuiz({ config, questions }, { withAnswers })}
+          printAnswers={printAnswers}
+          onToggleSettings={() => setShowSettings((s) => !s)}
+          settingsOpen={showSettings}
+          settingsPanel={settingsPanel}
+          advancedSettingsPanel={advancedSettingsPanel}
+          extraButtons={resultsButton}
+        />
+      </div>
       <AIGenerateQuizButton
         currentTitle={config.title}
         onGenerated={applyGeneratedQuiz}

@@ -319,7 +319,8 @@
 .builder-cmd-deck {
   position: relative;
   z-index: 30;
-  display: inline-flex;
+  display: flex;
+  width: 100%;
   align-items: center;
   gap: 0.35rem;
   padding: 0.4rem;

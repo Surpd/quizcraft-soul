@@ -9,8 +9,10 @@ function AnimatedBackgroundImpl({ theme }: { theme: PlayerTheme }) {
   if (theme === "forest") return <Leaves />;
   if (theme === "midnight") return <Stars />;
   if (theme === "amber") return <Sparks />;
+  if (theme === "classic") return <Shapes />;
   return null;
 }
+
 
 export const AnimatedBackground = memo(AnimatedBackgroundImpl);
 

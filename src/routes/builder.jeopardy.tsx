@@ -378,17 +378,20 @@ function BuilderJeopardy() {
     </div>
   );
 
+  const modeButton = (
+    <button
+      className="btn-ghost"
+      onClick={() => setMode((m) => (m === "list" ? "grid" : "list"))}
+      aria-label={mode === "list" ? "Плитки" : "Список"}
+      title={mode === "list" ? "Плитки" : "Список"}
+    >
+      {mode === "list" ? <LayoutGrid className="h-4 w-4 shrink-0" /> : <List className="h-4 w-4 shrink-0" />}
+      <span className="hidden md:inline">{mode === "list" ? "Плитки" : "Список"}</span>
+    </button>
+  );
+
   const toolbar = (
-    <div className="flex flex-wrap items-center justify-center gap-2">
-      <button
-        className="btn-ghost"
-        onClick={() => setMode((m) => (m === "list" ? "grid" : "list"))}
-        aria-label={mode === "list" ? "Плитки" : "Список"}
-        title={mode === "list" ? "Плитки" : "Список"}
-      >
-        {mode === "list" ? <LayoutGrid className="h-4 w-4" /> : <List className="h-4 w-4" />}
-        <span className="hidden md:inline">{mode === "list" ? "Плитки" : "Список"}</span>
-      </button>
+    <div className="flex w-full items-stretch">
       <BuilderToolbar
         kind="jeopardy"
         onImportFile={handleImport}
@@ -400,6 +403,7 @@ function BuilderJeopardy() {
         settingsOpen={showSettings}
         settingsPanel={settingsPanel}
         advancedSettingsPanel={advancedSettingsPanel}
+        extraButtons={modeButton}
       />
     </div>
   );

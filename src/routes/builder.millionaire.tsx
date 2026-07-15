@@ -341,18 +341,20 @@ function BuilderMillionaire() {
   );
 
   const toolbar = (
-    <BuilderToolbar
-      kind="millionaire"
-      onImportFile={handleImport}
-      onDownloadTemplate={() => downloadExcelTemplate("millionaire")}
-      onExportExcel={() => exportMillionaireExcel({ config, questions })}
-      onPrint={(withAnswers) => printMillionaire({ config, questions }, { withAnswers })}
-      printAnswers={printAnswers}
-      onToggleSettings={() => setShowSettings((s) => !s)}
-      settingsOpen={showSettings}
-      settingsPanel={settingsPanel}
-      advancedSettingsPanel={advancedSettingsPanel}
-    />
+    <div className="flex w-full items-stretch">
+      <BuilderToolbar
+        kind="millionaire"
+        onImportFile={handleImport}
+        onDownloadTemplate={() => downloadExcelTemplate("millionaire")}
+        onExportExcel={() => exportMillionaireExcel({ config, questions })}
+        onPrint={(withAnswers) => printMillionaire({ config, questions }, { withAnswers })}
+        printAnswers={printAnswers}
+        onToggleSettings={() => setShowSettings((s) => !s)}
+        settingsOpen={showSettings}
+        settingsPanel={settingsPanel}
+        advancedSettingsPanel={advancedSettingsPanel}
+      />
+    </div>
   );
 
 

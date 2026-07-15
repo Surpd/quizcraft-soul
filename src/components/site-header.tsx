@@ -48,46 +48,40 @@ export function SiteHeader({ compact = false }: { compact?: boolean }) {
       className={`sticky top-0 z-40 w-full border-b border-border bg-white/80 backdrop-blur-md ${compact ? "" : ""}`}
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-6">
-        {isHome ? (
-          <Link to="/" className="flex items-center gap-2">
+        <div ref={logoRef} className="relative">
+          <button
+            type="button"
+            onClick={() => setLogoOpen((v) => !v)}
+            aria-expanded={logoOpen}
+            aria-haspopup="menu"
+            className="flex items-center gap-1.5 rounded-lg px-1 py-1 hover:bg-surface-muted"
+          >
             <LogoMark />
-          </Link>
-        ) : (
-          <div ref={logoRef} className="relative">
-            <button
-              type="button"
-              onClick={() => setLogoOpen((v) => !v)}
-              aria-expanded={logoOpen}
-              aria-haspopup="menu"
-              className="flex items-center gap-1.5 rounded-lg px-1 py-1 hover:bg-surface-muted"
-            >
-              <LogoMark />
-              <ChevronDown className={`h-4 w-4 opacity-60 transition-transform ${logoOpen ? "rotate-180" : ""}`} />
-            </button>
-            {logoOpen && (
-              <div className="absolute left-0 top-full z-40 mt-2 w-44 overflow-hidden rounded-xl border border-border bg-surface shadow-lift md:w-56">
+            <ChevronDown className={`h-4 w-4 opacity-60 transition-transform ${logoOpen ? "rotate-180" : ""}`} />
+          </button>
+          {logoOpen && (
+            <div className="absolute left-0 top-full z-40 mt-2 w-44 overflow-hidden rounded-xl border border-border bg-surface shadow-lift md:w-56">
+              <Link
+                to="/"
+                onClick={() => setLogoOpen(false)}
+                className={`block px-3 py-2 text-sm hover:bg-surface-muted ${pathname === "/" ? "font-semibold text-primary" : ""}`}
+              >
+                Главная
+              </Link>
+              <div className="border-t border-border" />
+              {navItems.map((item) => (
                 <Link
-                  to="/"
+                  key={item.to}
+                  to={item.to}
                   onClick={() => setLogoOpen(false)}
-                  className="block px-3 py-2 text-sm hover:bg-surface-muted"
+                  className={`block px-3 py-2 text-sm hover:bg-surface-muted ${pathname === item.to ? "font-semibold text-primary" : ""}`}
                 >
-                  Главная
+                  {item.label}
                 </Link>
-                <div className="border-t border-border" />
-                {navItems.map((item) => (
-                  <Link
-                    key={item.to}
-                    to={item.to}
-                    onClick={() => setLogoOpen(false)}
-                    className="block px-3 py-2 text-sm hover:bg-surface-muted"
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
 
         <nav className="hidden gap-6 md:flex">
           <Link to="/library" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">

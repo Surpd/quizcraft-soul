@@ -53,31 +53,41 @@ export function BuilderShell({
             На главную
           </Link>
 
-          <div className="mb-6 space-y-4">
-            <div>
-              <h1 className="flex items-center gap-3 font-display text-3xl font-black tracking-tight sm:text-4xl">
+          <div className="mb-6">
+            <div className="builder-hero animate-fade-up">
+              <div className="flex min-w-0 items-center gap-4">
                 {icon && (
                   <span
-                    className="grid h-11 w-11 place-items-center rounded-2xl text-primary"
-                    style={
-                      theme
-                        ? { background: "var(--pt-surface-strong)", color: "var(--pt-accent)" }
-                        : { background: "var(--primary-soft)" }
-                    }
+                    className="grid h-14 w-14 flex-shrink-0 place-items-center rounded-2xl text-white shadow-lg"
+                    style={{
+                      background: "var(--pt-accent, var(--primary))",
+                      color: theme ? "#0b0b0b" : "#fff",
+                      boxShadow:
+                        "0 14px 30px -12px color-mix(in oklab, var(--pt-accent, var(--primary)) 55%, transparent)",
+                    }}
                   >
                     {icon}
                   </span>
                 )}
-                {title}
-              </h1>
-              {subtitle && <p className="mt-2 text-sm text-muted-foreground">{subtitle}</p>}
-            </div>
-            {toolbar && (
-              <div className="flex flex-wrap items-center justify-center gap-2">
-                {toolbar}
+                <div className="min-w-0">
+                  <h1 className="truncate font-display text-2xl font-black tracking-tight sm:text-3xl">
+                    {title}
+                  </h1>
+                  {subtitle && (
+                    <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
+                      {subtitle}
+                    </p>
+                  )}
+                </div>
               </div>
-            )}
+              {toolbar && (
+                <div className="-mx-1 flex w-full overflow-x-auto px-1 md:w-auto md:overflow-visible">
+                  <div className="builder-cmd-deck mx-auto md:mx-0">{toolbar}</div>
+                </div>
+              )}
+            </div>
           </div>
+
 
           <div className={sidebar ? "flex flex-col gap-6 lg:flex-row" : ""}>
             {sidebar && (

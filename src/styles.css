@@ -317,6 +317,8 @@
 
 
 .builder-cmd-deck {
+  position: relative;
+  z-index: 30;
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;

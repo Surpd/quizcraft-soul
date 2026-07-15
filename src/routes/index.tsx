@@ -14,6 +14,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { Avatar } from "@/components/avatar";
+import { LogoMenu } from "@/components/site-header";
 import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/")({

@@ -32,6 +32,8 @@ interface ToolbarProps {
   onToggleSettings: () => void;
   settingsOpen?: boolean;
   settingsPanel?: ReactNode;
+  /** Optional advanced settings; shown behind an "Ещё" toggle on desktop. Hidden on mobile. */
+  advancedSettingsPanel?: ReactNode;
 }
 
 export function BuilderToolbar({
@@ -44,9 +46,11 @@ export function BuilderToolbar({
   onToggleSettings,
   settingsOpen,
   settingsPanel,
+  advancedSettingsPanel,
 }: ToolbarProps) {
   const [openImport, setOpenImport] = useState(false);
   const [openExport, setOpenExport] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const exportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -61,17 +65,29 @@ export function BuilderToolbar({
 
   return (
     <>
-      <button className="btn-ghost" onClick={() => setOpenImport(true)}>
-        <Upload className="h-4 w-4" /> Импорт
+      <button
+        className="btn-ghost"
+        onClick={() => setOpenImport(true)}
+        aria-label="Импорт"
+        title="Импорт"
+      >
+        <Upload className="h-4 w-4" />
+        <span className="hidden md:inline">Импорт</span>
       </button>
 
       <div ref={exportRef} className="relative">
-        <button className="btn-ghost" onClick={() => setOpenExport((v) => !v)}>
-          <FileSpreadsheet className="h-4 w-4" /> Экспорт
-          <ChevronDown className="h-3.5 w-3.5" />
+        <button
+          className="btn-ghost"
+          onClick={() => setOpenExport((v) => !v)}
+          aria-label="Экспорт"
+          title="Экспорт"
+        >
+          <FileSpreadsheet className="h-4 w-4" />
+          <span className="hidden md:inline">Экспорт</span>
+          <ChevronDown className="hidden h-3.5 w-3.5 md:inline" />
         </button>
         {openExport && (
-          <div className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-xl border border-border bg-surface shadow-lift">
+          <div className="absolute right-0 top-full z-[70] mt-2 w-56 overflow-hidden rounded-xl border border-border bg-surface shadow-lift">
             <button
               className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-surface-muted"
               onClick={() => {
@@ -95,13 +111,36 @@ export function BuilderToolbar({
         )}
       </div>
 
-      <button className="btn-ghost" onClick={onToggleSettings} aria-label="Настройки" title="Настройки">
-        <Settings2 className="h-4 w-4" /> Настройки
+      <button
+        className="btn-ghost"
+        onClick={onToggleSettings}
+        aria-label="Настройки"
+        title="Настройки"
+      >
+        <Settings2 className="h-4 w-4" />
+        <span className="hidden md:inline">Настройки</span>
       </button>
 
       {settingsOpen && settingsPanel && (
-        <div className="absolute -left-[0.4rem] -right-[0.4rem] top-full z-[100] mt-2 max-h-[70vh] overflow-y-auto rounded-xl border border-border bg-surface p-4 shadow-lift">
+        <div className="absolute -left-[0.4rem] -right-[0.4rem] top-full z-[80] mt-2 max-h-[70vh] overflow-y-auto rounded-xl border border-border bg-surface p-4 shadow-lift">
           {settingsPanel}
+          {advancedSettingsPanel && (
+            <div className="mt-4 hidden md:block">
+              <button
+                type="button"
+                onClick={() => setShowAdvanced((s) => !s)}
+                className="flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
+              >
+                <ChevronDown
+                  className={`h-3.5 w-3.5 transition-transform ${showAdvanced ? "rotate-180" : ""}`}
+                />
+                {showAdvanced ? "Скрыть расширенные" : "Ещё · расширенные настройки"}
+              </button>
+              {showAdvanced && (
+                <div className="mt-3 border-t border-border pt-3">{advancedSettingsPanel}</div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -118,6 +157,7 @@ export function BuilderToolbar({
     </>
   );
 }
+
 
 function ImportModal({
   onClose,

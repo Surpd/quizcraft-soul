@@ -322,6 +322,7 @@
   display: flex;
   width: 100%;
   align-items: center;
+  justify-content: space-evenly;
   gap: 0.35rem;
   padding: 0.4rem;
   background: #0f172a; /* slate-900 */
@@ -332,6 +333,10 @@
   max-width: 100%;
 }
 .builder-cmd-deck > * { flex-shrink: 0; }
+.builder-cmd-deck > button {
+  flex: 1;
+  justify-content: center;
+}
 .builder-cmd-deck .cmd-sep {
   width: 1px;
   align-self: stretch;
@@ -362,6 +367,12 @@
   box-shadow: 0 6px 16px -8px rgb(0 0 0 / 0.5);
 }
 .builder-cmd-deck button:active { transform: translateY(0) scale(0.97); }
+.builder-cmd-deck .btn-ghost {
+  background: #1e293b;
+}
+.builder-cmd-deck .btn-ghost:hover {
+  background: #334155;
+}
 
 /* Primary action inside the deck — the AI Generate button */
 .builder-cmd-deck .cmd-primary {

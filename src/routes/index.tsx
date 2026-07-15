@@ -114,9 +114,6 @@ function Home() {
                 Войти
               </Link>
             )}
-            <Link to="/builder/quiz" className="btn-primary">
-              Создать игру
-            </Link>
           </div>
         </div>
       </header>

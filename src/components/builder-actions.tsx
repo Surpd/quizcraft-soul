@@ -160,6 +160,55 @@ export function BuilderToolbar({
   );
 }
 
+export function BuilderSettingsSection({
+  panel,
+  advancedPanel,
+  onClose,
+}: {
+  panel: ReactNode;
+  advancedPanel?: ReactNode;
+  onClose?: () => void;
+}) {
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  return (
+    <div className="surface-card animate-fade-up space-y-4 p-6">
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="font-display font-bold">Настройки</h3>
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg p-1.5 text-muted-foreground hover:bg-surface-muted hover:text-foreground"
+            aria-label="Свернуть настройки"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+      {panel}
+      {advancedPanel && (
+        <div className="pt-2">
+          <button
+            type="button"
+            onClick={() => setShowAdvanced((s) => !s)}
+            className="flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
+          >
+            <ChevronDown
+              className={`h-3.5 w-3.5 transition-transform ${showAdvanced ? "rotate-180" : ""}`}
+            />
+            {showAdvanced ? "Скрыть расширенные" : "Ещё · расширенные настройки"}
+          </button>
+          {showAdvanced && (
+            <div className="mt-3 border-t border-border pt-3">{advancedPanel}</div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+
 
 function ImportModal({
   onClose,

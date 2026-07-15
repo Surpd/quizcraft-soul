@@ -172,6 +172,7 @@ function BuilderQuiz() {
     const id = savedId ?? newId();
     saveGame<QuizData>("quiz", id, { config, questions }, { tags });
     setSavedId(id);
+    clearDraft("quiz");
     showToast(savedId ? "Изменения сохранены" : "Квиз сохранён!");
     return id;
   };

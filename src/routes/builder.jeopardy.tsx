@@ -108,6 +108,27 @@ function BuilderJeopardy() {
     }
   }, [urlId]);
 
+  const draftEnabled = !urlId;
+  const draftPrompt = useDraftPrompt<{
+    config: JeopardyConfig;
+    rounds: JeopardyCategory[][];
+    final: JeopardyFinal;
+    tags: string[];
+  }>("jeopardy", draftEnabled);
+  const draftPaused = !draftEnabled || !draftPrompt.checked || !!draftPrompt.draft || !!savedId;
+  useAutoDraft("jeopardy", { config, rounds, final, tags }, { paused: draftPaused });
+
+  const restoreDraft = () => {
+    const d = draftPrompt.draft;
+    if (!d) return;
+    setConfig(d.data.config);
+    setRounds(d.data.rounds);
+    setFinal(d.data.final);
+    setTags(d.data.tags ?? []);
+    draftPrompt.accept();
+    showToast("Черновик восстановлен");
+  };
+
 
   const showToast = (msg: string) => {
     setToast(msg);

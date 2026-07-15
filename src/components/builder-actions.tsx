@@ -96,9 +96,16 @@ export function BuilderToolbar({
           )}
         </div>
 
-        <button className="btn-ghost" onClick={onToggleSettings} aria-label="Настройки" title="Настройки">
-          <Settings2 className="h-4 w-4" /> Настройки
-        </button>
+        <div className="relative">
+          <button className="btn-ghost" onClick={onToggleSettings} aria-label="Настройки" title="Настройки">
+            <Settings2 className="h-4 w-4" /> Настройки
+          </button>
+          {settingsOpen && settingsPanel && (
+            <div className="absolute right-0 top-full z-50 mt-2 w-80 max-h-[70vh] overflow-y-auto rounded-xl border border-border bg-surface p-4 shadow-lift">
+              {settingsPanel}
+            </div>
+          )}
+        </div>
       </div>
 
       {openImport && (

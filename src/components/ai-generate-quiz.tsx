@@ -57,10 +57,11 @@ export function AIGenerateQuizButton({ currentTitle, onGenerated }: Props) {
           setTopic(currentTitle);
           setOpen(true);
         }}
-        className="btn-ghost"
+        className="btn-ghost cmd-primary"
       >
-        <WandSparkles className="h-4 w-4 text-primary" />
-        Сгенерировать квиз
+        <WandSparkles className="h-4 w-4" />
+        Сгенерировать
+
       </button>
       {open && (
         <div

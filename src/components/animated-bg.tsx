@@ -9,8 +9,10 @@ function AnimatedBackgroundImpl({ theme }: { theme: PlayerTheme }) {
   if (theme === "forest") return <Leaves />;
   if (theme === "midnight") return <Stars />;
   if (theme === "amber") return <Sparks />;
+  if (theme === "classic") return <Shapes />;
   return null;
 }
+
 
 export const AnimatedBackground = memo(AnimatedBackgroundImpl);
 
@@ -122,3 +124,65 @@ function Sparks() {
     </div>
   );
 }
+
+function Shapes() {
+  const shapes = Array.from({ length: 16 });
+  const kinds = ["circle", "square", "triangle"] as const;
+  return (
+    <div aria-hidden className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+      {shapes.map((_, i) => {
+        const size = 14 + Math.round(Math.random() * 26);
+        const left = Math.round(Math.random() * 100);
+        const dur = 16 + Math.random() * 14;
+        const delay = -Math.random() * dur;
+        const kind = kinds[i % kinds.length];
+        const common: React.CSSProperties = {
+          width: size,
+          height: size,
+          left: `${left}%`,
+          bottom: `-${size}px`,
+          animation: `iq-float-up ${dur}s linear infinite, iq-sway 7s ease-in-out infinite`,
+          animationDelay: `${delay}s, ${delay / 2}s`,
+          opacity: 0.5,
+        };
+        if (kind === "circle") {
+          return (
+            <span
+              key={i}
+              className="absolute rounded-full border-2 border-[color:var(--pt-accent)]/50 bg-[color:var(--pt-accent-2)]/10"
+              style={common}
+            />
+          );
+        }
+        if (kind === "square") {
+          return (
+            <span
+              key={i}
+              className="absolute rotate-12 rounded-md border-2 border-[color:var(--pt-accent-2)]/50 bg-[color:var(--pt-accent)]/10"
+              style={common}
+            />
+          );
+        }
+        return (
+          <svg
+            key={i}
+            width={size}
+            height={size}
+            viewBox="0 0 24 24"
+            className="absolute text-[color:var(--pt-accent)]/50"
+            style={common}
+          >
+            <path
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinejoin="round"
+              d="M12 3 L22 20 L2 20 Z"
+            />
+          </svg>
+        );
+      })}
+    </div>
+  );
+}
+

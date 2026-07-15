@@ -64,7 +64,7 @@ export function BuilderToolbar({
   }, []);
 
   return (
-    <>
+    <div className="relative">
       <button
         className="btn-ghost"
         onClick={() => setOpenImport(true)}
@@ -87,7 +87,7 @@ export function BuilderToolbar({
           <ChevronDown className="hidden h-3.5 w-3.5 md:inline" />
         </button>
         {openExport && (
-          <div className="absolute right-0 top-full z-[70] mt-2 w-56 overflow-hidden rounded-xl border border-border bg-surface shadow-lift">
+          <div className="absolute right-0 top-full z-[90] mt-2 w-56 overflow-hidden rounded-xl border border-border bg-surface shadow-lift">
             <button
               className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-surface-muted"
               onClick={() => {
@@ -122,7 +122,7 @@ export function BuilderToolbar({
       </button>
 
       {settingsOpen && settingsPanel && (
-        <div className="absolute -left-[0.4rem] -right-[0.4rem] top-full z-[80] mt-2 max-h-[70vh] overflow-y-auto rounded-xl border border-border bg-surface p-4 shadow-lift">
+        <div className="absolute -left-[0.4rem] -right-[0.4rem] top-full z-[100] mt-2 max-h-[70vh] overflow-y-auto rounded-xl border border-border bg-surface p-4 shadow-lift">
           {settingsPanel}
           {advancedSettingsPanel && (
             <div className="mt-4 hidden md:block">
@@ -154,7 +154,7 @@ export function BuilderToolbar({
           onDownloadTemplate={onDownloadTemplate}
         />
       )}
-    </>
+    </div>
   );
 }
 

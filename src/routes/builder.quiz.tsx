@@ -387,7 +387,6 @@ function BuilderQuiz() {
 
   const toolbar = (
     <div className="flex flex-wrap items-center justify-center gap-2">
-      <AIGenerateQuizButton currentTitle={config.title} onGenerated={applyGeneratedQuiz} />
       <BuilderToolbar
         kind="quiz"
         onImportFile={handleImport}
@@ -409,6 +408,11 @@ function BuilderQuiz() {
         <BarChart3 className="h-4 w-4" />
         <span className="hidden md:inline">Результаты</span>
       </button>
+      <AIGenerateQuizButton
+        currentTitle={config.title}
+        onGenerated={applyGeneratedQuiz}
+        className="w-full md:w-auto justify-center"
+      />
     </div>
   );
 

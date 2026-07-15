@@ -13,9 +13,10 @@ const COOLDOWN_MS = 30_000;
 interface Props {
   currentTitle: string;
   onGenerated: (result: { title: string; questions: GeneratedQuizQuestion[] }) => void;
+  className?: string;
 }
 
-export function AIGenerateQuizButton({ currentTitle, onGenerated }: Props) {
+export function AIGenerateQuizButton({ currentTitle, onGenerated, className }: Props) {
   const [open, setOpen] = useState(false);
   const [topic, setTopic] = useState(currentTitle);
   const [count, setCount] = useState(10);
@@ -57,7 +58,7 @@ export function AIGenerateQuizButton({ currentTitle, onGenerated }: Props) {
           setTopic(currentTitle);
           setOpen(true);
         }}
-        className="btn-ghost cmd-primary"
+        className={`btn-ghost cmd-primary ${className ?? ""}`}
       >
         <WandSparkles className="h-4 w-4" />
         Сгенерировать

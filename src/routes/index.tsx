@@ -14,6 +14,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { Avatar } from "@/components/avatar";
+import { LogoMenu } from "@/components/site-header";
 import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/")({
@@ -77,12 +78,7 @@ function Home() {
       {/* Header */}
       <header className="sticky top-0 z-40 w-full border-b border-border bg-white/80 backdrop-blur-md">
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-3 px-6">
-          <div className="flex items-center gap-2">
-            <div className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-foreground">
-              <span className="font-display text-sm font-black">IQ</span>
-            </div>
-            <span className="font-display text-xl font-bold tracking-tight">IslandQuiz</span>
-          </div>
+          <LogoMenu />
           <nav className="hidden gap-8 md:flex">
             <a href="#formats" className="text-sm font-medium text-muted-foreground hover:text-primary">
               Форматы

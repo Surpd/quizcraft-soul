@@ -298,6 +298,56 @@ function BuilderJeopardy() {
     [rounds, config.roundTitles],
   );
 
+  const settingsPanel = (
+    <div className="space-y-4">
+      <h3 className="font-display font-bold">Настройки</h3>
+      <div className="grid gap-4">
+        <label>
+          <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">Базовое время (сек)</span>
+          <input
+            type="number"
+            className="input-base"
+            value={config.timeBase}
+            onChange={(e) => setConfig({ ...config, timeBase: parseInt(e.target.value) || 30 })}
+          />
+        </label>
+        <label>
+          <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">Шаг времени (сек)</span>
+          <input
+            type="number"
+            className="input-base"
+            value={config.timeStep}
+            onChange={(e) => setConfig({ ...config, timeStep: parseInt(e.target.value) || 0 })}
+          />
+        </label>
+        <label>
+          <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">Таймер финала (сек)</span>
+          <input
+            type="number"
+            className="input-base"
+            value={config.timeFinal}
+            onChange={(e) => setConfig({ ...config, timeFinal: parseInt(e.target.value) || 90 })}
+          />
+        </label>
+        <div>
+          <span className="mb-2 block text-xs font-semibold text-muted-foreground">Тема плеера</span>
+          <ThemeSelect
+            value={config.theme}
+            onChange={(theme: PlayerTheme) => setConfig({ ...config, theme })}
+          />
+        </div>
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={printAnswers}
+            onChange={(e) => setPrintAnswers(e.target.checked)}
+          />
+          Печатать с ответами (иначе — только вопросы)
+        </label>
+      </div>
+    </div>
+  );
+
   const toolbar = (
     <div className="flex flex-wrap items-center justify-center gap-2">
       <button
@@ -315,6 +365,8 @@ function BuilderJeopardy() {
         onPrint={(withAnswers) => printJeopardy({ config, rounds, final }, { withAnswers })}
         printAnswers={printAnswers}
         onToggleSettings={() => setShowSettings((s) => !s)}
+        settingsOpen={showSettings}
+        settingsPanel={settingsPanel}
       />
     </div>
   );

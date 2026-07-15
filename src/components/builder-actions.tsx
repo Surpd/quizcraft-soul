@@ -172,9 +172,8 @@ export function BuilderSettingsSection({
   const [showAdvanced, setShowAdvanced] = useState(false);
   return (
     <div className="surface-card animate-fade-up space-y-4 p-6">
-      <div className="flex items-center justify-between gap-3">
-        <h3 className="font-display font-bold">Настройки</h3>
-        {onClose && (
+      {onClose && (
+        <div className="flex justify-end">
           <button
             type="button"
             onClick={onClose}
@@ -183,8 +182,8 @@ export function BuilderSettingsSection({
           >
             <X className="h-4 w-4" />
           </button>
-        )}
-      </div>
+        </div>
+      )}
       {panel}
       {advancedPanel && (
         <div className="pt-2">

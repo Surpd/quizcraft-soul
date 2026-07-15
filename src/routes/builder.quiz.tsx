@@ -185,6 +185,7 @@ function BuilderQuiz() {
       questions,
     }, { tags });
     setSavedId(id);
+    clearDraft("quiz");
     showToast("Создана копия квиза");
     return id;
   };

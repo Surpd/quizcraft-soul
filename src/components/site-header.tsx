@@ -15,72 +15,85 @@ function LogoMark() {
   );
 }
 
-export function SiteHeader({ compact = false }: { compact?: boolean }) {
-  const { user, logout } = useAuth();
-  const nav = useNavigate();
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
+const logoNavItems = [
+  { to: "/builder/quiz" as const, label: "Квиз" },
+  { to: "/builder/jeopardy" as const, label: "Своя игра" },
+  { to: "/builder/millionaire" as const, label: "Миллионер" },
+  { to: "/library" as const, label: "Библиотека" },
+  { to: "/join" as const, label: "Присоединиться" },
+];
 
-  const [open, setOpen] = useState(false);
+export function LogoMenu() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [logoOpen, setLogoOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
   const logoRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const onDoc = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setOpen(false);
       if (logoRef.current && !logoRef.current.contains(e.target as Node)) setLogoOpen(false);
     };
     document.addEventListener("mousedown", onDoc);
     return () => document.removeEventListener("mousedown", onDoc);
   }, []);
 
-  const navItems = [
-    { to: "/builder/quiz" as const, label: "Квиз" },
-    { to: "/builder/jeopardy" as const, label: "Своя игра" },
-    { to: "/builder/millionaire" as const, label: "Миллионер" },
-    { to: "/library" as const, label: "Библиотека" },
-    { to: "/join" as const, label: "Присоединиться" },
-  ];
+  return (
+    <div ref={logoRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setLogoOpen((v) => !v)}
+        aria-expanded={logoOpen}
+        aria-haspopup="menu"
+        className="flex items-center gap-1.5 rounded-lg px-1 py-1 hover:bg-surface-muted"
+      >
+        <LogoMark />
+        <ChevronDown className={`h-4 w-4 opacity-60 transition-transform ${logoOpen ? "rotate-180" : ""}`} />
+      </button>
+      {logoOpen && (
+        <div className="absolute left-0 top-full z-40 mt-2 w-44 overflow-hidden rounded-xl border border-border bg-surface shadow-lift md:w-56">
+          <Link
+            to="/"
+            onClick={() => setLogoOpen(false)}
+            className={`block px-3 py-2 text-sm hover:bg-surface-muted ${pathname === "/" ? "font-semibold text-primary" : ""}`}
+          >
+            Главная
+          </Link>
+          <div className="border-t border-border" />
+          {logoNavItems.map((item) => (
+            <Link
+              key={item.to}
+              to={item.to}
+              onClick={() => setLogoOpen(false)}
+              className={`block px-3 py-2 text-sm hover:bg-surface-muted ${pathname === item.to ? "font-semibold text-primary" : ""}`}
+            >
+              {item.label}
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function SiteHeader({ compact = false }: { compact?: boolean }) {
+  const { user, logout } = useAuth();
+  const nav = useNavigate();
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const onDoc = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, []);
 
   return (
     <header
       className={`sticky top-0 z-40 w-full border-b border-border bg-white/80 backdrop-blur-md ${compact ? "" : ""}`}
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-6">
-        <div ref={logoRef} className="relative">
-          <button
-            type="button"
-            onClick={() => setLogoOpen((v) => !v)}
-            aria-expanded={logoOpen}
-            aria-haspopup="menu"
-            className="flex items-center gap-1.5 rounded-lg px-1 py-1 hover:bg-surface-muted"
-          >
-            <LogoMark />
-            <ChevronDown className={`h-4 w-4 opacity-60 transition-transform ${logoOpen ? "rotate-180" : ""}`} />
-          </button>
-          {logoOpen && (
-            <div className="absolute left-0 top-full z-40 mt-2 w-44 overflow-hidden rounded-xl border border-border bg-surface shadow-lift md:w-56">
-              <Link
-                to="/"
-                onClick={() => setLogoOpen(false)}
-                className={`block px-3 py-2 text-sm hover:bg-surface-muted ${pathname === "/" ? "font-semibold text-primary" : ""}`}
-              >
-                Главная
-              </Link>
-              <div className="border-t border-border" />
-              {navItems.map((item) => (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  onClick={() => setLogoOpen(false)}
-                  className={`block px-3 py-2 text-sm hover:bg-surface-muted ${pathname === item.to ? "font-semibold text-primary" : ""}`}
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
+        <LogoMenu />
 
         <nav className="hidden gap-6 md:flex">
           <Link to="/library" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">

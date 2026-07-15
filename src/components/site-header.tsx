@@ -47,7 +47,7 @@ export function SiteHeader({ compact = false }: { compact?: boolean }) {
     <header
       className={`sticky top-0 z-40 w-full border-b border-border bg-white/80 backdrop-blur-md ${compact ? "" : ""}`}
     >
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-6">
         {isHome ? (
           <Link to="/" className="flex items-center gap-2">
             <LogoMark />
@@ -65,7 +65,7 @@ export function SiteHeader({ compact = false }: { compact?: boolean }) {
               <ChevronDown className={`h-4 w-4 opacity-60 transition-transform ${logoOpen ? "rotate-180" : ""}`} />
             </button>
             {logoOpen && (
-              <div className="absolute left-0 top-full mt-2 w-56 overflow-hidden rounded-xl border border-border bg-surface shadow-lift">
+              <div className="absolute left-0 top-full z-40 mt-2 w-44 overflow-hidden rounded-xl border border-border bg-surface shadow-lift md:w-56">
                 <Link
                   to="/"
                   onClick={() => setLogoOpen(false)}
@@ -108,13 +108,13 @@ export function SiteHeader({ compact = false }: { compact?: boolean }) {
         </nav>
 
         {user ? (
-          <div ref={menuRef} className="relative">
+          <div ref={menuRef} className="relative z-50">
             <button
               onClick={() => setOpen((v) => !v)}
               className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-2 py-1.5 text-sm font-semibold hover:bg-surface-muted"
             >
               <Avatar name={user.name} avatar={user.avatar} size={26} />
-              <span className="max-w-[10ch] truncate">{user.name}</span>
+              <span className="max-w-[8ch] truncate sm:max-w-[12ch]">{user.name}</span>
               <ChevronDown className="h-3.5 w-3.5 opacity-60" />
             </button>
             {open && (

@@ -76,7 +76,7 @@ function Home() {
     <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
       <header className="sticky top-0 z-40 w-full border-b border-border bg-white/80 backdrop-blur-md">
-        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
+        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-3 px-6">
           <div className="flex items-center gap-2">
             <div className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-foreground">
               <span className="font-display text-sm font-black">IQ</span>
@@ -104,7 +104,7 @@ function Home() {
                 className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1.5 text-sm font-semibold hover:bg-surface-muted"
               >
                 <Avatar name={user.name} size={28} />
-                <span className="max-w-[12ch] truncate">{user.name}</span>
+                <span className="max-w-[8ch] truncate sm:max-w-[12ch]">{user.name}</span>
               </Link>
             ) : (
               <Link
@@ -114,9 +114,6 @@ function Home() {
                 Войти
               </Link>
             )}
-            <Link to="/builder/quiz" className="btn-primary">
-              Создать игру
-            </Link>
           </div>
         </div>
       </header>

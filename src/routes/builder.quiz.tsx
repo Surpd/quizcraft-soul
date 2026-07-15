@@ -478,6 +478,13 @@ function BuilderQuiz() {
           }}
         />
       )}
+      {showSettings && (
+        <BuilderSettingsSection
+          panel={settingsPanel}
+          advancedPanel={advancedSettingsPanel}
+          onClose={() => setShowSettings(false)}
+        />
+      )}
       <div className="surface-card space-y-3 p-6">
         <label className="block">
           <span className="mb-1.5 flex items-center justify-between text-xs font-semibold text-muted-foreground">

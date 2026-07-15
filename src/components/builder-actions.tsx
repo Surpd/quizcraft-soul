@@ -42,6 +42,8 @@ export function BuilderToolbar({
   onPrint,
   printAnswers,
   onToggleSettings,
+  settingsOpen,
+  settingsPanel,
 }: ToolbarProps) {
   const [openImport, setOpenImport] = useState(false);
   const [openExport, setOpenExport] = useState(false);

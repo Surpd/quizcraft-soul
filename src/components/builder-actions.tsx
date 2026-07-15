@@ -117,9 +117,9 @@ export function BuilderToolbar({
         )}
       </div>
 
-      <div className="relative flex flex-1 md:flex-initial">
+      <div className="relative flex flex-1">
         <button
-          className="btn-ghost flex w-full items-center justify-center gap-2 md:w-auto md:justify-start"
+          className="btn-ghost flex w-full items-center justify-center gap-2 md:justify-start"
           onClick={onToggleSettings}
           aria-label="Настройки"
           title="Настройки"

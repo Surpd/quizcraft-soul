@@ -61,52 +61,49 @@ export function BuilderToolbar({
 
   return (
     <>
-      <div className="flex flex-wrap items-center justify-center gap-2">
-        <button className="btn-ghost" onClick={() => setOpenImport(true)}>
-          <Upload className="h-4 w-4" /> Импорт
+      <button className="btn-ghost" onClick={() => setOpenImport(true)}>
+        <Upload className="h-4 w-4" /> Импорт
+      </button>
+
+      <div ref={exportRef} className="relative">
+        <button className="btn-ghost" onClick={() => setOpenExport((v) => !v)}>
+          <FileSpreadsheet className="h-4 w-4" /> Экспорт
+          <ChevronDown className="h-3.5 w-3.5" />
         </button>
-
-        <div ref={exportRef} className="relative">
-          <button className="btn-ghost" onClick={() => setOpenExport((v) => !v)}>
-            <FileSpreadsheet className="h-4 w-4" /> Экспорт
-            <ChevronDown className="h-3.5 w-3.5" />
-          </button>
-          {openExport && (
-            <div className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-xl border border-border bg-surface shadow-lift">
-              <button
-                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-surface-muted"
-                onClick={() => {
-                  setOpenExport(false);
-                  onExportExcel();
-                }}
-              >
-                <FileSpreadsheet className="h-4 w-4 text-primary" /> Скачать Excel (.xlsx)
-              </button>
-              <button
-                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-surface-muted"
-                onClick={() => {
-                  setOpenExport(false);
-                  onPrint(printAnswers);
-                }}
-              >
-                <Printer className="h-4 w-4 text-primary" /> Печать / PDF (
-                {printAnswers ? "с ответами" : "без ответов"})
-              </button>
-            </div>
-          )}
-        </div>
-
-        <div className="relative">
-          <button className="btn-ghost" onClick={onToggleSettings} aria-label="Настройки" title="Настройки">
-            <Settings2 className="h-4 w-4" /> Настройки
-          </button>
-          {settingsOpen && settingsPanel && (
-            <div className="absolute right-0 top-full z-50 mt-2 w-80 max-h-[70vh] overflow-y-auto rounded-xl border border-border bg-surface p-4 shadow-lift">
-              {settingsPanel}
-            </div>
-          )}
-        </div>
+        {openExport && (
+          <div className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-xl border border-border bg-surface shadow-lift">
+            <button
+              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-surface-muted"
+              onClick={() => {
+                setOpenExport(false);
+                onExportExcel();
+              }}
+            >
+              <FileSpreadsheet className="h-4 w-4 text-primary" /> Скачать Excel (.xlsx)
+            </button>
+            <button
+              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-surface-muted"
+              onClick={() => {
+                setOpenExport(false);
+                onPrint(printAnswers);
+              }}
+            >
+              <Printer className="h-4 w-4 text-primary" /> Печать / PDF (
+              {printAnswers ? "с ответами" : "без ответов"})
+            </button>
+          </div>
+        )}
       </div>
+
+      <button className="btn-ghost" onClick={onToggleSettings} aria-label="Настройки" title="Настройки">
+        <Settings2 className="h-4 w-4" /> Настройки
+      </button>
+
+      {settingsOpen && settingsPanel && (
+        <div className="absolute left-0 right-0 top-full z-[100] mt-2 max-h-[70vh] overflow-y-auto rounded-xl border border-border bg-surface p-4 shadow-lift">
+          {settingsPanel}
+        </div>
+      )}
 
       {openImport && (
         <ImportModal

@@ -119,39 +119,17 @@ export function BuilderToolbar({
         )}
       </div>
 
-      <div className="relative flex flex-1">
-        <button
-          className="btn-ghost flex w-full items-center justify-center gap-2 md:justify-start"
-          onClick={onToggleSettings}
-          aria-label="Настройки"
-          title="Настройки"
-        >
-          <Settings2 className="h-4 w-4 shrink-0" />
-          <span className="hidden md:inline">Настройки</span>
-        </button>
-        {settingsOpen && settingsPanel && (
-          <div className="absolute right-0 top-full z-[100] mt-2 w-72 max-md:w-60 max-w-[calc(100vw-2rem)] max-h-[70vh] overflow-y-auto rounded-xl border border-border bg-surface p-4 shadow-lift">
-            {settingsPanel}
-            {advancedSettingsPanel && (
-              <div className="mt-4 hidden md:block">
-                <button
-                  type="button"
-                  onClick={() => setShowAdvanced((s) => !s)}
-                  className="flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
-                >
-                  <ChevronDown
-                    className={`h-3.5 w-3.5 transition-transform ${showAdvanced ? "rotate-180" : ""}`}
-                  />
-                  {showAdvanced ? "Скрыть расширенные" : "Ещё · расширенные настройки"}
-                </button>
-                {showAdvanced && (
-                  <div className="mt-3 border-t border-border pt-3">{advancedSettingsPanel}</div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+      <button
+        className="btn-ghost flex flex-1 items-center justify-center gap-2 md:justify-start"
+        onClick={onToggleSettings}
+        aria-label="Настройки"
+        title="Настройки"
+        aria-expanded={!!settingsOpen}
+      >
+        <Settings2 className="h-4 w-4 shrink-0" />
+        <span className="hidden md:inline">Настройки</span>
+      </button>
+
 
       {extraButtons && (
         <div className="flex flex-1 items-stretch justify-center gap-1 md:flex-initial">

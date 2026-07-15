@@ -81,7 +81,7 @@ export function BuilderShell({
                 </div>
               </div>
               {toolbar && (
-                <div className="-mx-1 flex w-full overflow-x-auto px-1 md:w-auto md:overflow-visible">
+                <div className="-mx-1 flex w-full px-1 md:w-auto">
                   <div className="builder-cmd-deck mx-auto md:mx-0">{toolbar}</div>
                 </div>
               )}

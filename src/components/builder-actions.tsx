@@ -54,9 +54,11 @@ export function BuilderToolbar({
   extraButtons,
   className,
 }: ToolbarProps) {
+  // settingsPanel / advancedSettingsPanel are intentionally unused here; settings render as a section under the toolbar, not as a dropdown.
+  void settingsPanel;
+  void advancedSettingsPanel;
   const [openImport, setOpenImport] = useState(false);
   const [openExport, setOpenExport] = useState(false);
-  const [showAdvanced, setShowAdvanced] = useState(false);
   const exportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

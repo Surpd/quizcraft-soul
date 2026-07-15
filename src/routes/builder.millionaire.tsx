@@ -395,6 +395,16 @@ function BuilderMillionaire() {
         </>
       }
     >
+      {draftPrompt.draft && (
+        <DraftBanner
+          updatedAt={draftPrompt.draft.updatedAt}
+          onRestore={restoreDraft}
+          onDiscard={() => {
+            draftPrompt.dismiss();
+            showToast("Черновик удалён");
+          }}
+        />
+      )}
       <div className="surface-card space-y-3 p-6">
         <label className="block">
           <span className="mb-1.5 flex items-center justify-between text-xs font-semibold text-muted-foreground">

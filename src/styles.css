@@ -297,11 +297,11 @@
   padding: 1.25rem 1.25rem 1.25rem 1.5rem;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 1.75rem;
-  box-shadow: 0 8px 30px -12px rgb(0 0 0 / 0.08);
-  overflow: hidden;
+  border-left: 6px solid var(--pt-accent, var(--primary));
+  border-radius: 1.5rem;
+  box-shadow: 0 10px 30px -14px rgb(0 0 0 / 0.1);
 }
-@media (min-width: 900px) {
+@media (min-width: 1024px) {
   .builder-hero {
     flex-direction: row;
     align-items: center;
@@ -310,6 +310,7 @@
     gap: 1.5rem;
   }
 }
+
 .builder-hero::before {
   content: "";
   position: absolute;

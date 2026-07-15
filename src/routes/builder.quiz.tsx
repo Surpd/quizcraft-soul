@@ -118,6 +118,25 @@ function BuilderQuiz() {
     }
   }, [urlId]);
 
+  // Draft autosave — only for NEW games (no urlId, no savedId yet).
+  const draftEnabled = !urlId;
+  const draftPrompt = useDraftPrompt<{ config: QuizConfig; questions: QuizQuestion[]; tags: string[] }>(
+    "quiz",
+    draftEnabled,
+  );
+  const draftPaused = !draftEnabled || !draftPrompt.checked || !!draftPrompt.draft || !!savedId;
+  useAutoDraft("quiz", { config, questions, tags }, { paused: draftPaused });
+
+  const restoreDraft = () => {
+    const d = draftPrompt.draft;
+    if (!d) return;
+    setConfig(d.data.config);
+    setQuestions(d.data.questions);
+    setTags(d.data.tags ?? []);
+    draftPrompt.accept();
+    showToast("Черновик восстановлен");
+  };
+
   const addQuestion = (type: QuizQuestionType) => {
     const q = makeQuestion(type, 100, config.defaultTime);
     setQuestions((prev) => [...prev, q]);

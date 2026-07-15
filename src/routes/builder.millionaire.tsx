@@ -263,6 +263,13 @@ function BuilderMillionaire() {
     <div className="space-y-4">
       <h3 className="font-display font-bold">Настройки</h3>
       <div className="grid gap-4">
+        <div>
+          <span className="mb-2 block text-xs font-semibold text-muted-foreground">Тема плеера</span>
+          <ThemeSelect
+            value={config.theme}
+            onChange={(theme: PlayerTheme) => setConfig({ ...config, theme })}
+          />
+        </div>
         <label>
           <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">Время на вопрос (сек)</span>
           <input
@@ -272,66 +279,64 @@ function BuilderMillionaire() {
             onChange={(e) => setConfig({ ...config, timePerQuestion: parseInt(e.target.value) || 30 })}
           />
         </label>
-        <label>
-          <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">Шкала призов</span>
-          <select
-            className="input-base"
-            value={config.moneyScale}
-            onChange={(e) => {
-              const scale = e.target.value as MoneyScale;
-              setConfig({ ...config, moneyScale: scale });
-              applyScaleAndMode(scale, config.pointsMode ?? "classic");
-            }}
-          >
-            <option value="easy">Лёгкая (10-100 000)</option>
-            <option value="normal">Средняя (500-1 000 000)</option>
-            <option value="hard">Хард (10 000-100 млн)</option>
-          </select>
-        </label>
-        <label>
-          <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">Режим очков</span>
-          <select
-            className="input-base"
-            value={config.pointsMode ?? "classic"}
-            onChange={(e) => {
-              const mode = e.target.value as PointsMode;
-              setConfig({ ...config, pointsMode: mode });
-              applyScaleAndMode(config.moneyScale, mode);
-            }}
-          >
-            <option value="classic">Классический</option>
-            <option value="double">Удвоенный (×2)</option>
-            <option value="custom">Произвольный (задать вручную)</option>
-          </select>
-        </label>
-        <label>
-          <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">Несгораемые</span>
-          <select
-            className="input-base"
-            value={config.milestones}
-            onChange={(e) => setConfig({ ...config, milestones: e.target.value as MilestoneMode })}
-          >
-            <option value="classic">Классика (5-я, 10-я)</option>
-            <option value="three">Три точки (5-я, 10-я, 15-я)</option>
-            <option value="none">Без несгораемых</option>
-          </select>
-        </label>
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={printAnswers}
-            onChange={(e) => setPrintAnswers(e.target.checked)}
-          />
-          Печатать верные ответы (иначе — только вопросы)
-        </label>
-        <div>
-          <span className="mb-2 block text-xs font-semibold text-muted-foreground">Тема плеера</span>
-          <ThemeSelect
-            value={config.theme}
-            onChange={(theme: PlayerTheme) => setConfig({ ...config, theme })}
-          />
-        </div>
       </div>
+    </div>
+  );
+
+  const advancedSettingsPanel = (
+    <div className="grid gap-4">
+      <label>
+        <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">Шкала призов</span>
+        <select
+          className="input-base"
+          value={config.moneyScale}
+          onChange={(e) => {
+            const scale = e.target.value as MoneyScale;
+            setConfig({ ...config, moneyScale: scale });
+            applyScaleAndMode(scale, config.pointsMode ?? "classic");
+          }}
+        >
+          <option value="easy">Лёгкая (10-100 000)</option>
+          <option value="normal">Средняя (500-1 000 000)</option>
+          <option value="hard">Хард (10 000-100 млн)</option>
+        </select>
+      </label>
+      <label>
+        <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">Режим очков</span>
+        <select
+          className="input-base"
+          value={config.pointsMode ?? "classic"}
+          onChange={(e) => {
+            const mode = e.target.value as PointsMode;
+            setConfig({ ...config, pointsMode: mode });
+            applyScaleAndMode(config.moneyScale, mode);
+          }}
+        >
+          <option value="classic">Классический</option>
+          <option value="double">Удвоенный (×2)</option>
+          <option value="custom">Произвольный (задать вручную)</option>
+        </select>
+      </label>
+      <label>
+        <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">Несгораемые</span>
+        <select
+          className="input-base"
+          value={config.milestones}
+          onChange={(e) => setConfig({ ...config, milestones: e.target.value as MilestoneMode })}
+        >
+          <option value="classic">Классика (5-я, 10-я)</option>
+          <option value="three">Три точки (5-я, 10-я, 15-я)</option>
+          <option value="none">Без несгораемых</option>
+        </select>
+      </label>
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          checked={printAnswers}
+          onChange={(e) => setPrintAnswers(e.target.checked)}
+        />
+        Печатать верные ответы (иначе — только вопросы)
+      </label>
     </div>
   );
 
@@ -346,8 +351,10 @@ function BuilderMillionaire() {
       onToggleSettings={() => setShowSettings((s) => !s)}
       settingsOpen={showSettings}
       settingsPanel={settingsPanel}
+      advancedSettingsPanel={advancedSettingsPanel}
     />
   );
+
 
   if (loadState === "loading") {
     return <div className="min-h-screen grid place-items-center bg-surface text-muted-foreground">Загружаем игру…</div>;

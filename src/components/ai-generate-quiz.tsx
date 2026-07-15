@@ -58,7 +58,7 @@ export function AIGenerateQuizButton({ currentTitle, onGenerated, className }: P
           setTopic(currentTitle);
           setOpen(true);
         }}
-        className="btn-ghost cmd-primary"
+        className={`btn-ghost cmd-primary ${className ?? ""}`}
       >
         <WandSparkles className="h-4 w-4" />
         Сгенерировать

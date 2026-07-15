@@ -128,7 +128,7 @@ export function BuilderToolbar({
           <span className="hidden md:inline">Настройки</span>
         </button>
         {settingsOpen && settingsPanel && (
-          <div className="absolute right-0 top-full z-[100] mt-2 w-72 max-w-[calc(100vw-2rem)] max-h-[70vh] overflow-y-auto rounded-xl border border-border bg-surface p-4 shadow-lift">
+          <div className="absolute right-0 top-full z-[100] mt-2 w-72 max-md:w-64 max-w-[calc(100vw-2rem)] max-h-[70vh] overflow-y-auto rounded-xl border border-border bg-surface p-4 shadow-lift">
             {settingsPanel}
             {advancedSettingsPanel && (
               <div className="mt-4 hidden md:block">

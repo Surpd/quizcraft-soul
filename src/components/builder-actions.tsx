@@ -30,6 +30,8 @@ interface ToolbarProps {
   onPrint: (withAnswers: boolean) => void;
   printAnswers: boolean;
   onToggleSettings: () => void;
+  settingsOpen?: boolean;
+  settingsPanel?: ReactNode;
 }
 
 export function BuilderToolbar({

@@ -194,6 +194,7 @@ function BuilderMillionaire() {
     saveGame<MillionaireData>("millionaire", id, { config, questions }, { tags });
 
     setSavedId(id);
+    clearDraft("millionaire");
     showToast(savedId ? "Изменения сохранены" : "Игра сохранена!");
     return id;
   };
@@ -203,6 +204,7 @@ function BuilderMillionaire() {
     const id = newId();
     saveGame<MillionaireData>("millionaire", id, { config, questions }, { tags });
     setSavedId(id);
+    clearDraft("millionaire");
     showToast("Создана копия");
     return id;
   };

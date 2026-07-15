@@ -81,9 +81,9 @@ export function BuilderToolbar({
         <span className="hidden md:inline">Импорт</span>
       </button>
 
-      <div ref={exportRef} className="relative flex flex-1 md:flex-initial">
+      <div ref={exportRef} className="relative flex flex-1">
         <button
-          className="btn-ghost flex w-full items-center justify-center gap-2 md:w-auto md:justify-start"
+          className="btn-ghost flex w-full items-center justify-center gap-2 md:justify-start"
           onClick={() => setOpenExport((v) => !v)}
           aria-label="Экспорт"
           title="Экспорт"

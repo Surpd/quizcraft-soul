@@ -102,6 +102,25 @@ function BuilderMillionaire() {
     }
   }, [urlId]);
 
+  const draftEnabled = !urlId;
+  const draftPrompt = useDraftPrompt<{
+    config: MillionaireConfig;
+    questions: MillionaireQuestion[];
+    tags: string[];
+  }>("millionaire", draftEnabled);
+  const draftPaused = !draftEnabled || !draftPrompt.checked || !!draftPrompt.draft || !!savedId;
+  useAutoDraft("millionaire", { config, questions, tags }, { paused: draftPaused });
+
+  const restoreDraft = () => {
+    const d = draftPrompt.draft;
+    if (!d) return;
+    setConfig(d.data.config);
+    setQuestions(d.data.questions);
+    setTags(d.data.tags ?? []);
+    draftPrompt.accept();
+    showToast("Черновик восстановлен");
+  };
+
   const moneyForIndex = (idx: number, scale: MoneyScale, mode: PointsMode): number => {
     const base = LADDERS[scale][idx] ?? LADDERS[scale].at(-1)!;
     if (mode === "double") return base * 2;

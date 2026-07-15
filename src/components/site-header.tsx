@@ -19,7 +19,6 @@ export function SiteHeader({ compact = false }: { compact?: boolean }) {
   const { user, logout } = useAuth();
   const nav = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const isHome = pathname === "/";
 
   const [open, setOpen] = useState(false);
   const [logoOpen, setLogoOpen] = useState(false);

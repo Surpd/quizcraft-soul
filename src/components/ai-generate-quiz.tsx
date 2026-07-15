@@ -13,9 +13,10 @@ const COOLDOWN_MS = 30_000;
 interface Props {
   currentTitle: string;
   onGenerated: (result: { title: string; questions: GeneratedQuizQuestion[] }) => void;
+  className?: string;
 }
 
-export function AIGenerateQuizButton({ currentTitle, onGenerated }: Props) {
+export function AIGenerateQuizButton({ currentTitle, onGenerated, className }: Props) {
   const [open, setOpen] = useState(false);
   const [topic, setTopic] = useState(currentTitle);
   const [count, setCount] = useState(10);

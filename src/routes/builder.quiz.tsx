@@ -26,6 +26,8 @@ import { LIMITS } from "@/lib/limits";
 import { ImageDrop } from "@/lib/image-drop";
 import { ThemeSelect } from "@/components/theme-select";
 import { newId, saveGame, loadGame } from "@/lib/storage";
+import { useAutoDraft, useDraftPrompt, clearDraft } from "@/hooks/use-draft";
+import { DraftBanner } from "@/components/draft-banner";
 import { BuilderToolbar, BuilderFabs } from "@/components/builder-actions";
 import {
   downloadExcelTemplate,
@@ -116,6 +118,25 @@ function BuilderQuiz() {
     }
   }, [urlId]);
 
+  // Draft autosave — only for NEW games (no urlId, no savedId yet).
+  const draftEnabled = !urlId;
+  const draftPrompt = useDraftPrompt<{ config: QuizConfig; questions: QuizQuestion[]; tags: string[] }>(
+    "quiz",
+    draftEnabled,
+  );
+  const draftPaused = !draftEnabled || !draftPrompt.checked || !!draftPrompt.draft || !!savedId;
+  useAutoDraft("quiz", { config, questions, tags }, { paused: draftPaused });
+
+  const restoreDraft = () => {
+    const d = draftPrompt.draft;
+    if (!d) return;
+    setConfig(d.data.config);
+    setQuestions(d.data.questions);
+    setTags(d.data.tags ?? []);
+    draftPrompt.accept();
+    showToast("Черновик восстановлен");
+  };
+
   const addQuestion = (type: QuizQuestionType) => {
     const q = makeQuestion(type, 100, config.defaultTime);
     setQuestions((prev) => [...prev, q]);
@@ -151,6 +172,7 @@ function BuilderQuiz() {
     const id = savedId ?? newId();
     saveGame<QuizData>("quiz", id, { config, questions }, { tags });
     setSavedId(id);
+    clearDraft("quiz");
     showToast(savedId ? "Изменения сохранены" : "Квиз сохранён!");
     return id;
   };
@@ -163,6 +185,7 @@ function BuilderQuiz() {
       questions,
     }, { tags });
     setSavedId(id);
+    clearDraft("quiz");
     showToast("Создана копия квиза");
     return id;
   };
@@ -291,19 +314,13 @@ function BuilderQuiz() {
     <div className="space-y-4">
       <h3 className="font-display font-bold">Настройки квиза</h3>
       <div className="grid gap-4">
-        <label className="block">
-          <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">Порядок вопросов</span>
-          <select
-            className="input-base"
-            value={config.orderMode}
-            onChange={(e) =>
-              setConfig({ ...config, orderMode: e.target.value as QuizConfig["orderMode"] })
-            }
-          >
-            <option value="sequential">Последовательно</option>
-            <option value="free">В любом порядке</option>
-          </select>
-        </label>
+        <div>
+          <span className="mb-2 block text-xs font-semibold text-muted-foreground">Тема плеера</span>
+          <ThemeSelect
+            value={config.theme}
+            onChange={(theme: PlayerTheme) => setConfig({ ...config, theme })}
+          />
+        </div>
         <label className="block">
           <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">
             {config.orderMode === "free" ? "Общее время (мин)" : "Таймер на вопрос (сек)"}
@@ -319,17 +336,6 @@ function BuilderQuiz() {
             }
           />
         </label>
-        <label className="block">
-          <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">Показывать результат</span>
-          <select
-            className="input-base"
-            value={config.showResult}
-            onChange={(e) => setConfig({ ...config, showResult: e.target.value as "each" | "end" })}
-          >
-            <option value="end">В конце</option>
-            <option value="each">После каждого</option>
-          </select>
-        </label>
         <label className="flex items-center gap-2 text-sm">
           <input
             type="checkbox"
@@ -338,22 +344,44 @@ function BuilderQuiz() {
           />
           Перемешивать вопросы
         </label>
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={printAnswers}
-            onChange={(e) => setPrintAnswers(e.target.checked)}
-          />
-          Печатать с ответами (иначе — только вопросы)
-        </label>
-        <div>
-          <span className="mb-2 block text-xs font-semibold text-muted-foreground">Тема плеера</span>
-          <ThemeSelect
-            value={config.theme}
-            onChange={(theme: PlayerTheme) => setConfig({ ...config, theme })}
-          />
-        </div>
       </div>
+    </div>
+  );
+
+  const advancedSettingsPanel = (
+    <div className="grid gap-4">
+      <label className="block">
+        <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">Порядок вопросов</span>
+        <select
+          className="input-base"
+          value={config.orderMode}
+          onChange={(e) =>
+            setConfig({ ...config, orderMode: e.target.value as QuizConfig["orderMode"] })
+          }
+        >
+          <option value="sequential">Последовательно</option>
+          <option value="free">В любом порядке</option>
+        </select>
+      </label>
+      <label className="block">
+        <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">Показывать результат</span>
+        <select
+          className="input-base"
+          value={config.showResult}
+          onChange={(e) => setConfig({ ...config, showResult: e.target.value as "each" | "end" })}
+        >
+          <option value="end">В конце</option>
+          <option value="each">После каждого</option>
+        </select>
+      </label>
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          checked={printAnswers}
+          onChange={(e) => setPrintAnswers(e.target.checked)}
+        />
+        Печатать с ответами (иначе — только вопросы)
+      </label>
     </div>
   );
 
@@ -370,12 +398,20 @@ function BuilderQuiz() {
         onToggleSettings={() => setShowSettings((s) => !s)}
         settingsOpen={showSettings}
         settingsPanel={settingsPanel}
+        advancedSettingsPanel={advancedSettingsPanel}
       />
-      <button className="btn-ghost" onClick={openResults}>
-        <BarChart3 className="h-4 w-4" /> Результаты
+      <button
+        className="btn-ghost"
+        onClick={openResults}
+        aria-label="Результаты"
+        title="Результаты"
+      >
+        <BarChart3 className="h-4 w-4" />
+        <span className="hidden md:inline">Результаты</span>
       </button>
     </div>
   );
+
 
   if (loadState === "loading") {
     return (
@@ -422,6 +458,16 @@ function BuilderQuiz() {
         </>
       }
     >
+      {draftPrompt.draft && (
+        <DraftBanner
+          updatedAt={draftPrompt.draft.updatedAt}
+          onRestore={restoreDraft}
+          onDiscard={() => {
+            draftPrompt.dismiss();
+            showToast("Черновик удалён");
+          }}
+        />
+      )}
       <div className="surface-card space-y-3 p-6">
         <label className="block">
           <span className="mb-1.5 flex items-center justify-between text-xs font-semibold text-muted-foreground">

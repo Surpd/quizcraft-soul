@@ -14,7 +14,7 @@ import { LIMITS } from "@/lib/limits";
 import { newId, saveGame, loadGame } from "@/lib/storage";
 import { useAutoDraft, useDraftPrompt, clearDraft } from "@/hooks/use-draft";
 import { DraftBanner } from "@/components/draft-banner";
-import { BuilderToolbar, BuilderFabs } from "@/components/builder-actions";
+import { BuilderToolbar, BuilderFabs, BuilderSettingsSection } from "@/components/builder-actions";
 import {
   downloadExcelTemplate,
   exportMillionaireExcel,
@@ -405,6 +405,13 @@ function BuilderMillionaire() {
             draftPrompt.dismiss();
             showToast("Черновик удалён");
           }}
+        />
+      )}
+      {showSettings && (
+        <BuilderSettingsSection
+          panel={settingsPanel}
+          advancedPanel={advancedSettingsPanel}
+          onClose={() => setShowSettings(false)}
         />
       )}
       <div className="surface-card space-y-3 p-6">
